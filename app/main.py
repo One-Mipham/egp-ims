@@ -1,4 +1,5 @@
 """FastAPI 入口."""
+import os
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -9,6 +10,7 @@ from app.database import engine, Base
 from app.routers import auth, users, companies, departments, accounts, vouchers, templates, periods, reports, audit, prints, permissions, cockpit, counterparties, persons, projects, investments, init_data, hr, fixed_assets, receivables, payables, inventory_trade, admin, servers, kb, expenses, contracts, bids, budget, board, taxes, gl, subscriptions, cashflow_items
 from app.auth import verify_company_isolation
 from app.permissions import require_module
+from app.middleware import rate_limit_middleware, security_headers_middleware
 
 Base.metadata.create_all(bind=engine)
 
@@ -24,13 +26,26 @@ except Exception:
 
 app = FastAPI(title="One Mipham Finance", version="0.1.0")
 
+# ── Security: CORS ──
+# SaaS: app.mipham.ai + Vercel preview URLs; 本地 dev: localhost
+ALLOWED_ORIGINS = os.environ.get(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://localhost:5173,https://app.mipham.ai,https://*.vercel.app",
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o.strip() for o in ALLOWED_ORIGINS],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Authorization", "Content-Type"],
 )
+
+# ── Security: Rate limiting ──
+app.middleware("http")(rate_limit_middleware)
+
+# ── Security: Security headers ──
+app.middleware("http")(security_headers_middleware)
 
 
 @app.middleware("http")
