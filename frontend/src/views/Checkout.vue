@@ -28,6 +28,7 @@ const paymentMethods = computed(() => {
 })
 
 const showBankInfo = computed(() => paymentMethod.value === 'bank_transfer')
+const showQRCode = computed(() => paymentMethod.value === 'alipay' || paymentMethod.value === 'wechat')
 
 const displayPrice = computed(() => {
   if (!selectedPlan.value) return ''
@@ -101,6 +102,19 @@ function confirmPayment() {
             <div class="text-xs text-stone-400">{{ pm.desc }}</div>
           </div>
         </div>
+      </div>
+
+      <!-- 收款码（支付宝/微信） -->
+      <div v-if="showQRCode" class="bg-white rounded-xl border border-stone-200 p-6 mb-6 text-center">
+        <h4 class="font-medium text-stone-700 mb-3">
+          {{ locale === 'en-US' ? 'Scan to Pay' : '扫码支付' }}
+        </h4>
+        <img src="/payment-qr.jpg" alt="收款码" class="w-48 h-48 mx-auto rounded-lg border border-stone-200" />
+        <p class="text-xs text-stone-400 mt-3">
+          {{ locale === 'en-US'
+            ? 'Scan the QR code with Alipay or WeChat. Include your Company ID in the payment note.'
+            : '请使用支付宝或微信扫描二维码支付，付款时请备注公司编号。' }}
+        </p>
       </div>
 
       <!-- Bank account info (visible when bank transfer selected) -->
