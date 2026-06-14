@@ -92,7 +92,7 @@ const messages: Record<Locale, Record<string, any>> = {
     },
     subscription: {
       title: '选择适合您的套餐',
-      subtitle: '7 天全模块免费试用，无需绑定支付方式。试用结束后选择套餐继续使用。',
+      subtitle: '30 天全模块免费试用（需 ¥0.99 实名验证）。试用结束后选择套餐继续使用。',
       monthly: '月付',
       annual: '年付',
       savePercent: '省 17%',
@@ -104,7 +104,7 @@ const messages: Record<Locale, Record<string, any>> = {
       selectPlan: '选择此套餐',
       buyout: '一次性买断 · 自部署',
       inquire: '咨询购买',
-      startTrial: '免费试用 7 天（全模块）',
+      startTrial: '¥0.99 实名验证 · 30 天全模块试用',
       activateFailed: '激活失败',
       checkout: {
         title: '确认订阅',
@@ -207,7 +207,7 @@ const messages: Record<Locale, Record<string, any>> = {
     },
     subscription: {
       title: 'Choose Your Plan',
-      subtitle: '7-day full-feature free trial. No payment method required.',
+      subtitle: '30-day full-feature free trial (¥0.99 ID verification required).',
       monthly: 'Monthly',
       annual: 'Annual',
       savePercent: 'Save 17%',

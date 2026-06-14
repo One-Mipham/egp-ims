@@ -66,7 +66,7 @@ def current_subscription(company_id: int, db: Session = Depends(get_db), user: U
 
 @router.post("/activate-trial")
 def activate_trial(company_id: int, db: Session = Depends(get_db)):
-    """激活 7 天全模块试用。无需认证（注册后调用）。"""
+    """激活 30 天（一个月）全模块试用。无需认证（注册后调用）。"""
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="公司不存在")
@@ -80,7 +80,7 @@ def activate_trial(company_id: int, db: Session = Depends(get_db)):
     company.module_set = "trial"
     company.enabled_modules = all_modules
     company.subscription_status = "trialing"
-    company.trial_ends_at = datetime.utcnow() + timedelta(days=7)
+    company.trial_ends_at = datetime.utcnow() + timedelta(days=30)
 
     # 创建试用订阅记录
     sub = CompanySubscription(

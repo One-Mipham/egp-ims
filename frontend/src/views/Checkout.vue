@@ -29,6 +29,7 @@ const paymentMethods = computed(() => {
 
 const showBankInfo = computed(() => paymentMethod.value === 'bank_transfer')
 const showQRCode = computed(() => paymentMethod.value === 'alipay' || paymentMethod.value === 'wechat')
+const isTrialVerification = computed(() => selectedPlan.value?.is_trial_verification === true)
 
 const displayPrice = computed(() => {
   if (!selectedPlan.value) return ''
@@ -72,7 +73,7 @@ function confirmPayment() {
     : ''
   alert(`${locale.value === 'en-US' ? 'Payment simulated' : '模拟支付成功'}：${selectedPlan.value.name} - ${amt} (${pm?.label})${receiptMsg}\n${locale.value === 'en-US' ? 'Payment integration will be implemented in Phase 3.' : '支付功能将在 Phase 3 实现。'}`)
   localStorage.removeItem('selectedPlan')
-  router.push('')
+  if (isTrialVerification.value) { router.push('/?fresh=1') } else { router.push('') }
 }
 </script>
 

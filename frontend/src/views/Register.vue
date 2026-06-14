@@ -58,11 +58,19 @@ async function handleRegister() {
       password: password.value,
     })
     result.value = res.data
-    // 自动激活7天试用并跳转定价页
+    // 自动激活30天试用
     redirecting.value = true
     try { await activateTrial(res.data.company_id) } catch (_) { /* ok */ }
+    // 存储 ¥0.99 验证支付信息，跳转结算页
+    localStorage.setItem('selectedPlan', JSON.stringify({
+      name: '实名验证',
+      slug: 'id-verification',
+      price: 0.99,
+      billing_cycle: 'once',
+      is_trial_verification: true,
+    }))
     setTimeout(() => {
-      router.push('/subscription/plans')
+      router.push('/subscription/checkout')
     }, 2500)
   } catch (e: any) {
     error.value = e.response?.data?.detail || t('register.registerFailed')
@@ -123,10 +131,10 @@ async function handleRegister() {
         </p>
 
         <button
-          @click="router.push('/subscription/plans')"
+          @click="router.push('/subscription/checkout')"
           class="w-full mt-3 px-6 py-2.5 bg-indigo-700 text-white text-sm font-medium rounded-sm hover:bg-indigo-800 transition-all"
         >
-          {{ t('register.selectPlan') }}
+          ¥0.99 实名验证
         </button>
       </div>
 
