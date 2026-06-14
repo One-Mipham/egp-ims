@@ -232,10 +232,27 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const token = localStorage.getItem('token')
+
+  // 访问登录/注册页：主动清除旧 token，确保能看到登录界面
+  if (to.path === '/login' || to.path === '/register') {
+    if (token) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('companyId')
+    }
+    return next()
+  }
+
+  // 首页根路径：有 token 也重定向到登录页（除刚登录的 fresh 标记外）
+  if ((to.path === '' || to.path === '/') && !to.query.fresh) {
+    if (token) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('companyId')
+    }
+    return next('/login')
+  }
+
   if (to.meta.requiresAuth && !token) {
     next('/login')
-  } else if (to.path === '/login' && token) {
-    next('/')
   } else if (to.meta.allowedRoles) {
     const role = localStorage.getItem('role') || ''
     const roles = to.meta.allowedRoles as string[]

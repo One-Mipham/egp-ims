@@ -1,0 +1,6 @@
+dist/
+dist-intranet/
+dist-saas/
+node_modules/
+.vite/
+*.local

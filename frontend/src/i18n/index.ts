@@ -57,6 +57,11 @@ const messages: Record<Locale, Record<string, any>> = {
       registerNew: '用户注册',
       miphamHome: 'MiphamAI 首页',
       loginFailed: '登录失败，请重试',
+      usernameRequired: '请输入用户名',
+      passwordRequired: '请输入密码',
+      companyNotIdentified: '请先完成公司识别',
+      networkError: '网络连接失败，请检查网络后重试',
+      developer: '由华安麦逄人工智能 MiphamAI 开发',
     },
     register: {
       title: '注册新公司',
@@ -168,6 +173,10 @@ const messages: Record<Locale, Record<string, any>> = {
       registerNew: 'Register New Company',
       miphamHome: 'MiphamAI Home',
       loginFailed: 'Login failed, please try again',
+      usernameRequired: 'Please enter your username',
+      passwordRequired: 'Please enter your password',
+      companyNotIdentified: 'Please complete company identification first',
+      networkError: 'Network error. Please check your connection and try again',
     },
     register: {
       title: 'Register Company',

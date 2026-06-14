@@ -11,6 +11,7 @@ const { t, locale } = useI18n()
 const router = useRouter()
 const username = ref('')
 const password = ref('')
+const showPassword = ref(false)
 const companyId = ref('')
 const companyName = ref('')
 const companyShortName = ref('')
@@ -22,6 +23,20 @@ const isAdmin = ref(false)
 const error = ref('')
 const loading = ref(false)
 const identifying = ref(false)
+
+// 模板引用 — 用于自动填充安全网（绕过 v-model 的 input 事件依赖）
+const usernameInput = ref<HTMLInputElement | null>(null)
+const passwordInput = ref<HTMLInputElement | null>(null)
+
+/**
+ * 从 DOM 读取真实值，防止浏览器自动填充绕过 Vue 响应式系统。
+ * v-model 依赖 input 事件，但浏览器自动填充经常不触发该事件，
+ * 导致 username.value / password.value 为空而 DOM 显示有值。
+ */
+function syncFromDOM() {
+  if (usernameInput.value) username.value = usernameInput.value.value
+  if (passwordInput.value) password.value = passwordInput.value.value
+}
 
 function defaultDateStr(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -41,7 +56,15 @@ onMounted(() => {
 })
 
 async function handleIdentify() {
-  if (!username.value || !password.value) return
+  syncFromDOM()  // 安全网：浏览器自动填充
+  if (!username.value) {
+    error.value = t('login.usernameRequired') || '请输入用户名'
+    return
+  }
+  if (!password.value) {
+    error.value = t('login.passwordRequired') || '请输入密码'
+    return
+  }
   identifying.value = true
   error.value = ''
   identified.value = false
@@ -55,7 +78,14 @@ async function handleIdentify() {
     companyShortName.value = res.data.company_short_name
     identified.value = true
   } catch (e: any) {
-    error.value = e.response?.data?.detail || t('login.loginFailed')
+    if (e.response) {
+      error.value = e.response.data?.detail || t('login.loginFailed')
+    } else if (e.request) {
+      error.value = t('login.networkError') || '网络连接失败，请检查网络后重试'
+    } else {
+      error.value = t('login.loginFailed')
+    }
+    console.error('[Login] 识别失败:', e)
     password.value = ''
   } finally {
     identifying.value = false
@@ -63,7 +93,19 @@ async function handleIdentify() {
 }
 
 async function handleLogin() {
-  if (!username.value || !password.value || !companyId.value) return
+  syncFromDOM()  // 安全网：浏览器自动填充
+  if (!username.value) {
+    error.value = t('login.usernameRequired') || '请输入用户名'
+    return
+  }
+  if (!password.value) {
+    error.value = t('login.passwordRequired') || '请输入密码'
+    return
+  }
+  if (!companyId.value) {
+    error.value = t('login.companyNotIdentified') || '请先完成公司识别'
+    return
+  }
   loading.value = true
   error.value = ''
   try {
@@ -90,9 +132,17 @@ async function handleLogin() {
       localStorage.setItem('subscriptionStatus', 'trialing')
       localStorage.setItem('enabledModules', '[]')
     }
-    router.push('')
+    // fresh=1 告知路由守卫这是刚登录的 token，放行至首页
+    router.push('/?fresh=1')
   } catch (e: any) {
-    error.value = e.response?.data?.detail || t('login.loginFailed')
+    if (e.response) {
+      error.value = e.response.data?.detail || t('login.loginFailed')
+    } else if (e.request) {
+      error.value = t('login.networkError') || '网络连接失败，请检查网络后重试'
+    } else {
+      error.value = t('login.loginFailed')
+    }
+    console.error('[Login] 登录失败:', e)
     password.value = ''
     identified.value = false
   } finally {
@@ -135,23 +185,48 @@ async function handleLogin() {
 
         <!-- Login form card -->
         <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-sm p-8">
+          <!-- 用户名 -->
           <label class="block text-base font-medium text-white/70 mb-2 tracking-wider uppercase">{{ t('login.username') }}</label>
           <input
+            ref="usernameInput"
             v-model="username"
             type="text"
             class="w-full px-4 py-3 border border-white/20 rounded-sm bg-white/10 text-white placeholder-white/30 focus:ring-1 focus:ring-white/40 focus:border-white/50 outline-none text-base tracking-wide transition-colors"
             :placeholder="t('login.usernamePlaceholder')"
-            autocomplete="off"
+            autocomplete="username"
             @keyup.enter="identified ? handleLogin() : handleIdentify()"
+            @change="username = ($event.target as HTMLInputElement).value"
           />
+
+          <!-- 密码（带眼睛） -->
           <label class="block text-base font-medium text-white/70 mb-2 mt-4 tracking-wider uppercase">{{ t('login.password') }}</label>
-          <input
-            v-model="password"
-            type="password"
-            class="w-full px-4 py-3 border border-white/20 rounded-sm bg-white/10 text-white placeholder-white/30 focus:ring-1 focus:ring-white/40 focus:border-white/50 outline-none text-base tracking-wide transition-colors"
-            :placeholder="t('login.passwordPlaceholder')"
-            @keyup.enter="identified ? handleLogin() : handleIdentify()"
-          />
+          <div class="relative">
+            <input
+              ref="passwordInput"
+              v-model="password"
+              :type="showPassword ? 'text' : 'password'"
+              class="w-full px-4 py-3 pr-12 border border-white/20 rounded-sm bg-white/10 text-white placeholder-white/30 focus:ring-1 focus:ring-white/40 focus:border-white/50 outline-none text-base tracking-wide transition-colors"
+              :placeholder="t('login.passwordPlaceholder')"
+              autocomplete="current-password"
+              @keyup.enter="identified ? handleLogin() : handleIdentify()"
+              @change="password = ($event.target as HTMLInputElement).value"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors p-1"
+              :title="showPassword ? '隐藏密码' : '显示密码'"
+              @click="showPassword = !showPassword"
+            >
+              <!-- 眼睛图标（SVG） -->
+              <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+              </svg>
+            </button>
+          </div>
 
           <!-- Step 1: Identify company -->
           <div v-if="!identified" class="mt-6 space-y-3">
