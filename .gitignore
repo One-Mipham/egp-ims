@@ -25,3 +25,6 @@ dist/
 .playwright-mcp/
 .playwright-mcp/
 dist-saas-cn/
+
+# 🔒 实际财务数据 — 仅在本地，不推送 GitHub
+basic_master_data/
