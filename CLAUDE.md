@@ -3,6 +3,7 @@
 > **项目**: omc-project1 — 企业智能管理系统
 > **版本**: 0.1.0
 > **创建日期**: 2026-05-04
+> **最后更新**: 2026-06-21 — 路径重组: omc-project1 → business-products/egp-ims
 > **维护人**: One Mipham Corporation 技术委员会
 
 本项目遵循母公司 [Rismed Ronxin Capital 开发治理规范](../../CLAUDE.md) 和 [One Mipham Corporation 开发规范](../CLAUDE.md)。
