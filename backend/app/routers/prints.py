@@ -232,6 +232,16 @@ def _period_range(period: str, rtype: str) -> tuple[str, str]:
         return f"{period}-01", f"{_prev_year_period(period)}-01"
 
 
+def _prev_day(date_str: str) -> str:
+    """Return the day before a YYYY-MM-DD date string.
+    e.g. '2026-05-01' → '2026-04-30' (last day of previous month).
+    Used to get period-beginning balance (balance at end of prior day = start of this day)."""
+    from datetime import timedelta as _td
+    y, m, d = int(date_str[:4]), int(date_str[5:7]), int(date_str[8:10])
+    dt = datetime(y, m, d) - _td(days=1)
+    return dt.strftime("%Y-%m-%d")
+
+
 def _get_report_data(db: Session, company_id: int, period: str, report: str, rtype: str = "monthly"):
     end_date = _period_end_date(period)
     ys = _year_start(period)
@@ -429,20 +439,34 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
         fin_in_p = round(_cat_sum(prev_items, "fin_", "inflow"), 2)
         fin_out_p = round(_cat_sum(prev_items, "fin_", "outflow"), 2)
 
+        # 现金类科目（与资产负债表货币资金一致：1001,1002,1012）
         all_accts = db.query(Account).filter(Account.company_id == company_id).all()
         accts_cf = {a.code: a for a in all_accts if _is_cash_account(a.code, CASH_CODES)}
-        beginning_balance = sum(_calc_ending(a, db, company_id, ys) for a in accts_cf.values())
+        pye = _prev_year_end(period)
+
+        def _cash_balance(ref_date):
+            """资产负债表货币资金在某一日期的余额"""
+            return round(sum(_calc_ending(a, db, company_id, ref_date) for a in accts_cf.values()), 2)
+
+        # ── 倒挤法：期末余额 = 资产负债表货币资金 ──
+        # curr 列：本期期初 = curr_start 前一日；期末 = end_date
+        beg_c = _cash_balance(_prev_day(curr_start))
+        end_c = _cash_balance(end_date)
+        # ytd 列：期初 = 去年12月31日；期末 = end_date（同curr）
+        beg_y = _cash_balance(pye)
+        end_y = end_c  # ytd 和 curr 期末是同一天（本期期末）
+        # prev 列：上年同期期初 = prev_curr_start 前一日；期末 = py_end
+        beg_p = _cash_balance(_prev_day(prev_curr_start))
+        end_p = _cash_balance(py_end)
 
         def _net(inc, outc): return round(inc - outc, 2)
         net_op_c = _net(op_in_c, op_out_c); net_op_y = _net(op_in_y, op_out_y); net_op_p = _net(op_in_p, op_out_p)
         net_inv_c = _net(inv_in_c, inv_out_c); net_inv_y = _net(inv_in_y, inv_out_y); net_inv_p = _net(inv_in_p, inv_out_p)
         net_fin_c = _net(fin_in_c, fin_out_c); net_fin_y = _net(fin_in_y, fin_out_y); net_fin_p = _net(fin_in_p, fin_out_p)
-        net_chg_c = round(net_op_c + net_inv_c + net_fin_c, 2)
-        net_chg_y = round(net_op_y + net_inv_y + net_fin_y, 2)
-        net_chg_p = round(net_op_p + net_inv_p + net_fin_p, 2)
-        end_c = round(beginning_balance + net_chg_c, 2)
-        end_y = round(beginning_balance + net_chg_y, 2)
-        end_p = round(beginning_balance + net_chg_p, 2)
+        # 净变动 = 期末 - 期初（倒挤，保证与资产负债表对齐）
+        net_chg_c = round(end_c - beg_c, 2)
+        net_chg_y = round(end_y - beg_y, 2)
+        net_chg_p = round(end_p - beg_p, 2)
 
         y, m = int(period[:4]), int(period[5:7])
         if rtype == "yearly":
@@ -474,7 +498,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             ("     筹资活动现金流出小计", fin_out_c, fin_out_y, fin_out_p),
             ("     筹资活动产生的现金流量净额", net_fin_c, net_fin_y, net_fin_p),
             ("五、现金及现金等价物净增加额", net_chg_c, net_chg_y, net_chg_p),
-            ("        加：期初现金及现金等价物余额", round(beginning_balance, 2), round(beginning_balance, 2), round(beginning_balance, 2)),
+            ("        加：期初现金及现金等价物余额", beg_c, beg_y, beg_p),
             ("六、期末现金及现金等价物余额", end_c, end_y, end_p),
         ]
         return {"type": "cashflow", "date_display": date_display, "rows": rows}
