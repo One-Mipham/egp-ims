@@ -74,8 +74,8 @@ const routes = [
   },
   {
     path: '/settings/options',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '选项设置' },
+    component: () => import('../views/OptionsSettings.vue'),
+    meta: { requiresAuth: true },
   },
   { path: '/servers', component: () => import('../views/Servers.vue'), meta: { requiresAuth: true } },
   // 初始化导航
@@ -87,8 +87,8 @@ const routes = [
   },
   {
     path: '/init/opening-balances',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '期初数据' },
+    component: () => import('../views/OpeningBalances.vue'),
+    meta: { requiresAuth: true },
   },
   // 初始化 → 基础档案 children
   { path: '/init/contracts', component: () => import('../views/InitContracts.vue'), meta: { requiresAuth: true } },
@@ -100,8 +100,7 @@ const routes = [
   },
   {
     path: '/init/monthly-reports',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '会计月报表' },
+    redirect: '/reports/monthly',
   },
   {
     path: '/init/annual-audit',
@@ -333,9 +332,12 @@ const routes = [
   },
   // Placeholder routes — legacy
   {
+    path: '/init/monthly-reports',
+    redirect: '/reports/monthly',
+  },
+  {
     path: '/mobile-stock',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '移动仓管' },
+    redirect: '/cockpit/accounting',
   },
   {
     path: '/todo',
