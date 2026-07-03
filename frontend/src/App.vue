@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getMe } from '@/api'
 
@@ -64,14 +64,7 @@ const ROLE_LABELS: Record<string, string> = {
   super_admin: '超级管理员',
 }
 
-onMounted(async () => {
-  initTheme()
-  document.addEventListener('click', (e) => {
-    if (showThemePopup.value && !(e.target as HTMLElement).closest('.theme-switcher')) {
-      showThemePopup.value = false
-    }
-  })
-  if (isLoginPage.value) return
+async function loadCurrentUser() {
   const token = localStorage.getItem('token')
   if (!token) {
     router.push('/login')
@@ -83,6 +76,27 @@ onMounted(async () => {
   } catch {
     localStorage.removeItem('token')
     router.push('/login')
+  }
+}
+
+onMounted(async () => {
+  initTheme()
+  document.addEventListener('click', (e) => {
+    if (showThemePopup.value && !(e.target as HTMLElement).closest('.theme-switcher')) {
+      showThemePopup.value = false
+    }
+  })
+  if (isLoginPage.value) return
+  await loadCurrentUser()
+})
+
+// 登录成功后从 /login → / 切换时，App.vue 不会重新挂载，
+// onMounted 不会再次执行，导致 currentUser 保持 null，
+// SidebarMenu 拿不到 role，只显示"知识库"。
+// 通过 watch 检测从登录页到认证页的转换，触发加载。
+watch(isLoginPage, async (nowLogin) => {
+  if (!nowLogin) {
+    await loadCurrentUser()
   }
 })
 
