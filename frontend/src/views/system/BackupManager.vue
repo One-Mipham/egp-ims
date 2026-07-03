@@ -2,7 +2,8 @@
 import { ref, onMounted } from 'vue'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
-import { listBackups, createBackup, api } from '@/api'
+import api from '@/api'
+import { listBackups, createBackup } from '@/api'
 
 const props = defineProps<{ type: 'monthly' | 'yearly'; title: string }>()
 
