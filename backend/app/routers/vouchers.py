@@ -238,3 +238,74 @@ def reverse_voucher(voucher_id: int, req: ReverseVoucherRequest, db: Session = D
     db.commit()
     db.refresh(voucher)
     return voucher
+
+
+# ── 历史凭证批量导入 ──
+
+@router.post("/batch-import")
+def batch_import_vouchers(
+    data: list[VoucherCreate],
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """批量导入历史凭证（跳过关帐检查和借贷平衡校验）。"""
+    if not data:
+        raise HTTPException(status_code=400, detail="导入数据为空")
+
+    company_id = data[0].company_id
+    imported = 0
+    for item in data:
+        voucher = Voucher(
+            company_id=item.company_id,
+            date=item.date,
+            voucher_no=item.voucher_no or _generate_voucher_no(db, item.company_id, item.voucher_type),
+            voucher_type=item.voucher_type,
+            summary=item.summary,
+            creator_id=user.id,
+            status="posted",
+        )
+        db.add(voucher)
+        db.flush()
+        for entry in item.entries:
+            e = VoucherEntry(
+                voucher_id=voucher.id,
+                account_code=entry.account_code,
+                debit=entry.debit,
+                credit=entry.credit,
+                description=entry.description,
+            )
+            db.add(e)
+        imported += 1
+
+    db.commit()
+    return {"imported": imported, "message": f"成功导入 {imported} 张历史凭证"}
+
+
+@router.get("/archive")
+def list_archive_vouchers(
+    company_id: int,
+    year: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """查询某年度的所有凭证（含历史导入）。"""
+    vouchers = db.query(Voucher).filter(
+        Voucher.company_id == company_id,
+        Voucher.date >= f"{year}-01-01",
+        Voucher.date <= f"{year}-12-31",
+    ).order_by(Voucher.date).all()
+    result = []
+    for v in vouchers:
+        entries = db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).all()
+        total_debit = sum(e.debit for e in entries)
+        result.append({
+            "id": v.id,
+            "date": v.date,
+            "voucher_no": v.voucher_no,
+            "voucher_type": v.voucher_type,
+            "summary": v.summary,
+            "status": v.status,
+            "total_debit": total_debit,
+            "entry_count": len(entries),
+        })
+    return result

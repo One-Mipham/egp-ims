@@ -28,6 +28,7 @@ export default tseslint.config(
         console: 'readonly',
         fetch: 'readonly',
         Blob: 'readonly',
+        FileReader: 'readonly',
         URL: 'readonly',
         File: 'readonly',
         FormData: 'readonly',

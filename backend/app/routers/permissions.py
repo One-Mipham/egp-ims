@@ -10,6 +10,32 @@ from app.auth import get_current_user
 router = APIRouter()
 
 
+@router.get("/")
+def list_all_permissions(
+    company_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """列出公司所有用户及权限。"""
+    users = db.query(User).all()
+    result = []
+    for u in users:
+        perm = db.query(UserPermission).filter_by(user_id=u.id, company_id=company_id).first()
+        perm_data = UserPermissionSchema.model_validate(perm) if perm else UserPermissionSchema(user_id=u.id, company_id=company_id)
+        result.append({
+            "user_id": u.id,
+            "username": u.username,
+            "role": u.role,
+            "is_admin": u.is_admin,
+            "permissions": {
+                k: getattr(perm_data, k)
+                for k in UserPermissionSchema.model_fields
+                if k not in ("user_id", "company_id")
+            },
+        })
+    return result
+
+
 def _get_user_or_404(db: Session, user_id: int) -> User:
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

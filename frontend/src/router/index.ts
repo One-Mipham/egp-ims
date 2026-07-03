@@ -82,8 +82,8 @@ const routes = [
   { path: '/init', component: () => import('../views/InitNavigation.vue'), meta: { requiresAuth: true } },
   {
     path: '/permissions',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '用户权限' },
+    component: () => import('../views/Permissions.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/init/opening-balances',
@@ -95,8 +95,8 @@ const routes = [
   { path: '/init/invoices', component: () => import('../views/InitInvoices.vue'), meta: { requiresAuth: true } },
   {
     path: '/init/voucher-archive',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '历史年度记账凭证' },
+    component: () => import('../views/VoucherArchive.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/init/monthly-reports',

@@ -675,6 +675,13 @@ export const deleteKbCategory = (id: number, companyId: number) =>
 export const getUserPermissions = (userId: number, companyId: number) =>
   api.get(`/permissions/${userId}`, { params: { company_id: companyId } })
 export const setUserPermissions = (userId: number, data: any) => api.put(`/permissions/${userId}`, data)
+export const listAllPermissions = (companyId: number) =>
+  api.get('/permissions/', { params: { company_id: companyId } })
+
+// ── 历史凭证 ──
+export const batchImportVouchers = (data: any[]) => api.post('/vouchers/batch-import', data)
+export const listVoucherArchive = (companyId: number, year: number) =>
+  api.get('/vouchers/archive', { params: { company_id: companyId, year } })
 
 // ── 期末处理扩展 ──
 
