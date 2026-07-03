@@ -180,6 +180,22 @@ export const printVouchers = (companyId: number, range: string = 'month', extraP
 export const printPeriodic = (companyId: number, period: string, report: string, type: string = 'monthly') =>
   api.get('/prints/periodic', { params: { company_id: companyId, period, report, type } })
 
+export const exportPeriodicExcel = async (companyId: number, period: string, report: string, type: string = 'monthly') => {
+  const res = await api.get('/prints/periodic/export', {
+    params: { company_id: companyId, period, report, type },
+    responseType: 'blob',
+  })
+  const url = URL.createObjectURL(res.data)
+  const link = document.createElement('a')
+  link.href = url
+  const names: Record<string, string> = { balance: '资产负债表', income: '利润表', cashflow: '现金流量表' }
+  link.download = `${names[report] || report}_${period}.xlsx`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
 // Counterparties & Persons
 export const listCounterparties = (companyId: number) =>
   api.get('/counterparties/', { params: { company_id: companyId } })

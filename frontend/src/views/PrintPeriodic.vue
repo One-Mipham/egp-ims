@@ -3,7 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
-import { listPeriods, printPeriodic } from '@/api'
+import { listPeriods, printPeriodic, exportPeriodicExcel } from '@/api'
 
 const route = useRoute()
 const data = ref<any>(null)
@@ -146,6 +146,21 @@ async function loadReport() {
   }
 }
 
+const exporting = ref(false)
+
+async function doExport() {
+  if (!selectedPeriod.value) return
+  exporting.value = true
+  try {
+    const cid = parseInt(localStorage.getItem('companyId') || '1')
+    await exportPeriodicExcel(cid, selectedPeriod.value, selectedReport.value, reportType.value)
+  } catch (e: any) {
+    alert('导出失败: ' + (e.response?.data?.detail || e.message))
+  } finally {
+    exporting.value = false
+  }
+}
+
 function doPrint() {
   window.print()
 }
@@ -173,7 +188,8 @@ onMounted(fetchClosedPeriods)
           optionValue="value"
           class="w-40"
         />
-        <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!data" />
+        <Button label="导出Excel" icon="pi pi-file-excel" severity="success" @click="doExport" :disabled="!data" :loading="exporting" />
+        <Button label="打印PDF" icon="pi pi-print" @click="doPrint" :disabled="!data" />
       </div>
       <p v-if="noDataMessage && periodOptions.length === 0" class="text-zinc-400 text-sm mt-2">{{ noDataMessage }}</p>
     </div>

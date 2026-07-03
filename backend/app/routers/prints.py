@@ -546,3 +546,177 @@ def print_periodic(
 ):
     _get_company(db, company_id)
     return _get_report_data(db, company_id, period, report, type)
+
+
+@router.get("/periodic/export")
+def export_periodic(
+    company_id: int,
+    period: str,
+    report: str = Query("balance", pattern="^(balance|income|cashflow)$"),
+    type: str = Query("monthly", pattern="^(monthly|quarterly|yearly)$"),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """导出月/季/年度报表为 Excel 文件。"""
+    from io import BytesIO
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+    from fastapi.responses import StreamingResponse
+
+    _get_company(db, company_id)
+    data = _get_report_data(db, company_id, period, report, type)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = {"balance": "资产负债表", "income": "利润表", "cashflow": "现金流量表"}[report]
+
+    # 样式
+    title_font = Font(name="微软雅黑", size=16, bold=True)
+    header_font = Font(name="微软雅黑", size=10, bold=True)
+    normal_font = Font(name="微软雅黑", size=10)
+    thin_border = Border(
+        left=Side(style="thin"), right=Side(style="thin"),
+        top=Side(style="thin"), bottom=Side(style="thin"),
+    )
+    header_fill = PatternFill(start_color="F5F5F4", end_color="F5F5F4", fill_type="solid")
+    center_align = Alignment(horizontal="center", vertical="center")
+    number_align = Alignment(horizontal="right", vertical="center")
+    text_align = Alignment(horizontal="left", vertical="center", wrap_text=True)
+
+    TYPE_LABEL = {"monthly": "月度", "quarterly": "季度", "yearly": "年度"}
+    type_label = TYPE_LABEL.get(type, "")
+
+    row = 1
+
+    if report == "balance":
+        # 标题
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value="资产负债表").font = title_font
+        ws.cell(row=row, column=1).alignment = center_align
+        row += 1
+
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=6)
+        ws.cell(row=row, column=1, value=f"{type_label}报表 — {data['date_display']}").font = normal_font
+        ws.cell(row=row, column=1).alignment = center_align
+        row += 2
+
+        # 表头
+        headers = ["资产", "期末余额", "年初余额", "负债及所有者权益", "期末余额", "年初余额"]
+        for ci, h in enumerate(headers, 1):
+            c = ws.cell(row=row, column=ci, value=h)
+            c.font = header_font; c.alignment = center_align; c.border = thin_border; c.fill = header_fill
+        row += 1
+
+        # 数据行
+        for i in range(max(len(data["left_items"]), len(data["right_items"]))):
+            for ci in range(1, 7):
+                ws.cell(row=row, column=ci).border = thin_border
+                ws.cell(row=row, column=ci).font = normal_font
+            left = data["left_items"][i] if i < len(data["left_items"]) else None
+            right = data["right_items"][i] if i < len(data["right_items"]) else None
+            is_bold = (left and ("合计" in left["name"] or "总计" in left["name"])) or \
+                      (right and ("合计" in right["name"] or "总计" in right["name"]))
+
+            if left:
+                ws.cell(row=row, column=1, value=left["name"]).alignment = text_align
+                ws.cell(row=row, column=2, value=left["ending"]).alignment = number_align
+                ws.cell(row=row, column=3, value=left["beginning"]).alignment = number_align
+            if right:
+                ws.cell(row=row, column=4, value=right["name"]).alignment = text_align
+                ws.cell(row=row, column=5, value=right["ending"]).alignment = number_align
+                ws.cell(row=row, column=6, value=right["beginning"]).alignment = number_align
+            if is_bold:
+                for ci in range(1, 7):
+                    ws.cell(row=row, column=ci).font = header_font
+                    ws.cell(row=row, column=ci).fill = header_fill
+            row += 1
+
+        ws.column_dimensions["A"].width = 30
+        ws.column_dimensions["B"].width = 16
+        ws.column_dimensions["C"].width = 16
+        ws.column_dimensions["D"].width = 30
+        ws.column_dimensions["E"].width = 16
+        ws.column_dimensions["F"].width = 16
+
+    elif report == "income":
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=4)
+        ws.cell(row=row, column=1, value="利润表").font = title_font
+        ws.cell(row=row, column=1).alignment = center_align
+        row += 1
+
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=4)
+        ws.cell(row=row, column=1, value=f"{type_label}报表 — {data['period_display']}").font = normal_font
+        ws.cell(row=row, column=1).alignment = center_align
+        row += 2
+
+        headers = ["项目", "本期金额", "本年累计", "上年同期"]
+        for ci, h in enumerate(headers, 1):
+            c = ws.cell(row=row, column=ci, value=h)
+            c.font = header_font; c.alignment = center_align; c.border = thin_border; c.fill = header_fill
+        row += 1
+
+        for item in data["items"]:
+            is_bold = any(k in item["name"] for k in ["营业利润", "利润总额", "净利润"])
+            for ci in range(1, 5):
+                ws.cell(row=row, column=ci).border = thin_border
+                ws.cell(row=row, column=ci).font = header_font if is_bold else normal_font
+                if is_bold:
+                    ws.cell(row=row, column=ci).fill = header_fill
+            ws.cell(row=row, column=1, value=item["name"]).alignment = text_align
+            ws.cell(row=row, column=2, value=item.get("curr", 0)).alignment = number_align
+            ws.cell(row=row, column=3, value=item.get("ytd", 0)).alignment = number_align
+            ws.cell(row=row, column=4, value=item.get("prev", 0)).alignment = number_align
+            row += 1
+
+        ws.column_dimensions["A"].width = 36
+        ws.column_dimensions["B"].width = 18
+        ws.column_dimensions["C"].width = 18
+        ws.column_dimensions["D"].width = 18
+
+    elif report == "cashflow":
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=4)
+        ws.cell(row=row, column=1, value="现金流量表").font = title_font
+        ws.cell(row=row, column=1).alignment = center_align
+        row += 1
+
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=4)
+        ws.cell(row=row, column=1, value=f"{type_label}报表 — {data['date_display']}").font = normal_font
+        ws.cell(row=row, column=1).alignment = center_align
+        row += 2
+
+        headers = ["项目", "本期金额", "本年累计", "上年同期"]
+        for ci, h in enumerate(headers, 1):
+            c = ws.cell(row=row, column=ci, value=h)
+            c.font = header_font; c.alignment = center_align; c.border = thin_border; c.fill = header_fill
+        row += 1
+
+        for r in data["rows"]:
+            is_header = r[0].startswith(("一、", "二、", "三、", "四、", "五、", "六、"))
+            is_sub = "小计" in r[0] or "净额" in r[0]
+            for ci in range(1, 5):
+                ws.cell(row=row, column=ci).border = thin_border
+                ws.cell(row=row, column=ci).font = header_font if (is_header or is_sub) else normal_font
+                if is_header or is_sub:
+                    ws.cell(row=row, column=ci).fill = header_fill
+            ws.cell(row=row, column=1, value=r[0]).alignment = text_align
+            for ci in range(1, 4):
+                val = r[ci]
+                ws.cell(row=row, column=ci + 1, value=val if isinstance(val, (int, float)) else 0).alignment = number_align
+            row += 1
+
+        ws.column_dimensions["A"].width = 50
+        ws.column_dimensions["B"].width = 18
+        ws.column_dimensions["C"].width = 18
+        ws.column_dimensions["D"].width = 18
+
+    # 输出
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    filename = f"{type_label}报表_{report}_{period}.xlsx"
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
