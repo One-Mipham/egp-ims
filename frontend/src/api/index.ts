@@ -787,3 +787,35 @@ export const getTransactionAging = (companyId: number, end_period: string, accou
   api.get('/gl/transactions/aging', {
     params: { company_id: companyId, end_period, ...(account_code ? { account_code } : {}) },
   })
+
+// ── 系统管理：备份与导出 ──
+export const listBackups = (type: string = 'monthly') =>
+  api.get('/system/backups', { params: { type } })
+
+export const createBackup = (type: string = 'monthly', label: string = '') =>
+  api.post('/system/backup', null, { params: { type, label } })
+
+export const exportData = (companyId: number, tables: string, format: string = 'csv') =>
+  api.get('/system/export', {
+    params: { company_id: companyId, tables, format },
+    responseType: 'blob',
+  }).then(res => {
+    const blob = new Blob([res.data], { type: format === 'json' ? 'application/json' : 'text/csv; charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `egp_export.${format === 'json' ? 'json' : 'csv'}`
+    a.click()
+    URL.revokeObjectURL(url)
+  })
+
+export const exportFullDb = () =>
+  api.get('/system/export/full', { responseType: 'blob' }).then(res => {
+    const blob = new Blob([res.data], { type: 'application/octet-stream' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'egp_ims_full.db'
+    a.click()
+    URL.revokeObjectURL(url)
+  })

@@ -148,18 +148,18 @@ const routes = [
   // 系统管理 — 数据管理
   {
     path: '/system/data-export',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '数据导出' },
+    component: () => import('../views/system/DataExport.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/system/monthly-backup',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '月度数据备份' },
+    component: () => import('../views/system/MonthlyBackup.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/system/yearly-backup',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '年度数据备份' },
+    component: () => import('../views/system/YearlyBackup.vue'),
+    meta: { requiresAuth: true },
   },
   // 税务管理
   {
