@@ -1,1 +1,0 @@
-import{i as e}from"./index-DHOdsQMJ.js";var t=(t,n)=>e.get(`/budgets`,{params:{company_id:t,...n?{year:n}:{}}}),n=t=>e.get(`/budgets/${t}`),r=t=>e.post(`/budgets`,t),i=(t,n)=>e.put(`/budgets/${t}`,n);export{i,n,t as r,r as t};
