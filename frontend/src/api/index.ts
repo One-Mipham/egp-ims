@@ -854,6 +854,27 @@ export const downloadAuditReportFile = (companyId: number, year: number) =>
     URL.revokeObjectURL(url)
   })
 
+// ── 协同办公 (Todo) ──
+export const listTasks = (companyId: number, status?: string | null, priority?: string | null) =>
+  api.get('/todo/', { params: { company_id: companyId, ...(status ? { status } : {}), ...(priority ? { priority } : {}) } })
+
+export const createTask = (companyId: number, title: string, description?: string, priority?: string, due_date?: string) =>
+  api.post('/todo/', null, { params: { company_id: companyId, title, ...(description ? { description } : {}), ...(priority ? { priority } : {}), ...(due_date ? { due_date } : {}) } })
+
+export const updateTask = (taskId: number, title?: string, description?: string, status?: string, priority?: string, due_date?: string) =>
+  api.put(`/todo/${taskId}`, null, { params: { ...(title !== undefined ? { title } : {}), ...(description !== undefined ? { description } : {}), ...(status !== undefined ? { status } : {}), ...(priority !== undefined ? { priority } : {}), ...(due_date !== undefined ? { due_date } : {}) } })
+
+export const deleteTask = (taskId: number) => api.delete(`/todo/${taskId}`)
+
+// ── 门禁管理 (Access Control) ──
+export const listAccessRecords = (companyId: number, page?: number, page_size?: number, direction?: string | null, person_name?: string) =>
+  api.get('/access-control/', { params: { company_id: companyId, ...(page ? { page } : {}), ...(page_size ? { page_size } : {}), ...(direction ? { direction } : {}), ...(person_name ? { person_name } : {}) } })
+
+export const createAccessRecord = (companyId: number, person_name: string, direction: string, department?: string, phone?: string, access_point?: string, reason?: string, notes?: string) =>
+  api.post('/access-control/', null, { params: { company_id: companyId, person_name, direction, ...(department ? { department } : {}), ...(phone ? { phone } : {}), ...(access_point ? { access_point } : {}), ...(reason ? { reason } : {}), ...(notes ? { notes } : {}) } })
+
+export const deleteAccessRecord = (recordId: number) => api.delete(`/access-control/${recordId}`)
+
 export const exportFullDb = () =>
   api.get('/system/export/full', { responseType: 'blob' }).then(res => {
     const blob = new Blob([res.data], { type: 'application/octet-stream' })

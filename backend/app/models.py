@@ -2111,7 +2111,7 @@ class AuditReport(Base):
     contact_person = Column(String(100), nullable=True)
     contact_email = Column(String(200), nullable=True)
     contact_phone = Column(String(50), nullable=True)
-    report_file = Column(String(500), nullable=True)   # uploaded file path
+    report_file = Column(String(500), nullable=True)
     report_file_name = Column(String(200), nullable=True)
     balance_sheet_ok = Column(Boolean, default=False)
     income_statement_ok = Column(Boolean, default=False)
@@ -2119,3 +2119,35 @@ class AuditReport(Base):
     notes = Column(String(1000), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class TodoTask(Base):
+    """协同办公 — 内部待办任务"""
+    __tablename__ = "todo_tasks"
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String(200), nullable=False)
+    description = Column(String(1000), nullable=True)
+    status = Column(String(20), default="pending")
+    priority = Column(String(10), default="medium")
+    due_date = Column(String(10), nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class AccessRecord(Base):
+    """门禁管理 — 人员出入记录"""
+    __tablename__ = "access_records"
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    person_name = Column(String(100), nullable=False)
+    department = Column(String(100), nullable=True)
+    phone = Column(String(50), nullable=True)
+    direction = Column(String(10), nullable=False, default="entry")
+    access_point = Column(String(100), nullable=True)
+    reason = Column(String(500), nullable=True)
+    record_time = Column(DateTime, nullable=False, default=datetime.utcnow)
+    notes = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)

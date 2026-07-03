@@ -341,7 +341,7 @@ const routes = [
   },
   {
     path: '/todo',
-    component: () => import('../views/PlaceholderPage.vue'),
+    component: () => import('../views/TodoPage.vue'),
     meta: { requiresAuth: true, pageTitle: '协同办公' },
   },
   // HR module (placeholder)
@@ -418,7 +418,7 @@ const routes = [
   },
   {
     path: '/admin/access',
-    component: () => import('../views/PlaceholderPage.vue'),
+    component: () => import('../views/AccessControl.vue'),
     meta: { requiresAuth: true, pageTitle: '门禁管理' },
   },
   {
