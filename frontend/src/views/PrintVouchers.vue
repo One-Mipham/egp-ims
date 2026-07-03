@@ -58,7 +58,9 @@ async function load() {
   }
 }
 
-function doPrint() { window.print() }
+function doPrint() {
+  window.print()
+}
 
 onMounted(load)
 </script>
@@ -67,7 +69,14 @@ onMounted(load)
   <div>
     <div class="flex justify-between items-center mb-4 no-print">
       <div class="flex gap-2 items-center">
-        <Dropdown v-model="selectedRange" :options="RANGE_OPTIONS" optionLabel="label" optionValue="value" class="w-40" @change="load" />
+        <Dropdown
+          v-model="selectedRange"
+          :options="RANGE_OPTIONS"
+          optionLabel="label"
+          optionValue="value"
+          class="w-40"
+          @change="load"
+        />
         <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!data?.vouchers?.length" />
       </div>
     </div>
@@ -82,7 +91,7 @@ onMounted(load)
         <div class="voucher-meta">
           <span>{{ v.date }}</span>
           <span>{{ v.voucher_no }}</span>
-          <span>附单据  张</span>
+          <span>附单据 张</span>
         </div>
 
         <!-- Table -->
@@ -214,13 +223,30 @@ onMounted(load)
   letter-spacing: 0.1em;
 }
 
-.no-print { display: flex; }
+.no-print {
+  display: flex;
+}
 
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; }
-  .no-print { display: none !important; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
 }
 </style>

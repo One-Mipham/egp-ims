@@ -8,7 +8,19 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
-import { listVouchers, createVoucher, updateVoucher, approveVoucher, postVoucher, reverseVoucher, listAccounts, listDepartments, listCounterparties, listPersons, listProjects } from '@/api'
+import {
+  listVouchers,
+  createVoucher,
+  updateVoucher,
+  approveVoucher,
+  postVoucher,
+  reverseVoucher,
+  listAccounts,
+  listDepartments,
+  listCounterparties,
+  listPersons,
+  listProjects,
+} from '@/api'
 
 const vouchers = ref<any[]>([])
 const accounts = ref<any[]>([])
@@ -56,9 +68,23 @@ const selectedEntryAux = computed(() => {
 })
 
 function blankEntry() {
-  return { account_code: '', debit: 0, credit: 0, department_id: null, counterparty_id: null, person_id: null, project_id: null, description: '' }
+  return {
+    account_code: '',
+    debit: 0,
+    credit: 0,
+    department_id: null,
+    counterparty_id: null,
+    person_id: null,
+    project_id: null,
+    description: '',
+  }
 }
-const defaultForm = () => ({ date: localStorage.getItem('accountingDate') || '', voucher_type: 'transfer', summary: '', entries: Array.from({ length: 4 }, () => blankEntry()) })
+const defaultForm = () => ({
+  date: localStorage.getItem('accountingDate') || '',
+  voucher_type: 'transfer',
+  summary: '',
+  entries: Array.from({ length: 4 }, () => blankEntry()),
+})
 const voucherForm = ref(defaultForm())
 const editForm = ref(defaultForm())
 
@@ -69,14 +95,23 @@ const voucherNoPreview = computed(() => {
   return `${label}字第 ${ym}-____ 号`
 })
 
-watch(() => voucherForm.value.entries.length, () => {
-  if (selectedEntryIdx.value >= voucherForm.value.entries.length)
-    selectedEntryIdx.value = Math.max(0, voucherForm.value.entries.length - 1)
-})
+watch(
+  () => voucherForm.value.entries.length,
+  () => {
+    if (selectedEntryIdx.value >= voucherForm.value.entries.length)
+      selectedEntryIdx.value = Math.max(0, voucherForm.value.entries.length - 1)
+  },
+)
 
 const accountAuxConfig = computed(() => {
   const map: Record<string, any> = {}
-  for (const a of accounts.value) map[a.code] = { dept: !!a.aux_dept, person: !!a.aux_person, counterparty: !!a.aux_counterparty, project: !!a.aux_project }
+  for (const a of accounts.value)
+    map[a.code] = {
+      dept: !!a.aux_dept,
+      person: !!a.aux_person,
+      counterparty: !!a.aux_counterparty,
+      project: !!a.aux_project,
+    }
   return map
 })
 
@@ -93,7 +128,12 @@ const queryFilters = ref({ start_date: '', end_date: '', voucher_no: '', voucher
 // Batch approve selection
 const selectedForApprove = ref<any[]>([])
 
-const STATUS_LABELS: Record<string, string> = { draft: '草稿', approved: '已审核', posted: '已记账', reversed: '已反记账' }
+const STATUS_LABELS: Record<string, string> = {
+  draft: '草稿',
+  approved: '已审核',
+  posted: '已记账',
+  reversed: '已反记账',
+}
 const TYPE_LABELS: Record<string, string> = { receipt: '收款', payment: '付款', transfer: '转账' }
 const STATUS_OPTIONS = [
   { label: '全部', value: '' },
@@ -110,7 +150,12 @@ const TYPE_OPTIONS = [
 ]
 
 const CATEGORY_LABELS: Record<string, string> = {
-  asset: '资产', liability: '负债', equity: '权益', cost: '成本', revenue: '收入', expense: '费用',
+  asset: '资产',
+  liability: '负债',
+  equity: '权益',
+  cost: '成本',
+  revenue: '收入',
+  expense: '费用',
 }
 
 const LEVEL_INDENT = ['', '  ', '    ', '      ']
@@ -157,7 +202,13 @@ async function loadVouchers() {
 
 async function loadMeta() {
   try {
-    const [a, d, c, p, pr] = await Promise.all([listAccounts(companyId.value), listDepartments(companyId.value), listCounterparties(companyId.value), listPersons(companyId.value), listProjects(companyId.value)])
+    const [a, d, c, p, pr] = await Promise.all([
+      listAccounts(companyId.value),
+      listDepartments(companyId.value),
+      listCounterparties(companyId.value),
+      listPersons(companyId.value),
+      listProjects(companyId.value),
+    ])
     accounts.value = a.data
     departments.value = d.data
     counterparties.value = c.data
@@ -167,7 +218,16 @@ async function loadMeta() {
 }
 
 function addEntry(form: any) {
-  form.entries.push({ account_code: '', debit: 0, credit: 0, department_id: null, counterparty_id: null, person_id: null, project_id: null, description: '' })
+  form.entries.push({
+    account_code: '',
+    debit: 0,
+    credit: 0,
+    department_id: null,
+    counterparty_id: null,
+    person_id: null,
+    project_id: null,
+    description: '',
+  })
 }
 
 function removeEntry(form: any, idx: number) {
@@ -210,7 +270,7 @@ async function handleCreate() {
       date: voucherForm.value.date,
       voucher_type: voucherForm.value.voucher_type,
       summary: voucherForm.value.summary,
-      entries: voucherForm.value.entries.map((e) => ({
+      entries: voucherForm.value.entries.map(e => ({
         account_code: e.account_code,
         department_id: e.department_id || undefined,
         counterparty_id: e.counterparty_id || undefined,
@@ -236,7 +296,16 @@ function openEdit(v: any) {
     date: v.date,
     voucher_type: v.voucher_type,
     summary: v.summary,
-    entries: v.entries.map((e: any) => ({ account_code: e.account_code, debit: e.debit, credit: e.credit, department_id: e.department_id, counterparty_id: e.counterparty_id, person_id: e.person_id, project_id: e.project_id, description: e.description || '' })),
+    entries: v.entries.map((e: any) => ({
+      account_code: e.account_code,
+      debit: e.debit,
+      credit: e.credit,
+      department_id: e.department_id,
+      counterparty_id: e.counterparty_id,
+      person_id: e.person_id,
+      project_id: e.project_id,
+      description: e.description || '',
+    })),
   }
   showEditDialog.value = true
 }
@@ -269,13 +338,20 @@ async function handleEdit() {
 }
 
 async function handleApprove(id: number) {
-  try { await approveVoucher(id); await loadVouchers() } catch (e: any) { alert(e.response?.data?.detail) }
+  try {
+    await approveVoucher(id)
+    await loadVouchers()
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
 }
 
 async function handleBatchApprove() {
   if (!selectedForApprove.value.length) return
   for (const v of selectedForApprove.value) {
-    try { await approveVoucher(v.id) } catch {}
+    try {
+      await approveVoucher(v.id)
+    } catch {}
   }
   selectedForApprove.value = []
   showBatchApproveDialog.value = false
@@ -283,65 +359,145 @@ async function handleBatchApprove() {
 }
 
 async function handlePost(id: number) {
-  try { await postVoucher(id); await loadVouchers() } catch (e: any) { alert(e.response?.data?.detail) }
+  try {
+    await postVoucher(id)
+    await loadVouchers()
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
 }
 
 async function handleReverse() {
   if (!reverseTarget.value || !reverseReason.value) return
-  try { await reverseVoucher(reverseTarget.value, reverseReason.value); showReverseDialog.value = false; reverseReason.value = ''; await loadVouchers() }
-  catch (e: any) { alert(e.response?.data?.detail) }
+  try {
+    await reverseVoucher(reverseTarget.value, reverseReason.value)
+    showReverseDialog.value = false
+    reverseReason.value = ''
+    await loadVouchers()
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
 }
 
-function handleQuery() { showQueryDialog.value = false; loadVouchers() }
-function resetQuery() { queryFilters.value = { start_date: '', end_date: '', voucher_no: '', voucher_type: '', status: '' }; loadVouchers() }
+function handleQuery() {
+  showQueryDialog.value = false
+  loadVouchers()
+}
+function resetQuery() {
+  queryFilters.value = { start_date: '', end_date: '', voucher_no: '', voucher_type: '', status: '' }
+  loadVouchers()
+}
 
 function formatNumber(val: number | null) {
   if (val === null || val === undefined) return ''
   return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function doPrintVoucher() { window.print() }
+function doPrintVoucher() {
+  window.print()
+}
 
 const draftVouchers = computed(() => vouchers.value.filter(v => v.status === 'draft'))
 
-onMounted(() => { loadVouchers(); loadMeta() })
+onMounted(() => {
+  loadVouchers()
+  loadMeta()
+})
 </script>
 
 <template>
   <div>
     <div class="flex flex-col gap-3 mb-4">
       <div class="flex justify-between items-center">
-        <Button label="新增凭证" icon="pi pi-plus" @click="showAddDialog = true; resetForm()" />
+        <Button
+          label="新增凭证"
+          icon="pi pi-plus"
+          @click="showAddDialog = true; resetForm()"
+        />
       </div>
       <div class="flex gap-2">
-        <Button label="审核凭证" icon="pi pi-check" severity="info" text @click="showBatchApproveDialog = true" :disabled="!draftVouchers.length" />
+        <Button
+          label="审核凭证"
+          icon="pi pi-check"
+          severity="info"
+          text
+          @click="showBatchApproveDialog = true"
+          :disabled="!draftVouchers.length"
+        />
         <Button label="查询凭证" icon="pi pi-search" severity="secondary" text @click="showQueryDialog = true" />
         <Button label="凭证打印" icon="pi pi-print" severity="secondary" text @click="doPrintVoucher" />
       </div>
     </div>
 
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto max-w-fit min-w-full">
-      <DataTable :value="vouchers" :loading="loading" stripedRows paginator :rows="15" class="shadow-sm" tableStyle="min-width: auto">
-        <Column field="voucher_no" header="凭证字号" sortable style="width:140px" />
-        <Column field="date" header="日期" sortable style="width:90px" />
-        <Column header="类型" style="width:60px">
+      <DataTable
+        :value="vouchers"
+        :loading="loading"
+        stripedRows
+        paginator
+        :rows="15"
+        class="shadow-sm"
+        tableStyle="min-width: auto"
+      >
+        <Column field="voucher_no" header="凭证字号" sortable style="width: 140px" />
+        <Column field="date" header="日期" sortable style="width: 90px" />
+        <Column header="类型" style="width: 60px">
           <template #body="{ data }">{{ TYPE_LABELS[data.voucher_type] || data.voucher_type }}</template>
         </Column>
-        <Column field="summary" header="摘要" style="width:280px" />
-        <Column header="状态" style="width:70px">
+        <Column field="summary" header="摘要" style="width: 280px" />
+        <Column header="状态" style="width: 70px">
           <template #body="{ data }">
-            <Tag :value="STATUS_LABELS[data.status] || data.status" :severity="data.status === 'posted' ? 'success' : data.status === 'approved' ? 'info' : data.status === 'reversed' ? 'danger' : 'warning'" />
+            <Tag
+              :value="STATUS_LABELS[data.status] || data.status"
+              :severity="
+                data.status === 'posted'
+                  ? 'success'
+                  : data.status === 'approved'
+                    ? 'info'
+                    : data.status === 'reversed'
+                      ? 'danger'
+                      : 'warning'
+              "
+            />
           </template>
         </Column>
-        <Column header="操作" style="width:220px">
-        <template #body="{ data }">
-          <Button v-if="data.status === 'draft'" label="编辑" text severity="secondary" size="small" @click="openEdit(data)" />
-          <Button v-if="data.status === 'draft'" label="审核" text severity="info" size="small" @click="handleApprove(data.id)" />
-          <Button v-if="data.status === 'draft' || data.status === 'approved'" label="记账" text severity="success" size="small" @click="handlePost(data.id)" />
-          <Button v-if="data.status === 'posted'" label="反记账" text severity="danger" size="small" @click="reverseTarget = data.id; reverseReason = ''; showReverseDialog = true" />
-        </template>
-      </Column>
-    </DataTable>
+        <Column header="操作" style="width: 220px">
+          <template #body="{ data }">
+            <Button
+              v-if="data.status === 'draft'"
+              label="编辑"
+              text
+              severity="secondary"
+              size="small"
+              @click="openEdit(data)"
+            />
+            <Button
+              v-if="data.status === 'draft'"
+              label="审核"
+              text
+              severity="info"
+              size="small"
+              @click="handleApprove(data.id)"
+            />
+            <Button
+              v-if="data.status === 'draft' || data.status === 'approved'"
+              label="记账"
+              text
+              severity="success"
+              size="small"
+              @click="handlePost(data.id)"
+            />
+            <Button
+              v-if="data.status === 'posted'"
+              label="反记账"
+              text
+              severity="danger"
+              size="small"
+              @click="reverseTarget = data.id; reverseReason = ''; showReverseDialog = true"
+            />
+          </template>
+        </Column>
+      </DataTable>
     </div>
 
     <!-- Add voucher dialog — traditional Chinese format -->
@@ -359,11 +515,22 @@ onMounted(() => { loadVouchers(); loadMeta() })
 
         <!-- Summary + voucher type row -->
         <div class="voucher-meta2">
-          <div class="meta-item">凭证字：
-            <Dropdown v-model="voucherForm.voucher_type" :options="TYPE_OPTIONS.filter(o => o.value)" option-label="label" option-value="value" class="meta-dropdown" />
+          <div class="meta-item">
+            凭证字：
+            <Dropdown
+              v-model="voucherForm.voucher_type"
+              :options="TYPE_OPTIONS.filter(o => o.value)"
+              option-label="label"
+              option-value="value"
+              class="meta-dropdown"
+            />
           </div>
-          <div class="meta-item meta-summary">摘要：<InputText v-model="voucherForm.summary" class="flex-1" placeholder="请输入凭证摘要" /></div>
-          <div class="meta-item">日期：<InputText v-model="voucherForm.date" type="date" class="meta-input-date" /></div>
+          <div class="meta-item meta-summary">
+            摘要：<InputText v-model="voucherForm.summary" class="flex-1" placeholder="请输入凭证摘要" />
+          </div>
+          <div class="meta-item">
+            日期：<InputText v-model="voucherForm.date" type="date" class="meta-input-date" />
+          </div>
         </div>
 
         <!-- 6-column entry table -->
@@ -379,17 +546,45 @@ onMounted(() => { loadVouchers(); loadMeta() })
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, idx) in voucherForm.entries" :key="idx" :class="{ 'row-selected': selectedEntryIdx === idx }" @click="selectedEntryIdx = idx">
+            <tr
+              v-for="(entry, idx) in voucherForm.entries"
+              :key="idx"
+              :class="{ 'row-selected': selectedEntryIdx === idx }"
+              @click="selectedEntryIdx = idx"
+            >
               <td class="col-code">
-                <Dropdown v-model="entry.account_code" :options="groupedAccounts" optionGroupLabel="label" optionGroupChildren="accounts" option-label="display" option-value="code" placeholder="选择科目" :filter="true" class="w-full" panel-class="text-sm" />
+                <Dropdown
+                  v-model="entry.account_code"
+                  :options="groupedAccounts"
+                  optionGroupLabel="label"
+                  optionGroupChildren="accounts"
+                  option-label="display"
+                  option-value="code"
+                  placeholder="选择科目"
+                  :filter="true"
+                  class="w-full"
+                  panel-class="text-sm"
+                />
               </td>
               <td class="col-l1 readonly-cell">{{ getLevel1Name(entry.account_code) }}</td>
               <td class="col-l2 readonly-cell">{{ getDetailName(entry.account_code) }}</td>
               <td class="col-amount">
-                <InputText :model-value="entry.debit ? String(entry.debit) : ''" @update:model-value="entry.debit = Number($event) || 0" type="number" placeholder="0.00" class="amount-input" />
+                <InputText
+                  :model-value="entry.debit ? String(entry.debit) : ''"
+                  @update:model-value="entry.debit = Number($event) || 0"
+                  type="number"
+                  placeholder="0.00"
+                  class="amount-input"
+                />
               </td>
               <td class="col-amount">
-                <InputText :model-value="entry.credit ? String(entry.credit) : ''" @update:model-value="entry.credit = Number($event) || 0" type="number" placeholder="0.00" class="amount-input" />
+                <InputText
+                  :model-value="entry.credit ? String(entry.credit) : ''"
+                  @update:model-value="entry.credit = Number($event) || 0"
+                  type="number"
+                  placeholder="0.00"
+                  class="amount-input"
+                />
               </td>
               <td class="col-remark">
                 <InputText v-model="entry.description" placeholder="备注" class="w-full" />
@@ -415,19 +610,47 @@ onMounted(() => { loadVouchers(); loadMeta() })
           <div class="flex gap-3 flex-wrap">
             <div v-if="selectedEntryAux.dept" class="aux-field">
               <span class="aux-label">部门</span>
-              <Dropdown v-model="voucherForm.entries[selectedEntryIdx].department_id" :options="departments" option-label="name" option-value="id" placeholder="选择部门" class="w-36" />
+              <Dropdown
+                v-model="voucherForm.entries[selectedEntryIdx].department_id"
+                :options="departments"
+                option-label="name"
+                option-value="id"
+                placeholder="选择部门"
+                class="w-36"
+              />
             </div>
             <div v-if="selectedEntryAux.person" class="aux-field">
               <span class="aux-label">个人</span>
-              <Dropdown v-model="voucherForm.entries[selectedEntryIdx].person_id" :options="getPersonsForEntry(voucherForm.entries[selectedEntryIdx])" option-label="name" option-value="id" placeholder="选择个人" class="w-32" />
+              <Dropdown
+                v-model="voucherForm.entries[selectedEntryIdx].person_id"
+                :options="getPersonsForEntry(voucherForm.entries[selectedEntryIdx])"
+                option-label="name"
+                option-value="id"
+                placeholder="选择个人"
+                class="w-32"
+              />
             </div>
             <div v-if="selectedEntryAux.counterparty" class="aux-field">
               <span class="aux-label">往来单位</span>
-              <Dropdown v-model="voucherForm.entries[selectedEntryIdx].counterparty_id" :options="counterparties" option-label="name" option-value="id" placeholder="选择单位" class="w-44" />
+              <Dropdown
+                v-model="voucherForm.entries[selectedEntryIdx].counterparty_id"
+                :options="counterparties"
+                option-label="name"
+                option-value="id"
+                placeholder="选择单位"
+                class="w-44"
+              />
             </div>
             <div v-if="selectedEntryAux.project" class="aux-field">
               <span class="aux-label">项目</span>
-              <Dropdown v-model="voucherForm.entries[selectedEntryIdx].project_id" :options="projects" option-label="name" option-value="id" placeholder="选择项目" class="w-40" />
+              <Dropdown
+                v-model="voucherForm.entries[selectedEntryIdx].project_id"
+                :options="projects"
+                option-label="name"
+                option-value="id"
+                placeholder="选择项目"
+                class="w-40"
+              />
             </div>
           </div>
         </div>
@@ -436,8 +659,22 @@ onMounted(() => { loadVouchers(); loadMeta() })
         <div class="voucher-actions">
           <Button label="+ 添加行" icon="pi pi-plus" text size="small" @click="addEntry(voucherForm)" />
           <div class="flex gap-2">
-            <Button label="删除选中行" icon="pi pi-minus" text severity="danger" size="small" @click="removeEntry(voucherForm, selectedEntryIdx)" :disabled="voucherForm.entries.length <= 1" />
-            <Button label="保存凭证" icon="pi pi-check" @click="handleCreate" :disabled="!balanced || saving" :loading="saving" />
+            <Button
+              label="删除选中行"
+              icon="pi pi-minus"
+              text
+              severity="danger"
+              size="small"
+              @click="removeEntry(voucherForm, selectedEntryIdx)"
+              :disabled="voucherForm.entries.length <= 1"
+            />
+            <Button
+              label="保存凭证"
+              icon="pi pi-check"
+              @click="handleCreate"
+              :disabled="!balanced || saving"
+              :loading="saving"
+            />
           </div>
         </div>
 
@@ -460,10 +697,19 @@ onMounted(() => { loadVouchers(); loadMeta() })
 
         <!-- Summary row -->
         <div class="voucher-meta2">
-          <div class="meta-item">凭证字：
-            <Dropdown v-model="editForm.voucher_type" :options="TYPE_OPTIONS.filter(o => o.value)" option-label="label" option-value="value" class="meta-dropdown" />
+          <div class="meta-item">
+            凭证字：
+            <Dropdown
+              v-model="editForm.voucher_type"
+              :options="TYPE_OPTIONS.filter(o => o.value)"
+              option-label="label"
+              option-value="value"
+              class="meta-dropdown"
+            />
           </div>
-          <div class="meta-item meta-summary">摘要：<InputText v-model="editForm.summary" class="flex-1" placeholder="请输入凭证摘要" /></div>
+          <div class="meta-item meta-summary">
+            摘要：<InputText v-model="editForm.summary" class="flex-1" placeholder="请输入凭证摘要" />
+          </div>
           <div class="meta-item">日期：<InputText v-model="editForm.date" type="date" class="meta-input-date" /></div>
         </div>
 
@@ -480,17 +726,44 @@ onMounted(() => { loadVouchers(); loadMeta() })
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(entry, idx) in editForm.entries" :key="idx" :class="{ 'row-selected': selectedEditEntryIdx === idx }" @click="selectedEditEntryIdx = idx">
+            <tr
+              v-for="(entry, idx) in editForm.entries"
+              :key="idx"
+              :class="{ 'row-selected': selectedEditEntryIdx === idx }"
+              @click="selectedEditEntryIdx = idx"
+            >
               <td class="col-code">
-                <Dropdown v-model="entry.account_code" :options="groupedAccounts" optionGroupLabel="label" optionGroupChildren="accounts" option-label="display" option-value="code" placeholder="选择科目" :filter="true" class="w-full" />
+                <Dropdown
+                  v-model="entry.account_code"
+                  :options="groupedAccounts"
+                  optionGroupLabel="label"
+                  optionGroupChildren="accounts"
+                  option-label="display"
+                  option-value="code"
+                  placeholder="选择科目"
+                  :filter="true"
+                  class="w-full"
+                />
               </td>
               <td class="col-l1 readonly-cell">{{ getLevel1Name(entry.account_code) }}</td>
               <td class="col-l2 readonly-cell">{{ getDetailName(entry.account_code) }}</td>
               <td class="col-amount">
-                <InputText :model-value="entry.debit ? String(entry.debit) : ''" @update:model-value="entry.debit = Number($event) || 0" type="number" placeholder="0.00" class="amount-input" />
+                <InputText
+                  :model-value="entry.debit ? String(entry.debit) : ''"
+                  @update:model-value="entry.debit = Number($event) || 0"
+                  type="number"
+                  placeholder="0.00"
+                  class="amount-input"
+                />
               </td>
               <td class="col-amount">
-                <InputText :model-value="entry.credit ? String(entry.credit) : ''" @update:model-value="entry.credit = Number($event) || 0" type="number" placeholder="0.00" class="amount-input" />
+                <InputText
+                  :model-value="entry.credit ? String(entry.credit) : ''"
+                  @update:model-value="entry.credit = Number($event) || 0"
+                  type="number"
+                  placeholder="0.00"
+                  class="amount-input"
+                />
               </td>
               <td class="col-remark">
                 <InputText v-model="entry.description" placeholder="备注" class="w-full" />
@@ -516,19 +789,47 @@ onMounted(() => { loadVouchers(); loadMeta() })
           <div class="flex gap-3 flex-wrap">
             <div v-if="editSelectedAux.dept" class="aux-field">
               <span class="aux-label">部门</span>
-              <Dropdown v-model="editForm.entries[selectedEditEntryIdx].department_id" :options="departments" option-label="name" option-value="id" placeholder="选择部门" class="w-36" />
+              <Dropdown
+                v-model="editForm.entries[selectedEditEntryIdx].department_id"
+                :options="departments"
+                option-label="name"
+                option-value="id"
+                placeholder="选择部门"
+                class="w-36"
+              />
             </div>
             <div v-if="editSelectedAux.person" class="aux-field">
               <span class="aux-label">个人</span>
-              <Dropdown v-model="editForm.entries[selectedEditEntryIdx].person_id" :options="getPersonsForEntry(editForm.entries[selectedEditEntryIdx])" option-label="name" option-value="id" placeholder="选择个人" class="w-32" />
+              <Dropdown
+                v-model="editForm.entries[selectedEditEntryIdx].person_id"
+                :options="getPersonsForEntry(editForm.entries[selectedEditEntryIdx])"
+                option-label="name"
+                option-value="id"
+                placeholder="选择个人"
+                class="w-32"
+              />
             </div>
             <div v-if="editSelectedAux.counterparty" class="aux-field">
               <span class="aux-label">往来单位</span>
-              <Dropdown v-model="editForm.entries[selectedEditEntryIdx].counterparty_id" :options="counterparties" option-label="name" option-value="id" placeholder="选择单位" class="w-44" />
+              <Dropdown
+                v-model="editForm.entries[selectedEditEntryIdx].counterparty_id"
+                :options="counterparties"
+                option-label="name"
+                option-value="id"
+                placeholder="选择单位"
+                class="w-44"
+              />
             </div>
             <div v-if="editSelectedAux.project" class="aux-field">
               <span class="aux-label">项目</span>
-              <Dropdown v-model="editForm.entries[selectedEditEntryIdx].project_id" :options="projects" option-label="name" option-value="id" placeholder="选择项目" class="w-40" />
+              <Dropdown
+                v-model="editForm.entries[selectedEditEntryIdx].project_id"
+                :options="projects"
+                option-label="name"
+                option-value="id"
+                placeholder="选择项目"
+                class="w-40"
+              />
             </div>
           </div>
         </div>
@@ -537,8 +838,22 @@ onMounted(() => { loadVouchers(); loadMeta() })
         <div class="voucher-actions">
           <Button label="+ 添加行" icon="pi pi-plus" text size="small" @click="addEntry(editForm)" />
           <div class="flex gap-2">
-            <Button label="删除选中行" icon="pi pi-minus" text severity="danger" size="small" @click="removeEntry(editForm, selectedEditEntryIdx)" :disabled="editForm.entries.length <= 1" />
-            <Button label="保存修改" icon="pi pi-check" @click="handleEdit" :disabled="!editBalanced || saving" :loading="saving" />
+            <Button
+              label="删除选中行"
+              icon="pi pi-minus"
+              text
+              severity="danger"
+              size="small"
+              @click="removeEntry(editForm, selectedEditEntryIdx)"
+              :disabled="editForm.entries.length <= 1"
+            />
+            <Button
+              label="保存修改"
+              icon="pi pi-check"
+              @click="handleEdit"
+              :disabled="!editBalanced || saving"
+              :loading="saving"
+            />
           </div>
         </div>
 
@@ -566,11 +881,23 @@ onMounted(() => { loadVouchers(); loadMeta() })
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">类型</label>
-            <Dropdown v-model="queryFilters.voucher_type" :options="TYPE_OPTIONS" option-label="label" option-value="value" class="w-full" />
+            <Dropdown
+              v-model="queryFilters.voucher_type"
+              :options="TYPE_OPTIONS"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">状态</label>
-            <Dropdown v-model="queryFilters.status" :options="STATUS_OPTIONS" option-label="label" option-value="value" class="w-full" />
+            <Dropdown
+              v-model="queryFilters.status"
+              :options="STATUS_OPTIONS"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+            />
           </div>
         </div>
         <div class="flex gap-2">
@@ -584,13 +911,26 @@ onMounted(() => { loadVouchers(); loadMeta() })
     <Dialog v-model:visible="showBatchApproveDialog" header="批量审核凭证" :style="{ width: '600px' }">
       <div class="flex flex-col gap-4 py-4">
         <p class="text-sm text-zinc-500">选择需要审核的草稿凭证：</p>
-        <DataTable :value="draftVouchers" stripedRows selectionMode="checkbox" v-model:selection="selectedForApprove" class="shadow-sm" scrollHeight="300px" tableStyle="min-width: auto">
-          <Column selectionMode="multiple" style="width:3rem" />
-          <Column field="voucher_no" header="凭证字号" style="width:140px" />
-          <Column field="date" header="日期" style="width:90px" />
-          <Column field="summary" header="摘要" style="width:200px" />
+        <DataTable
+          :value="draftVouchers"
+          stripedRows
+          selectionMode="checkbox"
+          v-model:selection="selectedForApprove"
+          class="shadow-sm"
+          scrollHeight="300px"
+          tableStyle="min-width: auto"
+        >
+          <Column selectionMode="multiple" style="width: 3rem" />
+          <Column field="voucher_no" header="凭证字号" style="width: 140px" />
+          <Column field="date" header="日期" style="width: 90px" />
+          <Column field="summary" header="摘要" style="width: 200px" />
         </DataTable>
-        <Button label="批量审核" icon="pi pi-check" @click="handleBatchApprove" :disabled="!selectedForApprove.length" />
+        <Button
+          label="批量审核"
+          icon="pi pi-check"
+          @click="handleBatchApprove"
+          :disabled="!selectedForApprove.length"
+        />
       </div>
     </Dialog>
 
@@ -599,7 +939,13 @@ onMounted(() => { loadVouchers(); loadMeta() })
       <div class="flex flex-col gap-4 py-4">
         <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">反记账原因（必填）</label>
         <Textarea v-model="reverseReason" rows="3" class="w-full" placeholder="请输入原因..." />
-        <Button label="确认反记账" icon="pi pi-exclamation-triangle" severity="danger" @click="handleReverse" :disabled="!reverseReason" />
+        <Button
+          label="确认反记账"
+          icon="pi pi-exclamation-triangle"
+          severity="danger"
+          @click="handleReverse"
+          :disabled="!reverseReason"
+        />
       </div>
     </Dialog>
   </div>
@@ -607,7 +953,9 @@ onMounted(() => { loadVouchers(); loadMeta() })
 
 <style scoped>
 /* === Voucher traditional form styles === */
-.voucher-form { font-size: 11pt; }
+.voucher-form {
+  font-size: 11pt;
+}
 
 .voucher-form-title {
   text-align: center;
@@ -633,9 +981,19 @@ onMounted(() => { loadVouchers(); loadMeta() })
   border-bottom: 1px solid #999;
   font-size: 10pt;
 }
-.meta-left { text-align: left; flex: 1; }
-.meta-center { text-align: center; flex: 1; font-size: 11pt; }
-.meta-right { text-align: right; flex: 1; }
+.meta-left {
+  text-align: left;
+  flex: 1;
+}
+.meta-center {
+  text-align: center;
+  flex: 1;
+  font-size: 11pt;
+}
+.meta-right {
+  text-align: right;
+  flex: 1;
+}
 
 /* Second meta row */
 .voucher-meta2 {
@@ -645,10 +1003,20 @@ onMounted(() => { loadVouchers(); loadMeta() })
   margin-bottom: 0.75rem;
   font-size: 10pt;
 }
-.voucher-meta2 .meta-item { display: flex; align-items: center; gap: 0.25rem; }
-.voucher-meta2 .meta-summary { flex: 1; }
-.voucher-meta2 .meta-input-date { width: 140px; }
-.voucher-meta2 .meta-dropdown { width: 80px; }
+.voucher-meta2 .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.voucher-meta2 .meta-summary {
+  flex: 1;
+}
+.voucher-meta2 .meta-input-date {
+  width: 140px;
+}
+.voucher-meta2 .meta-dropdown {
+  width: 80px;
+}
 
 /* 6-column table */
 .voucher-table {
@@ -659,7 +1027,8 @@ onMounted(() => { loadVouchers(); loadMeta() })
   table-layout: fixed;
 }
 
-.voucher-table th, .voucher-table td {
+.voucher-table th,
+.voucher-table td {
   border: 0.5px solid #888;
   padding: 4px 5px;
   vertical-align: middle;
@@ -673,11 +1042,24 @@ onMounted(() => { loadVouchers(); loadMeta() })
   padding: 6px 4px;
 }
 
-.col-code { width: 12%; }
-.col-l1 { width: 13%; text-align: center; }
-.col-l2 { width: 13%; text-align: center; }
-.col-amount { width: 14%; text-align: right; }
-.col-remark { width: 20%; }
+.col-code {
+  width: 12%;
+}
+.col-l1 {
+  width: 13%;
+  text-align: center;
+}
+.col-l2 {
+  width: 13%;
+  text-align: center;
+}
+.col-amount {
+  width: 14%;
+  text-align: right;
+}
+.col-remark {
+  width: 20%;
+}
 
 .readonly-cell {
   color: #666;
@@ -685,7 +1067,11 @@ onMounted(() => { loadVouchers(); loadMeta() })
   word-break: break-all;
 }
 
-.amount-input { width: 100%; text-align: right; font-family: 'Courier New', monospace; }
+.amount-input {
+  width: 100%;
+  text-align: right;
+  font-family: 'Courier New', monospace;
+}
 
 .voucher-table .row-selected {
   background: #e8f0fe;
@@ -711,9 +1097,22 @@ onMounted(() => { loadVouchers(); loadMeta() })
   border-radius: 4px;
   background: #fafaf9;
 }
-.aux-title { font-size: 9.5pt; font-weight: 600; margin-bottom: 0.5rem; color: #555; }
-.aux-field { display: flex; align-items: center; gap: 0.25rem; }
-.aux-label { font-size: 9pt; color: #888; min-width: 3em; }
+.aux-title {
+  font-size: 9.5pt;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #555;
+}
+.aux-field {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.aux-label {
+  font-size: 9pt;
+  color: #888;
+  min-width: 3em;
+}
 
 /* Action buttons */
 .voucher-actions {
@@ -725,12 +1124,21 @@ onMounted(() => { loadVouchers(); loadMeta() })
 
 /* === Print styles === */
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
 
-  body * { visibility: hidden; }
+  body * {
+    visibility: hidden;
+  }
 
-  .p-dialog, .p-dialog *,
-  .voucher-form, .voucher-form * { visibility: visible; }
+  .p-dialog,
+  .p-dialog *,
+  .voucher-form,
+  .voucher-form * {
+    visibility: visible;
+  }
 
   .p-dialog {
     position: absolute !important;
@@ -742,18 +1150,42 @@ onMounted(() => { loadVouchers(); loadMeta() })
     border: none !important;
   }
 
-  .p-dialog-header, .p-dialog-footer,
-  .voucher-actions, .aux-panel,
-  .p-dropdown, .p-button,
-  .meta-dropdown, .meta-input-date,
-  .amount-input, input, select { display: none !important; }
+  .p-dialog-header,
+  .p-dialog-footer,
+  .voucher-actions,
+  .aux-panel,
+  .p-dropdown,
+  .p-button,
+  .meta-dropdown,
+  .meta-input-date,
+  .amount-input,
+  input,
+  select {
+    display: none !important;
+  }
 
-  .voucher-form-title { font-size: 13pt; }
-  .voucher-form-company { color: #000; }
-  .voucher-meta, .voucher-meta2 { border-bottom-color: #000; }
-  .voucher-table { border-color: #000; font-size: 8.5pt; }
-  .voucher-table th, .voucher-table td { border-color: #000; padding: 2px 4px; }
+  .voucher-form-title {
+    font-size: 13pt;
+  }
+  .voucher-form-company {
+    color: #000;
+  }
+  .voucher-meta,
+  .voucher-meta2 {
+    border-bottom-color: #000;
+  }
+  .voucher-table {
+    border-color: #000;
+    font-size: 8.5pt;
+  }
+  .voucher-table th,
+  .voucher-table td {
+    border-color: #000;
+    padding: 2px 4px;
+  }
 
-  .readonly-cell { color: #000; }
+  .readonly-cell {
+    color: #000;
+  }
 }
 </style>

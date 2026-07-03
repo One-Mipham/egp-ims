@@ -7,9 +7,7 @@ import Select from 'primevue/select'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
-import {
-  listCarryForwards, createCarryForward, executeCarryForward, deleteCarryForward,
-} from '@/api'
+import { listCarryForwards, createCarryForward, executeCarryForward, deleteCarryForward } from '@/api'
 
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const items = ref<any[]>([])
@@ -29,7 +27,7 @@ const typeLabels: Record<string, string> = {
 
 const emptyForm = () => ({
   company_id: companyId.value,
-  period: new Date().toISOString().slice(0, 7),  // yyyy-MM
+  period: new Date().toISOString().slice(0, 7), // yyyy-MM
   entry_type: 'revenue_to_profit',
   debit_account_id: undefined as number | undefined,
   credit_account_id: undefined as number | undefined,
@@ -43,7 +41,9 @@ async function load() {
   try {
     const res = await listCarryForwards(companyId.value)
     items.value = res.data
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 function openAdd() {
@@ -59,7 +59,9 @@ async function handleSave() {
     await createCarryForward({ ...form.value, amount })
     showDialog.value = false
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '保存失败') }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '保存失败')
+  }
 }
 
 async function handleExecute(id: number) {
@@ -67,7 +69,9 @@ async function handleExecute(id: number) {
   try {
     await executeCarryForward(id)
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '执行失败') }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '执行失败')
+  }
 }
 
 async function handleDelete(id: number) {
@@ -75,7 +79,9 @@ async function handleDelete(id: number) {
   try {
     await deleteCarryForward(id)
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '删除失败') }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '删除失败')
+  }
 }
 
 onMounted(load)
@@ -90,31 +96,45 @@ onMounted(load)
 
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="items" :loading="loading" stripedRows paginator :rows="15" class="shadow-sm">
-        <Column header="序号" style="width:60px">
+        <Column header="序号" style="width: 60px">
           <template #body="{ index }">{{ index + 1 }}</template>
         </Column>
-        <Column field="period" header="期间" style="width:100px" />
-        <Column header="结转类型" style="width:130px">
+        <Column field="period" header="期间" style="width: 100px" />
+        <Column header="结转类型" style="width: 130px">
           <template #body="{ data }">{{ typeLabels[data.entry_type] || data.entry_type }}</template>
         </Column>
-        <Column field="amount" header="金额" style="width:120px">
+        <Column field="amount" header="金额" style="width: 120px">
           <template #body="{ data }">¥{{ Number(data.amount || 0).toLocaleString() }}</template>
         </Column>
-        <Column field="status" header="状态" style="width:80px">
+        <Column field="status" header="状态" style="width: 80px">
           <template #body="{ data }">
-            <Tag :value="data.status === 'executed' ? '已执行' : '草稿'"
-              :severity="data.status === 'executed' ? 'success' : 'warning'" />
+            <Tag
+              :value="data.status === 'executed' ? '已执行' : '草稿'"
+              :severity="data.status === 'executed' ? 'success' : 'warning'"
+            />
           </template>
         </Column>
-        <Column header="执行时间" style="width:150px">
+        <Column header="执行时间" style="width: 150px">
           <template #body="{ data }">{{ data.executed_at?.slice(0, 10) || '-' }}</template>
         </Column>
-        <Column header="操作" style="width:150px">
+        <Column header="操作" style="width: 150px">
           <template #body="{ data }">
-            <Button v-if="data.status !== 'executed'" label="执行" text severity="success"
-              size="small" @click="handleExecute(data.id)" />
-            <Button v-if="data.status !== 'executed'" label="删除" text severity="danger"
-              size="small" @click="handleDelete(data.id)" />
+            <Button
+              v-if="data.status !== 'executed'"
+              label="执行"
+              text
+              severity="success"
+              size="small"
+              @click="handleExecute(data.id)"
+            />
+            <Button
+              v-if="data.status !== 'executed'"
+              label="删除"
+              text
+              severity="danger"
+              size="small"
+              @click="handleDelete(data.id)"
+            />
           </template>
         </Column>
       </DataTable>
@@ -129,8 +149,13 @@ onMounted(load)
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">结转类型</label>
-            <Select v-model="form.entry_type" :options="entryTypes"
-              optionLabel="label" optionValue="value" class="w-full" />
+            <Select
+              v-model="form.entry_type"
+              :options="entryTypes"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
         </div>
         <div class="flex gap-4">

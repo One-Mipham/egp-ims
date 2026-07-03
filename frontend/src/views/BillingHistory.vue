@@ -12,10 +12,18 @@ const loading = ref(false)
 const companyId = parseInt(localStorage.getItem('companyId') || '0')
 
 const STATUS_LABELS: Record<string, string> = {
-  trialing: '试用中', active: '已激活', past_due: '已过期', cancelled: '已取消', expired: '已失效',
+  trialing: '试用中',
+  active: '已激活',
+  past_due: '已过期',
+  cancelled: '已取消',
+  expired: '已失效',
 }
 const STATUS_SEVERITY: Record<string, string> = {
-  trialing: 'info', active: 'success', past_due: 'warn', cancelled: 'secondary', expired: 'danger',
+  trialing: 'info',
+  active: 'success',
+  past_due: 'warn',
+  cancelled: 'secondary',
+  expired: 'danger',
 }
 
 async function load() {
@@ -24,8 +32,11 @@ async function load() {
     const res = await getBillingHistory(companyId)
     subscriptions.value = res.data.subscriptions || []
     payments.value = res.data.payments || []
-  } catch (_) { /* */ }
-  finally { loading.value = false }
+  } catch (_) {
+    /* */
+  } finally {
+    loading.value = false
+  }
 }
 
 async function doRenew() {
@@ -84,7 +95,17 @@ onMounted(load)
         <tbody>
           <tr v-for="s in subscriptions" :key="s.id" class="border-b border-stone-50 hover:bg-stone-50/50">
             <td class="px-4 py-2.5 font-medium text-stone-700">{{ s.plan_name }}</td>
-            <td class="px-4 py-2.5 text-stone-500">{{ s.billing_cycle === 'monthly' ? '月付' : s.billing_cycle === 'annual' ? '年付' : s.billing_cycle === 'lifetime' ? '买断' : s.billing_cycle }}</td>
+            <td class="px-4 py-2.5 text-stone-500">
+              {{
+                s.billing_cycle === 'monthly'
+                  ? '月付'
+                  : s.billing_cycle === 'annual'
+                    ? '年付'
+                    : s.billing_cycle === 'lifetime'
+                      ? '买断'
+                      : s.billing_cycle
+              }}
+            </td>
             <td class="px-4 py-2.5">
               <Badge :value="STATUS_LABELS[s.status] || s.status" :severity="STATUS_SEVERITY[s.status] || 'info'" />
             </td>
@@ -114,10 +135,15 @@ onMounted(load)
         </thead>
         <tbody>
           <tr v-for="p in payments" :key="p.id" class="border-b border-stone-50 hover:bg-stone-50/50">
-            <td class="px-4 py-2.5 font-mono text-stone-700">¥{{ p.amount?.toLocaleString('zh-CN') }} {{ p.currency }}</td>
+            <td class="px-4 py-2.5 font-mono text-stone-700">
+              ¥{{ p.amount?.toLocaleString('zh-CN') }} {{ p.currency }}
+            </td>
             <td class="px-4 py-2.5 text-stone-500">{{ p.payment_method }}</td>
             <td class="px-4 py-2.5">
-              <Badge :value="p.status" :severity="p.status === 'completed' ? 'success' : p.status === 'pending' ? 'warn' : 'secondary'" />
+              <Badge
+                :value="p.status"
+                :severity="p.status === 'completed' ? 'success' : p.status === 'pending' ? 'warn' : 'secondary'"
+              />
             </td>
             <td class="px-4 py-2.5 text-stone-500 font-mono text-xs">{{ p.paid_at?.slice(0, 10) || '-' }}</td>
           </tr>

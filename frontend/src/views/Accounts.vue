@@ -7,7 +7,14 @@ import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Checkbox from 'primevue/checkbox'
 import Badge from 'primevue/badge'
-import { listAccounts, createAccount, updateAccountName, bulkSetInitialBalance, deleteAccount, importAuxConfig } from '@/api'
+import {
+  listAccounts,
+  createAccount,
+  updateAccountName,
+  bulkSetInitialBalance,
+  deleteAccount,
+  importAuxConfig,
+} from '@/api'
 
 const accounts = ref<any[]>([])
 const loading = ref(false)
@@ -23,10 +30,26 @@ const editTarget = ref<any>(null)
 const selectedIds = ref<any[]>([])
 
 // New account form
-const newAccount = ref({ code: '', name: '', level: 1, parent_code: '', category: 'asset', balance_direction: 'debit', auxiliary_items: '' })
+const newAccount = ref({
+  code: '',
+  name: '',
+  level: 1,
+  parent_code: '',
+  category: 'asset',
+  balance_direction: 'debit',
+  auxiliary_items: '',
+})
 
 // Edit form
-const editAccount = ref({ code: '', name: '', level: 0, parent_code: '', category: 'asset', balance_direction: 'debit', auxiliary_items: '' })
+const editAccount = ref({
+  code: '',
+  name: '',
+  level: 0,
+  parent_code: '',
+  category: 'asset',
+  balance_direction: 'debit',
+  auxiliary_items: '',
+})
 
 const CATEGORY_OPTIONS = [
   { label: '资产', value: 'asset' },
@@ -77,13 +100,29 @@ async function loadAccounts() {
 
 // Toolbar actions
 function doNew() {
-  newAccount.value = { code: '', name: '', level: 1, parent_code: '', category: 'asset', balance_direction: 'debit', auxiliary_items: '' }
+  newAccount.value = {
+    code: '',
+    name: '',
+    level: 1,
+    parent_code: '',
+    category: 'asset',
+    balance_direction: 'debit',
+    auxiliary_items: '',
+  }
   showAddDialog.value = true
 }
 
 function doEdit(a: any) {
   editTarget.value = a
-  editAccount.value = { code: a.code, name: a.name, level: a.level, parent_code: a.parent_code, category: a.category, balance_direction: a.balance_direction, auxiliary_items: a.auxiliary_items || '' }
+  editAccount.value = {
+    code: a.code,
+    name: a.name,
+    level: a.level,
+    parent_code: a.parent_code,
+    category: a.category,
+    balance_direction: a.balance_direction,
+    auxiliary_items: a.auxiliary_items || '',
+  }
   showEditDialog.value = true
 }
 
@@ -98,12 +137,24 @@ async function doDelete(a: any) {
 }
 
 function doCopy(a: any) {
-  newAccount.value = { code: '', name: a.name + ' (复制)', level: a.level, parent_code: a.parent_code, category: a.category, balance_direction: a.balance_direction, auxiliary_items: a.auxiliary_items || '' }
+  newAccount.value = {
+    code: '',
+    name: a.name + ' (复制)',
+    level: a.level,
+    parent_code: a.parent_code,
+    category: a.category,
+    balance_direction: a.balance_direction,
+    auxiliary_items: a.auxiliary_items || '',
+  }
   showAddDialog.value = true
 }
 
-function doAuxSetup() { showAuxDialog.value = true }
-function doSearch() { showSearchDialog.value = true }
+function doAuxSetup() {
+  showAuxDialog.value = true
+}
+function doSearch() {
+  showSearchDialog.value = true
+}
 async function doImport() {
   try {
     const res = await importAuxConfig(companyId.value)
@@ -126,8 +177,12 @@ function doExport() {
   link.click()
   URL.revokeObjectURL(url)
 }
-function doCompare() { alert('科目对照功能待开发') }
-function doPrint() { window.print() }
+function doCompare() {
+  alert('科目对照功能待开发')
+}
+function doPrint() {
+  window.print()
+}
 
 async function handleAdd() {
   try {
@@ -180,20 +235,59 @@ onMounted(loadAccounts)
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-4 text-xs text-stone-500">
         <span class="font-medium">科目级次：4-4-2</span>
-        <span class="border-l border-stone-300 pl-4">科目个数：<strong class="text-stone-700">{{ accounts.length }}</strong></span>
+        <span class="border-l border-stone-300 pl-4"
+          >科目个数：<strong class="text-stone-700">{{ accounts.length }}</strong></span
+        >
       </div>
       <div class="flex items-center gap-2">
-        <Dropdown v-model="selectedLevel" :options="LEVEL_OPTIONS" optionLabel="label" optionValue="value" class="w-32" @change="() => {}" />
-        <Dropdown v-model="selectedCategory" :options="CATEGORY_OPTIONS" optionLabel="label" optionValue="value" class="w-28" @change="() => {}" placeholder="类别" />
+        <Dropdown
+          v-model="selectedLevel"
+          :options="LEVEL_OPTIONS"
+          optionLabel="label"
+          optionValue="value"
+          class="w-32"
+          @change="() => {}"
+        />
+        <Dropdown
+          v-model="selectedCategory"
+          :options="CATEGORY_OPTIONS"
+          optionLabel="label"
+          optionValue="value"
+          class="w-28"
+          @change="() => {}"
+          placeholder="类别"
+        />
       </div>
     </div>
 
     <!-- Toolbar -->
     <div class="toolbar">
       <Button label="新增" icon="pi pi-plus" text size="small" @click="doNew" />
-      <Button label="修改" icon="pi pi-pencil" text size="small" @click="editTarget && doEdit(editTarget)" :disabled="!editTarget" />
-      <Button label="删除" icon="pi pi-trash" text severity="danger" size="small" @click="editTarget && doDelete(editTarget)" :disabled="!editTarget" />
-      <Button label="复制" icon="pi pi-copy" text size="small" @click="editTarget && doCopy(editTarget)" :disabled="!editTarget" />
+      <Button
+        label="修改"
+        icon="pi pi-pencil"
+        text
+        size="small"
+        @click="editTarget && doEdit(editTarget)"
+        :disabled="!editTarget"
+      />
+      <Button
+        label="删除"
+        icon="pi pi-trash"
+        text
+        severity="danger"
+        size="small"
+        @click="editTarget && doDelete(editTarget)"
+        :disabled="!editTarget"
+      />
+      <Button
+        label="复制"
+        icon="pi pi-copy"
+        text
+        size="small"
+        @click="editTarget && doCopy(editTarget)"
+        :disabled="!editTarget"
+      />
       <span class="border-r border-stone-200 mx-1" />
       <Button label="辅助核算设置" icon="pi pi-cog" text size="small" @click="doAuxSetup" />
       <Button label="查找" icon="pi pi-search" text size="small" @click="doSearch" />
@@ -227,12 +321,21 @@ onMounted(loadAccounts)
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(a, idx) in filteredAccounts" :key="a.id"
-              class="cursor-pointer transition-colors"
-              :class="{ 'bg-amber-50/50': selectedIds.includes(a.id) }"
-              @click="editTarget = a">
+          <tr
+            v-for="(a, idx) in filteredAccounts"
+            :key="a.id"
+            class="cursor-pointer transition-colors"
+            :class="{ 'bg-amber-50/50': selectedIds.includes(a.id) }"
+            @click="editTarget = a"
+          >
             <td class="text-center">
-              <input type="checkbox" :checked="selectedIds.includes(a.id)" @change="toggleSelect(a.id)" @click.stop class="rounded-sm border-stone-300" />
+              <input
+                type="checkbox"
+                :checked="selectedIds.includes(a.id)"
+                @change="toggleSelect(a.id)"
+                @click.stop
+                class="rounded-sm border-stone-300"
+              />
             </td>
             <td class="text-center text-stone-400">{{ idx + 1 }}</td>
             <td class="text-center text-stone-400">{{ a.level || 1 }}</td>
@@ -241,7 +344,9 @@ onMounted(loadAccounts)
               {{ a.name }}
             </td>
             <td class="text-stone-500 text-xs">
-              <span class="inline-block px-1.5 py-0.5 rounded-sm bg-stone-100">{{ CATEGORY_LABELS[a.category] || a.category }}</span>
+              <span class="inline-block px-1.5 py-0.5 rounded-sm bg-stone-100">{{
+                CATEGORY_LABELS[a.category] || a.category
+              }}</span>
             </td>
             <td class="report-number text-stone-600">{{ formatNumber(a.initial_balance) }}</td>
             <td class="text-center text-xs">{{ DIRECTION_LABELS[a.balance_direction] || '' }}</td>
@@ -271,11 +376,26 @@ onMounted(loadAccounts)
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">科目类型</label>
-            <Dropdown v-model="newAccount.category" :options="CATEGORY_OPTIONS" optionLabel="label" optionValue="value" class="w-full" />
+            <Dropdown
+              v-model="newAccount.category"
+              :options="CATEGORY_OPTIONS"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">余额方向</label>
-            <Dropdown v-model="newAccount.balance_direction" :options="[{ label: '借', value: 'debit' }, { label: '贷', value: 'credit' }]" optionLabel="label" optionValue="value" class="w-full" />
+            <Dropdown
+              v-model="newAccount.balance_direction"
+              :options="[
+                { label: '借', value: 'debit' },
+                { label: '贷', value: 'credit' },
+              ]"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
         </div>
         <div>
@@ -304,7 +424,14 @@ onMounted(loadAccounts)
         </div>
         <div>
           <label class="block text-xs text-zinc-500 mb-1">科目类型</label>
-          <Dropdown v-model="editAccount.category" :options="CATEGORY_OPTIONS" optionLabel="label" optionValue="value" class="w-full" disabled />
+          <Dropdown
+            v-model="editAccount.category"
+            :options="CATEGORY_OPTIONS"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+            disabled
+          />
         </div>
       </div>
       <template #footer>
@@ -322,7 +449,12 @@ onMounted(loadAccounts)
         </div>
         <div class="flex gap-2">
           <Button label="查找" icon="pi pi-search" @click="showSearchDialog = false" />
-          <Button label="清除" icon="pi pi-refresh" text @click="searchText = ''; showSearchDialog = false" />
+          <Button
+            label="清除"
+            icon="pi pi-refresh"
+            text
+            @click="searchText = ''; showSearchDialog = false"
+          />
         </div>
       </div>
     </Dialog>
@@ -331,7 +463,11 @@ onMounted(loadAccounts)
     <Dialog v-model:visible="showAuxDialog" header="辅助核算设置" :style="{ width: '500px' }" :modal="true">
       <div class="flex flex-col gap-4 py-4">
         <p class="text-sm text-zinc-500">选择启用的辅助核算项目：</p>
-        <div v-for="item in ['部门核算', '人员核算', '客户核算', '供应商核算', '项目核算']" :key="item" class="flex items-center gap-2">
+        <div
+          v-for="item in ['部门核算', '人员核算', '客户核算', '供应商核算', '项目核算']"
+          :key="item"
+          class="flex items-center gap-2"
+        >
           <Checkbox :inputId="item" />
           <label :for="item" class="text-sm text-zinc-600">{{ item }}</label>
         </div>
@@ -346,6 +482,9 @@ onMounted(loadAccounts)
 
 <style scoped>
 @media print {
-  @page { size: A4 landscape; margin: 10mm; }
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
 }
 </style>

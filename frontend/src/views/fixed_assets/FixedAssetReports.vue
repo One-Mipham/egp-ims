@@ -28,9 +28,14 @@ const categoryGroups = computed(() => {
     totalOriginal: list.reduce((s, i) => s + (i.original_value || 0), 0),
     totalDepreciation: list.reduce((s, i) => s + (i.accumulated_depreciation || 0), 0),
     totalNet: list.reduce((s, i) => s + (i.net_value || 0), 0),
-    depreciationRate: list.reduce((s, i) => s + (i.original_value || 0), 0) > 0
-      ? (list.reduce((s, i) => s + (i.accumulated_depreciation || 0), 0) / list.reduce((s, i) => s + (i.original_value || 0), 0) * 100).toFixed(1)
-      : '0.0',
+    depreciationRate:
+      list.reduce((s, i) => s + (i.original_value || 0), 0) > 0
+        ? (
+            (list.reduce((s, i) => s + (i.accumulated_depreciation || 0), 0) /
+              list.reduce((s, i) => s + (i.original_value || 0), 0)) *
+            100
+          ).toFixed(1)
+        : '0.0',
   }))
 })
 
@@ -51,13 +56,26 @@ async function load() {
 onMounted(load)
 
 function exportCSV() {
-  const header = ['资产编号','名称','类别','原值','累计折旧','净值','状态']
-  const rows = items.value.map((i: any) => [i.asset_code, i.name, i.category, i.original_value, i.accumulated_depreciation, i.net_value, i.status])
-  const csv = [header.join(','), ...rows.map((r: any[]) => r.map((c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))].join('\n')
+  const header = ['资产编号', '名称', '类别', '原值', '累计折旧', '净值', '状态']
+  const rows = items.value.map((i: any) => [
+    i.asset_code,
+    i.name,
+    i.category,
+    i.original_value,
+    i.accumulated_depreciation,
+    i.net_value,
+    i.status,
+  ])
+  const csv = [
+    header.join(','),
+    ...rows.map((r: any[]) => r.map((c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')),
+  ].join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = '固定资产报表.csv'; a.click()
+  a.href = url
+  a.download = '固定资产报表.csv'
+  a.click()
   URL.revokeObjectURL(url)
 }
 </script>
@@ -92,9 +110,12 @@ function exportCSV() {
     <table class="w-full text-sm border-collapse mb-6">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">类别</th><th class="p-2 border text-right">数量</th>
-          <th class="p-2 border text-right">原值</th><th class="p-2 border text-right">累计折旧</th>
-          <th class="p-2 border text-right">净值</th><th class="p-2 border text-right">折旧率</th>
+          <th class="p-2 border">类别</th>
+          <th class="p-2 border text-right">数量</th>
+          <th class="p-2 border text-right">原值</th>
+          <th class="p-2 border text-right">累计折旧</th>
+          <th class="p-2 border text-right">净值</th>
+          <th class="p-2 border text-right">折旧率</th>
         </tr>
       </thead>
       <tbody>
@@ -113,7 +134,8 @@ function exportCSV() {
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">状态</th><th class="p-2 border text-right">数量</th>
+          <th class="p-2 border">状态</th>
+          <th class="p-2 border text-right">数量</th>
         </tr>
       </thead>
       <tbody>

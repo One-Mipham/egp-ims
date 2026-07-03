@@ -29,7 +29,9 @@ async function handleClose(period: string) {
   try {
     await closePeriod(companyId.value, period)
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail) }
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
 }
 
 function handleUnclose(period: string) {
@@ -43,7 +45,9 @@ async function confirmUnclose() {
     await unclosePeriod(companyId.value, uncloseTarget.value, uncloseReason.value)
     showUncloseDialog.value = false
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail) }
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
 }
 
 onMounted(load)
@@ -53,19 +57,33 @@ onMounted(load)
   <div>
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto max-w-fit min-w-full">
       <DataTable :value="periods" :loading="loading" stripedRows class="shadow-sm" tableStyle="min-width: auto">
-        <Column field="period" header="期间" sortable style="width:120px" />
-        <Column header="状态" style="width:90px">
+        <Column field="period" header="期间" sortable style="width: 120px" />
+        <Column header="状态" style="width: 90px">
           <template #body="{ data }">
             <Tag :value="data.is_closed ? '已结账' : '未结账'" :severity="data.is_closed ? 'success' : 'warning'" />
           </template>
         </Column>
-        <Column header="操作" style="width:100px">
-        <template #body="{ data }">
-          <Button v-if="!data.is_closed" label="结账" text severity="success" size="small" @click="handleClose(data.period)" />
-          <Button v-if="data.is_closed" label="反结账" text severity="danger" size="small" @click="handleUnclose(data.period)" />
-        </template>
-      </Column>
-    </DataTable>
+        <Column header="操作" style="width: 100px">
+          <template #body="{ data }">
+            <Button
+              v-if="!data.is_closed"
+              label="结账"
+              text
+              severity="success"
+              size="small"
+              @click="handleClose(data.period)"
+            />
+            <Button
+              v-if="data.is_closed"
+              label="反结账"
+              text
+              severity="danger"
+              size="small"
+              @click="handleUnclose(data.period)"
+            />
+          </template>
+        </Column>
+      </DataTable>
     </div>
 
     <Dialog v-model:visible="showUncloseDialog" header="反结账" :style="{ width: '450px' }" :modal="true">
@@ -76,7 +94,13 @@ onMounted(load)
       </div>
       <template #footer>
         <Button label="取消" severity="secondary" @click="showUncloseDialog = false" />
-        <Button label="确认反结账" icon="pi pi-exclamation-triangle" severity="danger" @click="confirmUnclose" :disabled="!uncloseReason" />
+        <Button
+          label="确认反结账"
+          icon="pi pi-exclamation-triangle"
+          severity="danger"
+          @click="confirmUnclose"
+          :disabled="!uncloseReason"
+        />
       </template>
     </Dialog>
   </div>

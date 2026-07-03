@@ -27,8 +27,11 @@ onMounted(async () => {
     stats.value[1].value = a.data.length
     stats.value[2].value = d.data.length
     stats.value[3].value = p.data.filter((x: any) => x.is_closed).length
-  } catch { /* use defaults */ }
-  finally { loading.value = false }
+  } catch {
+    /* use defaults */
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
@@ -49,14 +52,25 @@ onMounted(async () => {
       <div
         :class="[
           'cockpit-circle cursor-pointer',
-          taxFiledOnTime === true ? 'circle-green' : taxFiledOnTime === false ? 'circle-red' : 'circle-zinc'
+          taxFiledOnTime === true ? 'circle-green' : taxFiledOnTime === false ? 'circle-red' : 'circle-zinc',
         ]"
         @click="taxFiledOnTime = taxFiledOnTime === null ? true : taxFiledOnTime === true ? false : null"
       >
         <div class="circle-ring" />
         <i
-          :class="['pi', taxFiledOnTime === true ? 'pi-check-circle' : taxFiledOnTime === false ? 'pi-times-circle' : 'pi-calendar', 'circle-icon']"
-          :style="{ color: taxFiledOnTime === true ? '#059669' : taxFiledOnTime === false ? '#dc2626' : 'var(--color-text-secondary)' }"
+          :class="[
+            'pi',
+            taxFiledOnTime === true ? 'pi-check-circle' : taxFiledOnTime === false ? 'pi-times-circle' : 'pi-calendar',
+            'circle-icon',
+          ]"
+          :style="{
+            color:
+              taxFiledOnTime === true
+                ? '#059669'
+                : taxFiledOnTime === false
+                  ? '#dc2626'
+                  : 'var(--color-text-secondary)',
+          }"
         />
         <div class="text-xs font-medium mt-1">
           {{ taxFiledOnTime === true ? '已报税' : taxFiledOnTime === false ? '未报税' : '点击设置' }}
@@ -67,14 +81,25 @@ onMounted(async () => {
       <div
         :class="[
           'cockpit-circle cursor-pointer',
-          bankReconciled === true ? 'circle-green' : bankReconciled === false ? 'circle-red' : 'circle-zinc'
+          bankReconciled === true ? 'circle-green' : bankReconciled === false ? 'circle-red' : 'circle-zinc',
         ]"
         @click="bankReconciled = bankReconciled === null ? true : bankReconciled === true ? false : null"
       >
         <div class="circle-ring" />
         <i
-          :class="['pi', bankReconciled === true ? 'pi-check-circle' : bankReconciled === false ? 'pi-times-circle' : 'pi-building', 'circle-icon']"
-          :style="{ color: bankReconciled === true ? '#059669' : bankReconciled === false ? '#dc2626' : 'var(--color-text-secondary)' }"
+          :class="[
+            'pi',
+            bankReconciled === true ? 'pi-check-circle' : bankReconciled === false ? 'pi-times-circle' : 'pi-building',
+            'circle-icon',
+          ]"
+          :style="{
+            color:
+              bankReconciled === true
+                ? '#059669'
+                : bankReconciled === false
+                  ? '#dc2626'
+                  : 'var(--color-text-secondary)',
+          }"
         />
         <div class="text-xs font-medium mt-1">
           {{ bankReconciled === true ? '已对账' : bankReconciled === false ? '未对账' : '点击设置' }}

@@ -12,9 +12,12 @@ const page = ref(1)
 const pageSize = 20
 
 const emptyForm = () => ({
-  company_id: companyId, payable_id: null as number | null,
-  payment_date: new Date().toISOString().slice(0, 10), amount: 0,
-  payment_method: '银行转账', notes: '',
+  company_id: companyId,
+  payable_id: null as number | null,
+  payment_date: new Date().toISOString().slice(0, 10),
+  amount: 0,
+  payment_method: '银行转账',
+  notes: '',
 })
 
 const form = ref(emptyForm())
@@ -26,15 +29,15 @@ function invoiceLabel(id: number) {
 
 async function load() {
   const params: Record<string, any> = { limit: pageSize, offset: (page.value - 1) * pageSize }
-  const [r1, r2] = await Promise.all([
-    listPayablePayments(companyId, params),
-    listPayables(companyId, { limit: 500 })
-  ])
+  const [r1, r2] = await Promise.all([listPayablePayments(companyId, params), listPayables(companyId, { limit: 500 })])
   items.value = r1.data
   payables.value = r2.data
 }
 
-function openCreate() { form.value = emptyForm(); dialogVisible.value = true }
+function openCreate() {
+  form.value = emptyForm()
+  dialogVisible.value = true
+}
 
 async function save() {
   await createPayablePayment(form.value)
@@ -50,14 +53,18 @@ onMounted(load)
   <div class="p-4">
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-lg font-bold">付款管理</h1>
-      <button @click="openCreate" class="px-4 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">+ 登记付款</button>
+      <button @click="openCreate" class="px-4 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">
+        + 登记付款
+      </button>
     </div>
 
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">应付发票</th><th class="p-2 border">付款日期</th>
-          <th class="p-2 border text-right">金额</th><th class="p-2 border">方式</th>
+          <th class="p-2 border">应付发票</th>
+          <th class="p-2 border">付款日期</th>
+          <th class="p-2 border text-right">金额</th>
+          <th class="p-2 border">方式</th>
           <th class="p-2 border text-xs text-zinc-400">备注</th>
         </tr>
       </thead>
@@ -78,8 +85,19 @@ onMounted(load)
     <div class="flex items-center justify-between mt-3">
       <span class="text-xs text-zinc-400">第 {{ page }} 页</span>
       <div class="flex gap-1">
-        <button @click="page = Math.max(1, page - 1); load()" :disabled="page <= 1" class="px-3 py-1 border rounded text-sm disabled:opacity-30">上一页</button>
-        <button @click="page = page + 1; load()" class="px-3 py-1 border rounded text-sm">下一页</button>
+        <button
+          @click="page = Math.max(1, page - 1); load()"
+          :disabled="page <= 1"
+          class="px-3 py-1 border rounded text-sm disabled:opacity-30"
+        >
+          上一页
+        </button>
+        <button
+          @click="page = page + 1; load()"
+          class="px-3 py-1 border rounded text-sm"
+        >
+          下一页
+        </button>
       </div>
     </div>
 
@@ -91,18 +109,31 @@ onMounted(load)
             <label class="text-xs text-zinc-500">选择发票</label>
             <select v-model.number="form.payable_id" class="w-full border rounded px-2 py-1.5 text-sm">
               <option :value="null" disabled>-- 请选择 --</option>
-              <option v-for="p in payables" :key="p.id" :value="p.id">{{ p.supplier_name }} · {{ p.invoice_no }} (余额 {{ (p.balance || 0).toLocaleString() }})</option>
+              <option v-for="p in payables" :key="p.id" :value="p.id">
+                {{ p.supplier_name }} · {{ p.invoice_no }} (余额 {{ (p.balance || 0).toLocaleString() }})
+              </option>
             </select>
           </div>
-          <div><label class="text-xs text-zinc-500">付款日期</label><input type="date" v-model="form.payment_date" class="w-full border rounded px-2 py-1.5 text-sm" /></div>
-          <div><label class="text-xs text-zinc-500">金额</label><input type="number" v-model.number="form.amount" class="w-full border rounded px-2 py-1.5 text-sm" /></div>
+          <div>
+            <label class="text-xs text-zinc-500">付款日期</label
+            ><input type="date" v-model="form.payment_date" class="w-full border rounded px-2 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500">金额</label
+            ><input type="number" v-model.number="form.amount" class="w-full border rounded px-2 py-1.5 text-sm" />
+          </div>
           <div>
             <label class="text-xs text-zinc-500">付款方式</label>
             <select v-model="form.payment_method" class="w-full border rounded px-2 py-1.5 text-sm">
-              <option>银行转账</option><option>现金</option><option>承兑汇票</option>
+              <option>银行转账</option>
+              <option>现金</option>
+              <option>承兑汇票</option>
             </select>
           </div>
-          <div><label class="text-xs text-zinc-500">备注</label><input v-model="form.notes" class="w-full border rounded px-2 py-1.5 text-sm" /></div>
+          <div>
+            <label class="text-xs text-zinc-500">备注</label
+            ><input v-model="form.notes" class="w-full border rounded px-2 py-1.5 text-sm" />
+          </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
           <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>

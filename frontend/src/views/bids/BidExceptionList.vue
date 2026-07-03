@@ -14,9 +14,15 @@ import Tag from 'primevue/tag'
 import Toolbar from 'primevue/toolbar'
 
 import {
-  listExceptionEvents, getExceptionOptions,
-  createExceptionEvent, updateExceptionEvent, deleteExceptionEvent,
-  reviewExceptionEvent, approveExceptionEvent, rejectExceptionEvent, bypassExceptionEvent,
+  listExceptionEvents,
+  getExceptionOptions,
+  createExceptionEvent,
+  updateExceptionEvent,
+  deleteExceptionEvent,
+  reviewExceptionEvent,
+  approveExceptionEvent,
+  rejectExceptionEvent,
+  bypassExceptionEvent,
 } from '../../api/bids'
 import api from '../../api'
 
@@ -31,7 +37,7 @@ const routeTargetType = computed(() => {
 })
 
 const isTendering = computed(() => routeTargetType.value === 'tender_project')
-const pageTitle = computed(() => isTendering.value ? '招标例外事项' : '投标例外事项')
+const pageTitle = computed(() => (isTendering.value ? '招标例外事项' : '投标例外事项'))
 
 // ── 常量 ──
 const tenderExceptionTypeOptions = [
@@ -62,12 +68,14 @@ const statusOptions = [
 
 const statusLabels: Record<string, string> = Object.fromEntries(statusOptions.map(o => [o.value, o.label]))
 const statusSeverity: Record<string, string> = {
-  draft: 'info', reviewed: 'warn', approved: 'success', rejected: 'danger', closed: 'secondary',
+  draft: 'info',
+  reviewed: 'warn',
+  approved: 'success',
+  rejected: 'danger',
+  closed: 'secondary',
 }
 
-const exceptionTypeOptions = computed(() =>
-  isTendering.value ? tenderExceptionTypeOptions : bidExceptionTypeOptions,
-)
+const exceptionTypeOptions = computed(() => (isTendering.value ? tenderExceptionTypeOptions : bidExceptionTypeOptions))
 
 // ── 数据状态 ──
 const items = ref<any[]>([])
@@ -101,23 +109,24 @@ function emptyForm(): Record<string, any> {
 
 // ── 权限 ──
 const userRole = computed(() => localStorage.getItem('role') || '')
-const isPrivileged = computed(() =>
-  ['finance_manager', 'finance_director', 'super_admin'].includes(userRole.value),
-)
-const canBypass = computed(() =>
-  ['super_admin', 'finance_director'].includes(userRole.value),
-)
+const isPrivileged = computed(() => ['finance_manager', 'finance_director', 'super_admin'].includes(userRole.value))
+const canBypass = computed(() => ['super_admin', 'finance_director'].includes(userRole.value))
 
 const bypassDialog = ref(false)
 const bypassReason = ref('')
 const currentExceptionId = ref<number | null>(null)
 
-const openBypassException = (id: number) => { currentExceptionId.value = id; bypassReason.value = ''; bypassDialog.value = true }
+const openBypassException = (id: number) => {
+  currentExceptionId.value = id
+  bypassReason.value = ''
+  bypassDialog.value = true
+}
 
 const doBypassException = async () => {
   try {
     await bypassExceptionEvent(currentExceptionId.value!, bypassReason.value)
-    bypassDialog.value = false; load()
+    bypassDialog.value = false
+    load()
   } catch (e: any) {
     alert('操作失败: ' + (e.response?.data?.detail || e.message))
   }
@@ -146,7 +155,9 @@ async function loadRefs() {
       api.get('/departments', { params: { company_id: Number(localStorage.getItem('company_id') || '1') } }),
     ])
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 function openCreate() {
@@ -226,7 +237,13 @@ onMounted(() => {
     <Toolbar class="mb-4">
       <template #start>
         <div class="flex flex-wrap gap-3">
-          <Dropdown v-model="fExceptionType" :options="exceptionTypeOptions" placeholder="例外类型" class="w-36" showClear />
+          <Dropdown
+            v-model="fExceptionType"
+            :options="exceptionTypeOptions"
+            placeholder="例外类型"
+            class="w-36"
+            showClear
+          />
           <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-32" showClear />
           <InputText v-model="fSearch" placeholder="搜索标题/事由" class="w-48" @keyup.enter="load" />
           <Button icon="pi pi-search" label="查询" @click="load" />
@@ -234,41 +251,83 @@ onMounted(() => {
       </template>
     </Toolbar>
 
-    <DataTable :value="items" :loading="loading" stripedRows paginator :rows="15" :rowsPerPageOptions="[10, 15, 25, 50]" class="text-sm">
-      <Column field="exception_type" header="例外类型" style="min-width:110px">
+    <DataTable
+      :value="items"
+      :loading="loading"
+      stripedRows
+      paginator
+      :rows="15"
+      :rowsPerPageOptions="[10, 15, 25, 50]"
+      class="text-sm"
+    >
+      <Column field="exception_type" header="例外类型" style="min-width: 110px">
         <template #body="{ data }">
           <Tag :value="data.exception_type" severity="warn" />
         </template>
       </Column>
-      <Column field="title" header="标题" style="min-width:180px" />
-      <Column field="target_id" header="关联项目ID" style="min-width:90px" />
-      <Column field="reason" header="事由" style="min-width:200px">
+      <Column field="title" header="标题" style="min-width: 180px" />
+      <Column field="target_id" header="关联项目ID" style="min-width: 90px" />
+      <Column field="reason" header="事由" style="min-width: 200px">
         <template #body="{ data }">{{ (data.reason || '').slice(0, 60) }}</template>
       </Column>
-      <Column field="resolution" header="处理结果" style="min-width:150px">
+      <Column field="resolution" header="处理结果" style="min-width: 150px">
         <template #body="{ data }">{{ (data.resolution || '').slice(0, 40) || '-' }}</template>
       </Column>
-      <Column field="status" header="状态" style="min-width:90px">
+      <Column field="status" header="状态" style="min-width: 90px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status]" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width:280px">
+      <Column header="操作" style="min-width: 280px">
         <template #body="{ data }">
           <div class="flex gap-1 flex-wrap">
             <Button icon="pi pi-pencil" size="small" severity="info" @click="openEdit(data)" v-tooltip.top="'编辑'" />
-            <Button v-if="isPrivileged && data.status === 'draft'" icon="pi pi-check" size="small" severity="warn" @click="doReview(data.id)" v-tooltip.top="'审核'" />
-            <Button v-if="isPrivileged && data.status === 'reviewed'" icon="pi pi-check-circle" size="small" severity="success" @click="doApprove(data.id)" v-tooltip.top="'批准(联动闭环)'" />
-            <Button v-if="isPrivileged && data.status === 'reviewed'" icon="pi pi-times-circle" size="small" severity="danger" @click="doReject(data.id)" v-tooltip.top="'驳回'" />
-            <Button v-if="canBypass && data.status === 'reviewed'" icon="pi pi-forward" size="small" severity="warn" @click="openBypassException(data.id)" v-tooltip.top="'强制跳过'" />
+            <Button
+              v-if="isPrivileged && data.status === 'draft'"
+              icon="pi pi-check"
+              size="small"
+              severity="warn"
+              @click="doReview(data.id)"
+              v-tooltip.top="'审核'"
+            />
+            <Button
+              v-if="isPrivileged && data.status === 'reviewed'"
+              icon="pi pi-check-circle"
+              size="small"
+              severity="success"
+              @click="doApprove(data.id)"
+              v-tooltip.top="'批准(联动闭环)'"
+            />
+            <Button
+              v-if="isPrivileged && data.status === 'reviewed'"
+              icon="pi pi-times-circle"
+              size="small"
+              severity="danger"
+              @click="doReject(data.id)"
+              v-tooltip.top="'驳回'"
+            />
+            <Button
+              v-if="canBypass && data.status === 'reviewed'"
+              icon="pi pi-forward"
+              size="small"
+              severity="warn"
+              @click="openBypassException(data.id)"
+              v-tooltip.top="'强制跳过'"
+            />
             <Button icon="pi pi-trash" size="small" severity="danger" @click="remove(data.id)" v-tooltip.top="'删除'" />
           </div>
         </template>
       </Column>
     </DataTable>
 
-    <Dialog v-model:visible="showDialog" :header="(isEdit ? '编辑' : '新建') + '例外事项'" :style="{ width: '700px' }" :modal="true" class="p-fluid">
-      <div class="grid grid-cols-2 gap-4" style="max-height:60vh; overflow-y:auto; padding-right:4px">
+    <Dialog
+      v-model:visible="showDialog"
+      :header="(isEdit ? '编辑' : '新建') + '例外事项'"
+      :style="{ width: '700px' }"
+      :modal="true"
+      class="p-fluid"
+    >
+      <div class="grid grid-cols-2 gap-4" style="max-height: 60vh; overflow-y: auto; padding-right: 4px">
         <div class="col-span-2 font-bold text-lg border-b pb-1 mb-1">例外信息</div>
         <div>
           <label class="block text-sm font-medium mb-1">例外类型 *</label>

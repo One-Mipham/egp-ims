@@ -11,26 +11,20 @@ export const listTenderProjects = (params: {
   search?: string
 }) => api.get('/bids/tender-projects', { params })
 
-export const getTenderOptions = () =>
-  api.get('/bids/tender-projects/options')
+export const getTenderOptions = () => api.get('/bids/tender-projects/options')
 
-export const getTenderProject = (id: number) =>
-  api.get(`/bids/tender-projects/${id}`)
+export const getTenderProject = (id: number) => api.get(`/bids/tender-projects/${id}`)
 
-export const createTenderProject = (data: Record<string, any>) =>
-  api.post('/bids/tender-projects', data)
+export const createTenderProject = (data: Record<string, any>) => api.post('/bids/tender-projects', data)
 
 export const updateTenderProject = (id: number, data: Record<string, any>) =>
   api.put(`/bids/tender-projects/${id}`, data)
 
-export const deleteTenderProject = (id: number) =>
-  api.delete(`/bids/tender-projects/${id}`)
+export const deleteTenderProject = (id: number) => api.delete(`/bids/tender-projects/${id}`)
 
-export const reviewTenderProject = (id: number) =>
-  api.post(`/bids/tender-projects/${id}/review`)
+export const reviewTenderProject = (id: number) => api.post(`/bids/tender-projects/${id}/review`)
 
-export const approveTenderProject = (id: number) =>
-  api.post(`/bids/tender-projects/${id}/approve`)
+export const approveTenderProject = (id: number) => api.post(`/bids/tender-projects/${id}/approve`)
 
 // ── 投标登记 CRUD ──
 
@@ -43,25 +37,19 @@ export const listBidSubmissions = (params: {
   search?: string
 }) => api.get('/bids/submissions', { params })
 
-export const getBidOptions = () =>
-  api.get('/bids/submissions/options')
+export const getBidOptions = () => api.get('/bids/submissions/options')
 
-export const getBidSubmission = (id: number) =>
-  api.get(`/bids/submissions/${id}`)
+export const getBidSubmission = (id: number) => api.get(`/bids/submissions/${id}`)
 
-export const createBidSubmission = (data: Record<string, any>) =>
-  api.post('/bids/submissions', data)
+export const createBidSubmission = (data: Record<string, any>) => api.post('/bids/submissions', data)
 
-export const updateBidSubmission = (id: number, data: Record<string, any>) =>
-  api.put(`/bids/submissions/${id}`, data)
+export const updateBidSubmission = (id: number, data: Record<string, any>) => api.put(`/bids/submissions/${id}`, data)
 
-export const deleteBidSubmission = (id: number) =>
-  api.delete(`/bids/submissions/${id}`)
+export const deleteBidSubmission = (id: number) => api.delete(`/bids/submissions/${id}`)
 
 // ── 统计 ──
 
-export const getBidStats = (companyId: number) =>
-  api.get('/bids/stats', { params: { company_id: companyId } })
+export const getBidStats = (companyId: number) => api.get('/bids/stats', { params: { company_id: companyId } })
 
 // ── 例外事项 CRUD ──
 
@@ -77,26 +65,19 @@ export const listExceptionEvents = (params: {
 export const getExceptionOptions = (target_type?: string) =>
   api.get('/bids/exceptions/options', { params: target_type ? { target_type } : {} })
 
-export const getExceptionEvent = (id: number) =>
-  api.get(`/bids/exceptions/${id}`)
+export const getExceptionEvent = (id: number) => api.get(`/bids/exceptions/${id}`)
 
-export const createExceptionEvent = (data: Record<string, any>) =>
-  api.post('/bids/exceptions', data)
+export const createExceptionEvent = (data: Record<string, any>) => api.post('/bids/exceptions', data)
 
-export const updateExceptionEvent = (id: number, data: Record<string, any>) =>
-  api.put(`/bids/exceptions/${id}`, data)
+export const updateExceptionEvent = (id: number, data: Record<string, any>) => api.put(`/bids/exceptions/${id}`, data)
 
-export const deleteExceptionEvent = (id: number) =>
-  api.delete(`/bids/exceptions/${id}`)
+export const deleteExceptionEvent = (id: number) => api.delete(`/bids/exceptions/${id}`)
 
-export const reviewExceptionEvent = (id: number) =>
-  api.post(`/bids/exceptions/${id}/review`)
+export const reviewExceptionEvent = (id: number) => api.post(`/bids/exceptions/${id}/review`)
 
-export const approveExceptionEvent = (id: number) =>
-  api.post(`/bids/exceptions/${id}/approve`)
+export const approveExceptionEvent = (id: number) => api.post(`/bids/exceptions/${id}/approve`)
 
-export const rejectExceptionEvent = (id: number) =>
-  api.post(`/bids/exceptions/${id}/reject`)
+export const rejectExceptionEvent = (id: number) => api.post(`/bids/exceptions/${id}/reject`)
 
 // ── 强制跳过审批 ──
 

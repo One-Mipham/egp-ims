@@ -71,19 +71,36 @@ onMounted(async () => {
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">客户</th><th class="p-2 border">发票号</th>
-          <th class="p-2 border text-right">金额</th><th class="p-2 border text-right">余额</th>
-          <th class="p-2 border">到期日</th><th class="p-2 border text-right">账龄(天)</th><th class="p-2 border">状态</th>
+          <th class="p-2 border">客户</th>
+          <th class="p-2 border">发票号</th>
+          <th class="p-2 border text-right">金额</th>
+          <th class="p-2 border text-right">余额</th>
+          <th class="p-2 border">到期日</th>
+          <th class="p-2 border text-right">账龄(天)</th>
+          <th class="p-2 border">状态</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in items" :key="item.id" v-show="item.balance > 0" class="hover:bg-zinc-50" :class="(item.aging_days || 0) > 90 ? 'bg-red-50' : (item.aging_days || 0) > 60 ? 'bg-orange-50' : ''">
+        <tr
+          v-for="item in items"
+          :key="item.id"
+          v-show="item.balance > 0"
+          class="hover:bg-zinc-50"
+          :class="(item.aging_days || 0) > 90 ? 'bg-red-50' : (item.aging_days || 0) > 60 ? 'bg-orange-50' : ''"
+        >
           <td class="p-2 border">{{ item.customer_name }}</td>
           <td class="p-2 border font-mono text-xs">{{ item.invoice_no }}</td>
           <td class="p-2 border text-right">{{ (item.amount || 0).toLocaleString() }}</td>
-          <td class="p-2 border text-right font-bold" :class="(item.aging_days || 0) > 90 ? 'text-red-700' : ''">{{ (item.balance || 0).toLocaleString() }}</td>
+          <td class="p-2 border text-right font-bold" :class="(item.aging_days || 0) > 90 ? 'text-red-700' : ''">
+            {{ (item.balance || 0).toLocaleString() }}
+          </td>
           <td class="p-2 border text-xs">{{ item.due_date }}</td>
-          <td class="p-2 border text-right font-bold" :class="(item.aging_days || 0) > 90 ? 'text-red-600' : (item.aging_days || 0) > 60 ? 'text-orange-600' : ''">{{ item.aging_days }}</td>
+          <td
+            class="p-2 border text-right font-bold"
+            :class="(item.aging_days || 0) > 90 ? 'text-red-600' : (item.aging_days || 0) > 60 ? 'text-orange-600' : ''"
+          >
+            {{ item.aging_days }}
+          </td>
           <td class="p-2 border">{{ item.status }}</td>
         </tr>
         <tr v-if="totalCount === 0">

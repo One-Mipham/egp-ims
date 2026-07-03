@@ -47,7 +47,9 @@ async function load() {
     ])
     items.value = adjRes.data
     positions.value = posRes.data
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 function openCreate() {
@@ -89,7 +91,9 @@ async function handleDelete(id: number) {
   await load()
 }
 
-function onFilterChange() { load() }
+function onFilterChange() {
+  load()
+}
 
 onMounted(load)
 </script>
@@ -103,8 +107,16 @@ onMounted(load)
 
     <!-- Filter -->
     <div class="flex items-center gap-3 mb-3">
-      <Dropdown v-model="filterPosition" :options="positions" optionLabel="security_name" optionValue="id"
-                placeholder="按持仓筛选" showClear class="w-64" @change="onFilterChange" />
+      <Dropdown
+        v-model="filterPosition"
+        :options="positions"
+        optionLabel="security_name"
+        optionValue="id"
+        placeholder="按持仓筛选"
+        showClear
+        class="w-64"
+        @change="onFilterChange"
+      />
     </div>
 
     <!-- Table -->
@@ -144,12 +156,23 @@ onMounted(load)
     </DataTable>
 
     <!-- Create/Edit Dialog -->
-    <Dialog v-model:visible="showDialog" :header="isEdit ? '编辑调整' : '新增公允价值调整'"
-            :style="{ width: '480px' }" modal>
+    <Dialog
+      v-model:visible="showDialog"
+      :header="isEdit ? '编辑调整' : '新增公允价值调整'"
+      :style="{ width: '480px' }"
+      modal
+    >
       <div class="flex flex-col gap-3 pt-2">
         <label class="text-sm text-stone-600">持仓 <span class="text-red-400">*</span></label>
-        <Dropdown v-model="form.position_id" :options="positions" optionLabel="security_name" optionValue="id"
-                  placeholder="选择持仓" filterable :disabled="isEdit" />
+        <Dropdown
+          v-model="form.position_id"
+          :options="positions"
+          optionLabel="security_name"
+          optionValue="id"
+          placeholder="选择持仓"
+          filterable
+          :disabled="isEdit"
+        />
 
         <label class="text-sm text-stone-600">调整日期 <span class="text-red-400">*</span></label>
         <InputText v-model="form.adjustment_date" placeholder="YYYY-MM-DD" />
@@ -177,8 +200,11 @@ onMounted(load)
       </div>
       <template #footer>
         <Button label="取消" severity="secondary" @click="showDialog = false" />
-        <Button label="保存并生成凭证" @click="handleSave"
-                :disabled="!form.position_id || !form.adjustment_date || changeAmount === 0" />
+        <Button
+          label="保存并生成凭证"
+          @click="handleSave"
+          :disabled="!form.position_id || !form.adjustment_date || changeAmount === 0"
+        />
       </template>
     </Dialog>
   </div>

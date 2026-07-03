@@ -11,8 +11,13 @@ import Textarea from 'primevue/textarea'
 import Dropdown from 'primevue/dropdown'
 import DatePicker from 'primevue/datepicker'
 import {
-  type BoardFilingData, type BoardFilingCreateData, type BoardFilingUpdateData,
-  listFilings, createFiling, updateFiling, deleteFiling,
+  type BoardFilingData,
+  type BoardFilingCreateData,
+  type BoardFilingUpdateData,
+  listFilings,
+  createFiling,
+  updateFiling,
+  deleteFiling,
 } from '@/api/board'
 
 const route = useRoute()
@@ -30,7 +35,14 @@ const routeDocType = computed(() => {
 })
 
 const pageConfig = computed(() => {
-  const m: Record<string, { title: string; statuses: { label: string; value: string; severity?: string }[]; subtypes: { label: string; value: string }[] }> = {
+  const m: Record<
+    string,
+    {
+      title: string
+      statuses: { label: string; value: string; severity?: string }[]
+      subtypes: { label: string; value: string }[]
+    }
+  > = {
     filing: {
       title: '合规报送管理',
       statuses: [
@@ -172,8 +184,11 @@ async function load() {
   try {
     const res = await listFilings(companyId.value, routeDocType.value)
     data.value = res.data || []
-  } catch { /* */ }
-  finally { loading.value = false }
+  } catch {
+    /* */
+  } finally {
+    loading.value = false
+  }
 }
 
 function openAdd() {
@@ -243,8 +258,11 @@ async function save() {
     }
     showDialog.value = false
     await load()
-  } catch (e: any) { alert(e?.response?.data?.detail || '保存失败') }
-  finally { saving.value = false }
+  } catch (e: any) {
+    alert(e?.response?.data?.detail || '保存失败')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(id: number) {
@@ -255,7 +273,7 @@ async function handleDelete(id: number) {
 
 function statusSeverity(status: string) {
   const s = pageConfig.value.statuses.find(st => st.value === status)
-  return s?.severity as any || 'info'
+  return (s?.severity as any) || 'info'
 }
 
 const approvalSteps = ['草稿', '部门审核', '董秘审核', '董事长审批', '已完成']
@@ -281,8 +299,8 @@ onMounted(load)
 
     <div class="form-card overflow-x-auto">
       <DataTable :value="data" :loading="loading" stripedRows class="text-xs" paginator :rows="15">
-        <Column field="title" header="标题" style="min-width:180px" />
-        <Column field="doc_subtype" header="子类型" style="width:130px">
+        <Column field="title" header="标题" style="min-width: 180px" />
+        <Column field="doc_subtype" header="子类型" style="width: 130px">
           <template #body="{ data: row }">
             <span v-if="pageConfig.subtypes.length" class="text-stone-500">
               {{ pageConfig.subtypes.find(s => s.value === row.doc_subtype)?.label || row.doc_subtype }}
@@ -290,28 +308,29 @@ onMounted(load)
             <span v-else class="text-stone-400">—</span>
           </template>
         </Column>
-        <Column field="target_org" header="目标机构" style="width:120px">
+        <Column field="target_org" header="目标机构" style="width: 120px">
           <template #body="{ data: row }">{{ row.target_org || '—' }}</template>
         </Column>
-        <Column field="deadline" header="截止日期" style="width:100px">
+        <Column field="deadline" header="截止日期" style="width: 100px">
           <template #body="{ data: row }">{{ row.deadline || '—' }}</template>
         </Column>
-        <Column header="状态" style="width:90px">
+        <Column header="状态" style="width: 90px">
           <template #body="{ data: row }">
             <Tag :value="row.status" :severity="statusSeverity(row.status)" />
           </template>
         </Column>
-        <Column v-if="routeDocType === 'approval'" header="审批进度" style="width:200px">
+        <Column v-if="routeDocType === 'approval'" header="审批进度" style="width: 200px">
           <template #body="{ data: row }">
             <div class="flex items-center gap-1">
               <template v-for="(step, idx) in approvalSteps" :key="step">
                 <div
                   class="w-3 h-3 rounded-full border text-[0px]"
-                  :class="idx <= approvalStepIndex(row.status)
-                    ? 'bg-amber-500 border-amber-500'
-                    : 'bg-white border-stone-300'"
+                  :class="
+                    idx <= approvalStepIndex(row.status) ? 'bg-amber-500 border-amber-500' : 'bg-white border-stone-300'
+                  "
                 />
-                <div v-if="idx < approvalSteps.length - 1"
+                <div
+                  v-if="idx < approvalSteps.length - 1"
                   class="h-px flex-1"
                   :class="idx < approvalStepIndex(row.status) ? 'bg-amber-500' : 'bg-stone-200'"
                 />
@@ -319,7 +338,7 @@ onMounted(load)
             </div>
           </template>
         </Column>
-        <Column header="操作" style="width:110px">
+        <Column header="操作" style="width: 110px">
           <template #body="{ data: row }">
             <Button label="编辑" text size="small" @click="openEdit(row)" />
             <Button label="删除" text severity="danger" size="small" @click="handleDelete(row.id)" />
@@ -329,69 +348,126 @@ onMounted(load)
     </div>
 
     <!-- Dialog -->
-    <Dialog v-model:visible="showDialog" :header="editingId ? '编辑记录' : '新增记录'" :style="{ width: '620px' }" modal>
+    <Dialog
+      v-model:visible="showDialog"
+      :header="editingId ? '编辑记录' : '新增记录'"
+      :style="{ width: '620px' }"
+      modal
+    >
       <div class="flex flex-col gap-3 py-4 text-sm">
-        <div><label class="text-xs text-zinc-500 mb-1 block">标题 *</label>
-          <InputText v-model="form.title" class="w-full" required /></div>
+        <div>
+          <label class="text-xs text-zinc-500 mb-1 block">标题 *</label>
+          <InputText v-model="form.title" class="w-full" required />
+        </div>
 
         <!-- Subtype dropdown (except for contact type) -->
         <div v-if="pageConfig.subtypes.length > 0">
           <label class="text-xs text-zinc-500 mb-1 block">类型</label>
-          <Dropdown v-model="form.doc_subtype" :options="pageConfig.subtypes" option-label="label" option-value="value" class="w-full" placeholder="选择类型" />
+          <Dropdown
+            v-model="form.doc_subtype"
+            :options="pageConfig.subtypes"
+            option-label="label"
+            option-value="value"
+            class="w-full"
+            placeholder="选择类型"
+          />
         </div>
 
         <!-- Target org: csrc dropdown for filing->csrc -->
         <div v-if="form.doc_type === 'filing' && form.doc_subtype === 'csrc'">
           <label class="text-xs text-zinc-500 mb-1 block">证监会机构</label>
-          <Dropdown v-model="form.target_org" :options="csrcOrgs" option-label="label" option-value="value" class="w-full" placeholder="选择证监会机构" />
+          <Dropdown
+            v-model="form.target_org"
+            :options="csrcOrgs"
+            option-label="label"
+            option-value="value"
+            class="w-full"
+            placeholder="选择证监会机构"
+          />
         </div>
 
         <!-- Target org: exchange dropdown for filing->exchange -->
         <div v-if="form.doc_type === 'filing' && form.doc_subtype === 'exchange'">
           <label class="text-xs text-zinc-500 mb-1 block">交易所</label>
-          <Dropdown v-model="form.target_org" :options="exchanges" option-label="label" option-value="value" class="w-full" placeholder="选择交易所" />
+          <Dropdown
+            v-model="form.target_org"
+            :options="exchanges"
+            option-label="label"
+            option-value="value"
+            class="w-full"
+            placeholder="选择交易所"
+          />
         </div>
 
         <!-- Target org: free text for others -->
-        <div v-if="routeDocType !== 'contact' && !(form.doc_type === 'filing' && (form.doc_subtype === 'csrc' || form.doc_subtype === 'exchange'))">
+        <div
+          v-if="
+            routeDocType !== 'contact' &&
+            !(form.doc_type === 'filing' && (form.doc_subtype === 'csrc' || form.doc_subtype === 'exchange'))
+          "
+        >
           <label class="text-xs text-zinc-500 mb-1 block">目标机构</label>
           <InputText v-model="form.target_org" class="w-full" placeholder="例如：股东大会、财务部..." />
         </div>
 
         <!-- Contact-specific fields -->
         <template v-if="routeDocType === 'contact'">
-          <div><label class="text-xs text-zinc-500 mb-1 block">对方单位</label>
-            <InputText v-model="form.party_name" class="w-full" /></div>
-          <div><label class="text-xs text-zinc-500 mb-1 block">联系人</label>
-            <InputText v-model="form.contact_person" class="w-full" /></div>
-          <div><label class="text-xs text-zinc-500 mb-1 block">联系方式</label>
-            <InputText v-model="form.contact_method" class="w-full" /></div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">对方单位</label>
+            <InputText v-model="form.party_name" class="w-full" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">联系人</label>
+            <InputText v-model="form.contact_person" class="w-full" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">联系方式</label>
+            <InputText v-model="form.contact_method" class="w-full" />
+          </div>
         </template>
 
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-xs text-zinc-500 mb-1 block">截止日期</label>
-            <DatePicker v-model="form.deadline" date-format="yy-mm-dd" class="w-full" /></div>
-          <div><label class="text-xs text-zinc-500 mb-1 block">实际日期</label>
-            <DatePicker v-model="form.submit_date" date-format="yy-mm-dd" class="w-full" /></div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">截止日期</label>
+            <DatePicker v-model="form.deadline" date-format="yy-mm-dd" class="w-full" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">实际日期</label>
+            <DatePicker v-model="form.submit_date" date-format="yy-mm-dd" class="w-full" />
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-xs text-zinc-500 mb-1 block">状态</label>
-            <Dropdown v-model="form.status" :options="pageConfig.statuses" option-label="label" option-value="value" class="w-full" /></div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">状态</label>
+            <Dropdown
+              v-model="form.status"
+              :options="pageConfig.statuses"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+            />
+          </div>
           <div v-if="routeDocType === 'approval'">
             <label class="text-xs text-zinc-500 mb-1 block">审批人</label>
             <InputText v-model="form.approver" class="w-full" placeholder="当前审批人" />
           </div>
         </div>
 
-        <div><label class="text-xs text-zinc-500 mb-1 block">摘要</label>
-          <Textarea v-model="form.summary" rows="2" class="w-full" /></div>
+        <div>
+          <label class="text-xs text-zinc-500 mb-1 block">摘要</label>
+          <Textarea v-model="form.summary" rows="2" class="w-full" />
+        </div>
 
-        <div><label class="text-xs text-zinc-500 mb-1 block">正文 (Markdown)</label>
-          <Textarea v-model="form.content" rows="4" class="w-full" /></div>
+        <div>
+          <label class="text-xs text-zinc-500 mb-1 block">正文 (Markdown)</label>
+          <Textarea v-model="form.content" rows="4" class="w-full" />
+        </div>
 
-        <div><label class="text-xs text-zinc-500 mb-1 block">附件路径</label>
-          <InputText v-model="form.file_path" class="w-full" placeholder="文件路径或链接" /></div>
+        <div>
+          <label class="text-xs text-zinc-500 mb-1 block">附件路径</label>
+          <InputText v-model="form.file_path" class="w-full" placeholder="文件路径或链接" />
+        </div>
 
         <Button label="保存" icon="pi pi-check" :loading="saving" @click="save" />
       </div>

@@ -7,17 +7,19 @@ const router = useRouter()
 const userRole = ref<string>('')
 
 const canViewAccountingCockpit = computed(() =>
-  ['accountant', 'finance_manager', 'finance_director', 'super_admin'].includes(userRole.value)
+  ['accountant', 'finance_manager', 'finance_director', 'super_admin'].includes(userRole.value),
 )
 const canViewFinanceCockpit = computed(() =>
-  ['finance_manager', 'finance_director', 'super_admin'].includes(userRole.value)
+  ['finance_manager', 'finance_director', 'super_admin'].includes(userRole.value),
 )
 
 onMounted(async () => {
   try {
     const me = await getMe()
     userRole.value = me.data.role
-  } catch { /* hidden if no role */ }
+  } catch {
+    /* hidden if no role */
+  }
 })
 </script>
 
@@ -33,9 +35,11 @@ onMounted(async () => {
       <div
         @click="canViewAccountingCockpit && router.push('/cockpit/accounting')"
         class="border rounded-sm p-6 transition-all shadow-sm hover:shadow-md select-none"
-        :class="canViewAccountingCockpit
-          ? 'bg-white border-stone-200 cursor-pointer hover:border-emerald-300'
-          : 'bg-stone-100 border-stone-200 opacity-60 cursor-not-allowed'"
+        :class="
+          canViewAccountingCockpit
+            ? 'bg-white border-stone-200 cursor-pointer hover:border-emerald-300'
+            : 'bg-stone-100 border-stone-200 opacity-60 cursor-not-allowed'
+        "
       >
         <div class="flex items-center gap-3 mb-3">
           <div class="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center">
@@ -61,9 +65,11 @@ onMounted(async () => {
       <div
         @click="canViewFinanceCockpit && router.push('/cockpit/finance')"
         class="border rounded-sm p-6 transition-all shadow-sm hover:shadow-md select-none"
-        :class="canViewFinanceCockpit
-          ? 'bg-white border-stone-200 cursor-pointer hover:border-amber-300'
-          : 'bg-stone-100 border-stone-200 opacity-60 cursor-not-allowed'"
+        :class="
+          canViewFinanceCockpit
+            ? 'bg-white border-stone-200 cursor-pointer hover:border-amber-300'
+            : 'bg-stone-100 border-stone-200 opacity-60 cursor-not-allowed'
+        "
       >
         <div class="flex items-center gap-3 mb-3">
           <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
@@ -77,7 +83,9 @@ onMounted(async () => {
         <div class="grid grid-cols-2 gap-2 text-xs text-stone-500">
           <span class="flex items-center gap-1"><i class="pi pi-check text-emerald-500 text-[10px]" /> 预算表现</span>
           <span class="flex items-center gap-1"><i class="pi pi-check text-emerald-500 text-[10px]" /> 现金流安全</span>
-          <span class="flex items-center gap-1"><i class="pi pi-check text-emerald-500 text-[10px]" /> 偿债/营运/盈利</span>
+          <span class="flex items-center gap-1"
+            ><i class="pi pi-check text-emerald-500 text-[10px]" /> 偿债/营运/盈利</span
+          >
           <span class="flex items-center gap-1"><i class="pi pi-check text-emerald-500 text-[10px]" /> 成长能力</span>
         </div>
         <div v-if="!canViewFinanceCockpit" class="mt-3 flex items-center gap-1 text-xs text-stone-400">

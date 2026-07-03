@@ -5,11 +5,25 @@
     <div class="flex gap-3 items-end mb-4 flex-wrap">
       <div>
         <label class="block text-sm mb-1">辅助维度</label>
-        <SelectButton v-model="filters.aux_type" :options="auxTypeOptions" optionLabel="label" optionValue="value" @change="loadAuxObjects" />
+        <SelectButton
+          v-model="filters.aux_type"
+          :options="auxTypeOptions"
+          optionLabel="label"
+          optionValue="value"
+          @change="loadAuxObjects"
+        />
       </div>
       <div>
         <label class="block text-sm mb-1">{{ auxLabel }}</label>
-        <Dropdown v-model="filters.aux_id" :options="auxObjects" optionLabel="name" optionValue="id" :filter="true" placeholder="选择对象" class="w-48" />
+        <Dropdown
+          v-model="filters.aux_id"
+          :options="auxObjects"
+          optionLabel="name"
+          optionValue="id"
+          :filter="true"
+          placeholder="选择对象"
+          class="w-48"
+        />
       </div>
       <div>
         <label class="block text-sm mb-1">科目代码(可选)</label>
@@ -28,21 +42,23 @@
 
     <div v-if="result">
       <div class="bg-gray-50 p-3 rounded mb-3">
-        <strong>{{ result.aux_name }}</strong> | 期初: {{ result.beginning_balance?.toLocaleString() }} | 借方: {{ result.total_debit?.toLocaleString() }} | 贷方: {{ result.total_credit?.toLocaleString() }} | 期末: {{ result.ending_balance?.toLocaleString() }}
+        <strong>{{ result.aux_name }}</strong> | 期初: {{ result.beginning_balance?.toLocaleString() }} | 借方:
+        {{ result.total_debit?.toLocaleString() }} | 贷方: {{ result.total_credit?.toLocaleString() }} | 期末:
+        {{ result.ending_balance?.toLocaleString() }}
       </div>
       <DataTable :value="result.entries" stripedRows>
-        <Column field="date" header="日期" style="width:7rem" />
-        <Column field="voucher_no" header="凭证号" style="width:7rem" />
-        <Column field="account_code" header="科目" style="width:6rem" />
-        <Column field="account_name" header="科目名称" style="width:8rem" />
+        <Column field="date" header="日期" style="width: 7rem" />
+        <Column field="voucher_no" header="凭证号" style="width: 7rem" />
+        <Column field="account_code" header="科目" style="width: 6rem" />
+        <Column field="account_name" header="科目名称" style="width: 8rem" />
         <Column field="summary" header="摘要" />
-        <Column field="debit" header="借方" style="width:8rem">
+        <Column field="debit" header="借方" style="width: 8rem">
           <template #body="{ data }">{{ data.debit ? data.debit.toLocaleString() : '' }}</template>
         </Column>
-        <Column field="credit" header="贷方" style="width:8rem">
+        <Column field="credit" header="贷方" style="width: 8rem">
           <template #body="{ data }">{{ data.credit ? data.credit.toLocaleString() : '' }}</template>
         </Column>
-        <Column field="balance" header="余额" style="width:8rem">
+        <Column field="balance" header="余额" style="width: 8rem">
           <template #body="{ data }">{{ data.balance?.toLocaleString() }}</template>
         </Column>
       </DataTable>
@@ -95,13 +111,17 @@ async function loadAuxObjects() {
     const type = filters.value.aux_type
     let data: any[] = []
     if (type === 'department') {
-      const res = await listDepartments(companyId); data = res.data
+      const res = await listDepartments(companyId)
+      data = res.data
     } else if (type === 'person') {
-      const res = await listPersons(companyId); data = res.data
+      const res = await listPersons(companyId)
+      data = res.data
     } else if (type === 'counterparty') {
-      const res = await listCounterparties(companyId); data = res.data
+      const res = await listCounterparties(companyId)
+      data = res.data
     } else if (type === 'project') {
-      const res = await listProjects(companyId); data = res.data
+      const res = await listProjects(companyId)
+      data = res.data
     }
     auxObjects.value = data
   } catch (err) {
@@ -118,8 +138,11 @@ async function search() {
   }
   try {
     const { data } = await getAuxLedger(
-      companyId, filters.value.aux_type, filters.value.aux_id,
-      filters.value.start_period, filters.value.end_period,
+      companyId,
+      filters.value.aux_type,
+      filters.value.aux_id,
+      filters.value.start_period,
+      filters.value.end_period,
       filters.value.account_code || undefined,
     )
     result.value = data

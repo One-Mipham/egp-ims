@@ -30,28 +30,45 @@ const canBypass = computed(() => ['super_admin', 'finance_director'].includes(cu
 const bypassDialog = ref(false)
 const bypassReason = ref('')
 
-const openBypass = (r: any) => { currentReport.value = r; bypassReason.value = ''; bypassDialog.value = true }
+const openBypass = (r: any) => {
+  currentReport.value = r
+  bypassReason.value = ''
+  bypassDialog.value = true
+}
 
 const doBypass = async () => {
   try {
     await bypassReport(currentReport.value.id, bypassReason.value)
     toast.add({ severity: 'success', summary: '已强制跳过', life: 2000 })
-    bypassDialog.value = false; fetchReports()
+    bypassDialog.value = false
+    fetchReports()
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '操作失败', detail: e.response?.data?.detail || e.message, life: 3000 })
   }
 }
 
 const statusLabels: Record<string, string> = {
-  draft: '草稿', submitted: '待审批', dept_approved: '部门已批',
-  finance_approved: '财务已批', director_approved: '总监已批',
-  unit_head_approved: '已审批', paid: '已付款', closed: '已归档', rejected: '已驳回',
+  draft: '草稿',
+  submitted: '待审批',
+  dept_approved: '部门已批',
+  finance_approved: '财务已批',
+  director_approved: '总监已批',
+  unit_head_approved: '已审批',
+  paid: '已付款',
+  closed: '已归档',
+  rejected: '已驳回',
 }
 
 const statusSeverity: Record<string, string> = {
-  draft: 'secondary', submitted: 'info', dept_approved: 'warn',
-  finance_approved: 'warn', director_approved: 'warn',
-  unit_head_approved: 'success', paid: 'success', closed: 'success', rejected: 'danger',
+  draft: 'secondary',
+  submitted: 'info',
+  dept_approved: 'warn',
+  finance_approved: 'warn',
+  director_approved: 'warn',
+  unit_head_approved: 'success',
+  paid: 'success',
+  closed: 'success',
+  rejected: 'danger',
 }
 
 const fetchReports = async () => {
@@ -61,7 +78,9 @@ const fetchReports = async () => {
     reports.value = res.data
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '加载失败', detail: e.response?.data?.detail || e.message, life: 3000 })
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 const filteredReports = computed(() => {
@@ -70,14 +89,23 @@ const filteredReports = computed(() => {
   return reports.value
 })
 
-const openApprove = (r: any) => { currentReport.value = r; comment.value = ''; approveDialog.value = true }
-const openReject = (r: any) => { currentReport.value = r; comment.value = ''; rejectDialog.value = true }
+const openApprove = (r: any) => {
+  currentReport.value = r
+  comment.value = ''
+  approveDialog.value = true
+}
+const openReject = (r: any) => {
+  currentReport.value = r
+  comment.value = ''
+  rejectDialog.value = true
+}
 
 const doApprove = async () => {
   try {
     await approveReport(currentReport.value.id, comment.value || undefined)
     toast.add({ severity: 'success', summary: '已批准', life: 2000 })
-    approveDialog.value = false; fetchReports()
+    approveDialog.value = false
+    fetchReports()
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '操作失败', detail: e.response?.data?.detail || e.message, life: 3000 })
   }
@@ -87,7 +115,8 @@ const doReject = async () => {
   try {
     await rejectReport(currentReport.value.id, comment.value || undefined)
     toast.add({ severity: 'success', summary: '已驳回', life: 2000 })
-    rejectDialog.value = false; fetchReports()
+    rejectDialog.value = false
+    fetchReports()
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '操作失败', detail: e.response?.data?.detail || e.message, life: 3000 })
   }
@@ -130,17 +159,61 @@ onMounted(fetchReports)
       </Column>
       <Column header="状态">
         <template #body="slotProps">
-          <Tag :value="statusLabels[slotProps.data.status] || slotProps.data.status" :severity="statusSeverity[slotProps.data.status] || 'secondary'" />
+          <Tag
+            :value="statusLabels[slotProps.data.status] || slotProps.data.status"
+            :severity="statusSeverity[slotProps.data.status] || 'secondary'"
+          />
         </template>
       </Column>
-      <Column header="操作" style="width:12rem">
+      <Column header="操作" style="width: 12rem">
         <template #body="slotProps">
           <div class="flex gap-1">
-            <Button icon="pi pi-eye" size="small" text rounded @click="router.push(`/finance/expenses/report-form/${slotProps.data.id}`)" />
-            <Button v-if="slotProps.data.current_approver_id === userId" icon="pi pi-check" size="small" text rounded severity="success" @click="openApprove(slotProps.data)" />
-            <Button v-if="slotProps.data.current_approver_id === userId" icon="pi pi-times" size="small" text rounded severity="danger" @click="openReject(slotProps.data)" />
-            <Button v-if="slotProps.data.applicant_id === userId && ['submitted', 'dept_approved'].includes(slotProps.data.status)" icon="pi pi-undo" size="small" text rounded severity="warn" @click="doCancel(slotProps.data.id)" />
-            <Button v-if="canBypass && slotProps.data.current_approver_id" icon="pi pi-forward" size="small" text rounded severity="warn" @click="openBypass(slotProps.data)" v-tooltip.top="'强制跳过'" />
+            <Button
+              icon="pi pi-eye"
+              size="small"
+              text
+              rounded
+              @click="router.push(`/finance/expenses/report-form/${slotProps.data.id}`)"
+            />
+            <Button
+              v-if="slotProps.data.current_approver_id === userId"
+              icon="pi pi-check"
+              size="small"
+              text
+              rounded
+              severity="success"
+              @click="openApprove(slotProps.data)"
+            />
+            <Button
+              v-if="slotProps.data.current_approver_id === userId"
+              icon="pi pi-times"
+              size="small"
+              text
+              rounded
+              severity="danger"
+              @click="openReject(slotProps.data)"
+            />
+            <Button
+              v-if="
+                slotProps.data.applicant_id === userId && ['submitted', 'dept_approved'].includes(slotProps.data.status)
+              "
+              icon="pi pi-undo"
+              size="small"
+              text
+              rounded
+              severity="warn"
+              @click="doCancel(slotProps.data.id)"
+            />
+            <Button
+              v-if="canBypass && slotProps.data.current_approver_id"
+              icon="pi pi-forward"
+              size="small"
+              text
+              rounded
+              severity="warn"
+              @click="openBypass(slotProps.data)"
+              v-tooltip.top="'强制跳过'"
+            />
           </div>
         </template>
       </Column>

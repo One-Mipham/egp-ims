@@ -19,7 +19,9 @@ async function load() {
   }
 }
 
-function doPrint() { window.print() }
+function doPrint() {
+  window.print()
+}
 
 onMounted(load)
 </script>
@@ -38,10 +40,10 @@ onMounted(load)
       <table class="data-table border-collapse border border-stone-300">
         <thead>
           <tr class="border-b-2 border-stone-400 bg-stone-50">
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width:100px">部门编码</th>
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width:180px">部门名称</th>
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width:100px">负责人</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200" style="width:60px">状态</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 100px">部门编码</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 180px">部门名称</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 100px">负责人</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 60px">状态</th>
           </tr>
         </thead>
         <tbody>
@@ -59,9 +61,23 @@ onMounted(load)
 
 <style scoped>
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0 auto; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 auto;
+  }
 }
 </style>

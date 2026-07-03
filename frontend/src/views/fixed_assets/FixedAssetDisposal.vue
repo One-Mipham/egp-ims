@@ -64,22 +64,49 @@ onMounted(load)
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">资产编号</th><th class="p-2 border">名称</th><th class="p-2 border">类别</th>
-          <th class="p-2 border text-right">原值</th><th class="p-2 border text-right">净值</th>
-          <th class="p-2 border">状态</th><th class="p-2 border">存放地点</th><th class="p-2 border">操作</th>
+          <th class="p-2 border">资产编号</th>
+          <th class="p-2 border">名称</th>
+          <th class="p-2 border">类别</th>
+          <th class="p-2 border text-right">原值</th>
+          <th class="p-2 border text-right">净值</th>
+          <th class="p-2 border">状态</th>
+          <th class="p-2 border">存放地点</th>
+          <th class="p-2 border">操作</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in filteredItems" :key="item.id" class="hover:bg-zinc-50" :class="item.status === '已处置' || item.status === '报废' ? 'opacity-50' : ''">
+        <tr
+          v-for="item in filteredItems"
+          :key="item.id"
+          class="hover:bg-zinc-50"
+          :class="item.status === '已处置' || item.status === '报废' ? 'opacity-50' : ''"
+        >
           <td class="p-2 border font-mono text-xs">{{ item.asset_code }}</td>
           <td class="p-2 border">{{ item.name }}</td>
           <td class="p-2 border text-xs">{{ item.category }}</td>
           <td class="p-2 border text-right">{{ (item.original_value || 0).toLocaleString() }}</td>
           <td class="p-2 border text-right">{{ (item.net_value || 0).toLocaleString() }}</td>
-          <td class="p-2 border"><span :class="item.status === '使用中' ? 'text-green-600' : item.status === '已处置' ? 'text-zinc-400' : 'text-red-500'">{{ item.status }}</span></td>
+          <td class="p-2 border">
+            <span
+              :class="
+                item.status === '使用中'
+                  ? 'text-green-600'
+                  : item.status === '已处置'
+                    ? 'text-zinc-400'
+                    : 'text-red-500'
+              "
+              >{{ item.status }}</span
+            >
+          </td>
           <td class="p-2 border text-xs">{{ item.location }}</td>
           <td class="p-2 border">
-            <button v-if="item.status !== '已处置' && item.status !== '报废'" @click="openDisposal(item)" class="text-orange-600 text-xs">处置</button>
+            <button
+              v-if="item.status !== '已处置' && item.status !== '报废'"
+              @click="openDisposal(item)"
+              class="text-orange-600 text-xs"
+            >
+              处置
+            </button>
             <span v-else class="text-xs text-zinc-400">--</span>
           </td>
         </tr>
@@ -90,25 +117,49 @@ onMounted(load)
       <div class="bg-white rounded-lg w-[440px] p-6">
         <h2 class="text-lg font-bold mb-4">资产处置 - {{ selectedItem?.name }}</h2>
         <div class="bg-zinc-50 rounded p-3 mb-3 text-sm">
-          <div class="flex justify-between"><span>原值</span><span>{{ (selectedItem?.original_value || 0).toLocaleString() }}</span></div>
-          <div class="flex justify-between"><span>累计折旧</span><span>{{ (selectedItem?.accumulated_depreciation || 0).toLocaleString() }}</span></div>
-          <div class="flex justify-between"><span>净值</span><span class="font-bold">{{ (selectedItem?.net_value || 0).toLocaleString() }}</span></div>
-          <div v-if="disposalProceeds > 0" class="flex justify-between mt-1 pt-1 border-t"><span>预计处置损益</span><span :class="(disposalProceeds - (selectedItem?.net_value || 0)) >= 0 ? 'text-green-600' : 'text-red-500'">{{ (disposalProceeds - (selectedItem?.net_value || 0)).toLocaleString() }}</span></div>
+          <div class="flex justify-between">
+            <span>原值</span><span>{{ (selectedItem?.original_value || 0).toLocaleString() }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>累计折旧</span><span>{{ (selectedItem?.accumulated_depreciation || 0).toLocaleString() }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span>净值</span><span class="font-bold">{{ (selectedItem?.net_value || 0).toLocaleString() }}</span>
+          </div>
+          <div v-if="disposalProceeds > 0" class="flex justify-between mt-1 pt-1 border-t">
+            <span>预计处置损益</span
+            ><span
+              :class="disposalProceeds - (selectedItem?.net_value || 0) >= 0 ? 'text-green-600' : 'text-red-500'"
+              >{{ (disposalProceeds - (selectedItem?.net_value || 0)).toLocaleString() }}</span
+            >
+          </div>
         </div>
         <div class="space-y-3">
           <div>
             <label class="text-xs text-zinc-500">处置类型</label>
             <select v-model="disposalType" class="w-full border rounded px-2 py-1.5 text-sm">
-              <option value="已处置">已处置</option><option value="报废">报废</option>
+              <option value="已处置">已处置</option>
+              <option value="报废">报废</option>
             </select>
           </div>
-          <div><label class="text-xs text-zinc-500">处置日期</label><input type="date" v-model="disposalDate" class="w-full border rounded px-2 py-1.5 text-sm" /></div>
-          <div><label class="text-xs text-zinc-500">处置收入</label><input type="number" v-model.number="disposalProceeds" class="w-full border rounded px-2 py-1.5 text-sm" /></div>
-          <div><label class="text-xs text-zinc-500">处置原因</label><textarea v-model="disposalReason" rows="2" class="w-full border rounded px-2 py-1.5 text-sm"></textarea></div>
+          <div>
+            <label class="text-xs text-zinc-500">处置日期</label
+            ><input type="date" v-model="disposalDate" class="w-full border rounded px-2 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500">处置收入</label
+            ><input type="number" v-model.number="disposalProceeds" class="w-full border rounded px-2 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500">处置原因</label
+            ><textarea v-model="disposalReason" rows="2" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
+          </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
           <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
-          <button @click="confirmDisposal" class="px-4 py-1.5 bg-orange-600 text-white rounded text-sm">确认处置</button>
+          <button @click="confirmDisposal" class="px-4 py-1.5 bg-orange-600 text-white rounded text-sm">
+            确认处置
+          </button>
         </div>
       </div>
     </div>

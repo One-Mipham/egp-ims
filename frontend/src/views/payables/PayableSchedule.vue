@@ -36,7 +36,9 @@ const totalUpcoming = computed(() => {
 })
 
 const overdueTotal = computed(() =>
-  items.value.filter((i: any) => i.balance > 0 && i.aging_days > 0).reduce((s: number, i: any) => s + (i.balance || 0), 0)
+  items.value
+    .filter((i: any) => i.balance > 0 && i.aging_days > 0)
+    .reduce((s: number, i: any) => s + (i.balance || 0), 0),
 )
 
 async function load() {
@@ -74,8 +76,10 @@ onMounted(load)
       <table class="w-full text-sm border-collapse">
         <thead>
           <tr class="bg-zinc-50 text-left">
-            <th class="p-2 border text-xs">供应商</th><th class="p-2 border text-xs">发票号</th>
-            <th class="p-2 border text-xs text-right">金额</th><th class="p-2 border text-xs text-right">余额</th>
+            <th class="p-2 border text-xs">供应商</th>
+            <th class="p-2 border text-xs">发票号</th>
+            <th class="p-2 border text-xs text-right">金额</th>
+            <th class="p-2 border text-xs text-right">余额</th>
             <th class="p-2 border text-xs">状态</th>
           </tr>
         </thead>
@@ -84,7 +88,9 @@ onMounted(load)
             <td class="p-2 border text-xs">{{ item.supplier_name }}</td>
             <td class="p-2 border text-xs font-mono">{{ item.invoice_no }}</td>
             <td class="p-2 border text-xs text-right">{{ (item.amount || 0).toLocaleString() }}</td>
-            <td class="p-2 border text-xs text-right font-bold text-red-600">{{ (item.balance || 0).toLocaleString() }}</td>
+            <td class="p-2 border text-xs text-right font-bold text-red-600">
+              {{ (item.balance || 0).toLocaleString() }}
+            </td>
             <td class="p-2 border text-xs">{{ item.status }}</td>
           </tr>
         </tbody>

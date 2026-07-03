@@ -25,24 +25,28 @@ const filterCustomer = ref<number | null>(null)
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 const emptyForm = () => ({
-  contract_no: '', counterparty_id: null as number | null,
+  contract_no: '',
+  counterparty_id: null as number | null,
   department_id: null as number | null,
-  subject: '', amount: 0, sign_date: '', notes: '',
+  subject: '',
+  amount: 0,
+  sign_date: '',
+  notes: '',
 })
 const form = ref(emptyForm())
 
 const STATUS_LABELS: Record<string, string> = {
-  active: '执行中', completed: '已完成', terminated: '已终止',
+  active: '执行中',
+  completed: '已完成',
+  terminated: '已终止',
 }
 
 const filteredContracts = computed(() => {
   let result = contracts.value
   if (searchKeyword.value) {
     const q = searchKeyword.value.toLowerCase()
-    result = result.filter((c: any) =>
-      (c.contract_no || '').includes(q) ||
-      (c.subject || '').includes(q) ||
-      (c.notes || '').includes(q)
+    result = result.filter(
+      (c: any) => (c.contract_no || '').includes(q) || (c.subject || '').includes(q) || (c.notes || '').includes(q),
     )
   }
   if (filterDepartment.value) {
@@ -65,8 +69,11 @@ async function load() {
     contracts.value = cRes.data
     counterparties.value = cpRes.data
     departments.value = dRes.data
-  } catch { /* API may not exist yet */ }
-  finally { loading.value = false }
+  } catch {
+    /* API may not exist yet */
+  } finally {
+    loading.value = false
+  }
 }
 
 function getCustomerName(id: number | null) {
@@ -90,9 +97,13 @@ function openAdd() {
 function openEdit(row: any) {
   editingId.value = row.id
   form.value = {
-    contract_no: row.contract_no, counterparty_id: row.counterparty_id,
-    department_id: row.department_id, subject: row.subject || '',
-    amount: row.amount, sign_date: row.sign_date || '', notes: row.notes || '',
+    contract_no: row.contract_no,
+    counterparty_id: row.counterparty_id,
+    department_id: row.department_id,
+    subject: row.subject || '',
+    amount: row.amount,
+    sign_date: row.sign_date || '',
+    notes: row.notes || '',
   }
   showDialog.value = true
 }
@@ -108,8 +119,11 @@ async function handleSave() {
     }
     showDialog.value = false
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '保存失败') }
-  finally { saving.value = false }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '保存失败')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(id: number) {
@@ -117,7 +131,9 @@ async function handleDelete(id: number) {
   try {
     await api.delete(`/investments/init/contracts/${id}`)
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '删除失败') }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '删除失败')
+  }
 }
 
 onMounted(load)
@@ -136,32 +152,49 @@ onMounted(load)
     <!-- Search filters -->
     <div class="flex gap-2 items-center mb-3 flex-wrap">
       <InputText v-model="searchKeyword" placeholder="合同号码/核心内容/关键字..." class="w-64" />
-      <Dropdown v-model="filterDepartment" :options="departments" optionLabel="name" optionValue="id"
-                placeholder="经办部门" class="w-36" showClear />
-      <Dropdown v-model="filterCustomer" :options="counterparties" optionLabel="name" optionValue="id"
-                placeholder="客户名称" class="w-40" showClear filter />
+      <Dropdown
+        v-model="filterDepartment"
+        :options="departments"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="经办部门"
+        class="w-36"
+        showClear
+      />
+      <Dropdown
+        v-model="filterCustomer"
+        :options="counterparties"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="客户名称"
+        class="w-40"
+        showClear
+        filter
+      />
     </div>
 
     <DataTable :value="filteredContracts" :loading="loading" stripedRows size="small" paginator :rows="10">
-      <Column field="contract_no" header="合同号码" sortable style="width:130px" />
-      <Column header="客户名称" sortable style="width:150px">
+      <Column field="contract_no" header="合同号码" sortable style="width: 130px" />
+      <Column header="客户名称" sortable style="width: 150px">
         <template #body="{ data }">{{ getCustomerName(data.counterparty_id) }}</template>
       </Column>
       <Column field="subject" header="核心内容" sortable />
-      <Column header="经办部门" sortable style="width:100px">
+      <Column header="经办部门" sortable style="width: 100px">
         <template #body="{ data }">{{ getDepartmentName(data.department_id) }}</template>
       </Column>
-      <Column field="amount" header="金额" sortable style="width:120px">
+      <Column field="amount" header="金额" sortable style="width: 120px">
         <template #body="{ data }">{{ data.amount.toLocaleString() }}</template>
       </Column>
-      <Column field="sign_date" header="签订日期" sortable style="width:100px" />
-      <Column field="status" header="状态" sortable style="width:80px">
+      <Column field="sign_date" header="签订日期" sortable style="width: 100px" />
+      <Column field="status" header="状态" sortable style="width: 80px">
         <template #body="{ data }">
-          <Tag :value="STATUS_LABELS[data.status] || data.status"
-               :severity="data.status === 'active' ? 'info' : data.status === 'completed' ? 'success' : 'warn'" />
+          <Tag
+            :value="STATUS_LABELS[data.status] || data.status"
+            :severity="data.status === 'active' ? 'info' : data.status === 'completed' ? 'success' : 'warn'"
+          />
         </template>
       </Column>
-      <Column header="操作" style="width:140px">
+      <Column header="操作" style="width: 140px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
@@ -186,13 +219,26 @@ onMounted(load)
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm mb-1">客户名称</label>
-            <Dropdown v-model="form.counterparty_id" :options="counterparties" optionLabel="name" optionValue="id"
-                      class="w-full" showClear filter />
+            <Dropdown
+              v-model="form.counterparty_id"
+              :options="counterparties"
+              optionLabel="name"
+              optionValue="id"
+              class="w-full"
+              showClear
+              filter
+            />
           </div>
           <div>
             <label class="block text-sm mb-1">经办部门</label>
-            <Dropdown v-model="form.department_id" :options="departments" optionLabel="name" optionValue="id"
-                      class="w-full" showClear />
+            <Dropdown
+              v-model="form.department_id"
+              :options="departments"
+              optionLabel="name"
+              optionValue="id"
+              class="w-full"
+              showClear
+            />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">

@@ -10,7 +10,13 @@ import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 import Tag from 'primevue/tag'
 import Textarea from 'primevue/textarea'
-import { listExpensePolicies, createExpensePolicy, updateExpensePolicy, deleteExpensePolicy, listExpenseItems } from '@/api/expenses'
+import {
+  listExpensePolicies,
+  createExpensePolicy,
+  updateExpensePolicy,
+  deleteExpensePolicy,
+  listExpenseItems,
+} from '@/api/expenses'
 
 const toast = useToast()
 const companyId = Number(localStorage.getItem('company_id') || '1')
@@ -23,7 +29,8 @@ const loading = ref(false)
 
 const form = ref({
   expense_item_id: null as number | null,
-  country: '', region: '',
+  country: '',
+  region: '',
   department_id: null as number | null,
   position_level: null as number | null,
   policy_type: 'event',
@@ -43,35 +50,49 @@ const policyTypeOptions = [
 const fetchAll = async () => {
   loading.value = true
   try {
-    const [pRes, iRes] = await Promise.all([
-      listExpensePolicies(companyId), listExpenseItems(companyId),
-    ])
+    const [pRes, iRes] = await Promise.all([listExpensePolicies(companyId), listExpenseItems(companyId)])
     policies.value = pRes.data
     expenseItems.value = iRes.data
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '加载失败', detail: e.message, life: 3000 })
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 const openCreate = () => {
-  isEdit.value = false; editId.value = null
+  isEdit.value = false
+  editId.value = null
   form.value = {
-    expense_item_id: null, country: '', region: '',
-    department_id: null, position_level: null,
-    policy_type: 'event', max_amount: 0, currency: 'CNY',
-    effective_from: '', effective_to: '', notes: '',
+    expense_item_id: null,
+    country: '',
+    region: '',
+    department_id: null,
+    position_level: null,
+    policy_type: 'event',
+    max_amount: 0,
+    currency: 'CNY',
+    effective_from: '',
+    effective_to: '',
+    notes: '',
   }
   dialog.value = true
 }
 
 const openEdit = (p: any) => {
-  isEdit.value = true; editId.value = p.id
+  isEdit.value = true
+  editId.value = p.id
   form.value = {
-    expense_item_id: p.expense_item_id, country: p.country || '',
-    region: p.region || '', department_id: p.department_id,
-    position_level: p.position_level, policy_type: p.policy_type,
-    max_amount: p.max_amount, currency: p.currency || 'CNY',
-    effective_from: p.effective_from, effective_to: p.effective_to || '',
+    expense_item_id: p.expense_item_id,
+    country: p.country || '',
+    region: p.region || '',
+    department_id: p.department_id,
+    position_level: p.position_level,
+    policy_type: p.policy_type,
+    max_amount: p.max_amount,
+    currency: p.currency || 'CNY',
+    effective_from: p.effective_from,
+    effective_to: p.effective_to || '',
     notes: p.notes || '',
   }
   dialog.value = true
@@ -138,7 +159,15 @@ onMounted(fetchAll)
         <Column field="region" header="地区" />
         <Column field="policy_type" header="标准类型">
           <template #body="slotProps">
-            <Tag :value="slotProps.data.policy_type === 'daily' ? '日标准' : slotProps.data.policy_type === 'per_person' ? '人均' : '单次'" />
+            <Tag
+              :value="
+                slotProps.data.policy_type === 'daily'
+                  ? '日标准'
+                  : slotProps.data.policy_type === 'per_person'
+                    ? '人均'
+                    : '单次'
+              "
+            />
           </template>
         </Column>
         <Column field="max_amount" header="上限金额">
@@ -150,7 +179,7 @@ onMounted(fetchAll)
         <Column field="effective_to" header="失效日期">
           <template #body="slotProps">{{ slotProps.data.effective_to || '长期' }}</template>
         </Column>
-        <Column header="操作" style="width:8rem">
+        <Column header="操作" style="width: 8rem">
           <template #body="slotProps">
             <Button icon="pi pi-pencil" size="small" text rounded @click="openEdit(slotProps.data)" />
             <Button icon="pi pi-trash" size="small" text rounded severity="danger" @click="remove(slotProps.data.id)" />
@@ -159,16 +188,35 @@ onMounted(fetchAll)
       </DataTable>
     </div>
 
-    <Dialog v-model:visible="dialog" :header="isEdit ? '编辑费用标准' : '新增费用标准'" :modal="true" :style="{ width: '32rem' }">
+    <Dialog
+      v-model:visible="dialog"
+      :header="isEdit ? '编辑费用标准' : '新增费用标准'"
+      :modal="true"
+      :style="{ width: '32rem' }"
+    >
       <div class="flex flex-col gap-3">
         <div class="grid grid-cols-2 gap-3">
           <div class="flex flex-col gap-1">
             <label class="text-sm font-medium">费用类型</label>
-            <Dropdown v-model="form.expense_item_id" :options="expenseItems" optionLabel="name" optionValue="id" class="w-full" showClear placeholder="选择费用类型" />
+            <Dropdown
+              v-model="form.expense_item_id"
+              :options="expenseItems"
+              optionLabel="name"
+              optionValue="id"
+              class="w-full"
+              showClear
+              placeholder="选择费用类型"
+            />
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-sm font-medium">标准类型</label>
-            <Dropdown v-model="form.policy_type" :options="policyTypeOptions" optionLabel="label" optionValue="value" class="w-full" />
+            <Dropdown
+              v-model="form.policy_type"
+              :options="policyTypeOptions"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">

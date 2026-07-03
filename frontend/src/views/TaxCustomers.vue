@@ -17,18 +17,30 @@ const searchText = ref('')
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 const emptyForm = () => ({
-  name: '', short_name: '', tax_number: '', bank_account: '',
-  bank_name: '', address: '', phone: '', contact_person: '',
-  website: '', email: '', zip_code: '', category: '客户',
+  name: '',
+  short_name: '',
+  tax_number: '',
+  bank_account: '',
+  bank_name: '',
+  address: '',
+  phone: '',
+  contact_person: '',
+  website: '',
+  email: '',
+  zip_code: '',
+  category: '客户',
 })
 const form = ref(emptyForm())
 
 const filteredCustomers = computed(() => {
   if (!searchText.value) return customers.value
   const q = searchText.value.toLowerCase()
-  return customers.value.filter((c: any) =>
-    (c.name || '').includes(q) || (c.tax_number || '').includes(q) ||
-    (c.code || '').includes(q) || (c.contact_person || '').includes(q)
+  return customers.value.filter(
+    (c: any) =>
+      (c.name || '').includes(q) ||
+      (c.tax_number || '').includes(q) ||
+      (c.code || '').includes(q) ||
+      (c.contact_person || '').includes(q),
   )
 })
 
@@ -37,7 +49,9 @@ async function load() {
   try {
     const res = await listCounterparties(companyId.value)
     customers.value = res.data
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 function openAdd() {
@@ -49,12 +63,18 @@ function openAdd() {
 function openEdit(row: any) {
   editingId.value = row.id
   form.value = {
-    name: row.name || '', short_name: row.short_name || '',
-    tax_number: row.tax_number || '', bank_account: row.bank_account || '',
-    bank_name: row.bank_name || '', address: row.address || '',
-    phone: row.phone || '', contact_person: row.contact_person || '',
-    website: row.website || '', email: row.email || '',
-    zip_code: row.zip_code || '', category: row.category || '客户',
+    name: row.name || '',
+    short_name: row.short_name || '',
+    tax_number: row.tax_number || '',
+    bank_account: row.bank_account || '',
+    bank_name: row.bank_name || '',
+    address: row.address || '',
+    phone: row.phone || '',
+    contact_person: row.contact_person || '',
+    website: row.website || '',
+    email: row.email || '',
+    zip_code: row.zip_code || '',
+    category: row.category || '客户',
   }
   showDialog.value = true
 }
@@ -77,7 +97,9 @@ async function handleSave(saveAndNew: boolean) {
     await load()
   } catch (e: any) {
     alert(e.response?.data?.detail || '保存失败')
-  } finally { saving.value = false }
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(id: number) {
@@ -85,7 +107,9 @@ async function handleDelete(id: number) {
   try {
     await api.delete(`/counterparties/${id}`)
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '删除失败') }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '删除失败')
+  }
 }
 
 onMounted(load)
@@ -101,18 +125,26 @@ onMounted(load)
     </div>
 
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
-      <DataTable :value="filteredCustomers" :loading="loading" stripedRows paginator :rows="15" class="shadow-sm" tableStyle="min-width: auto">
-        <Column header="序号" style="width:60px">
+      <DataTable
+        :value="filteredCustomers"
+        :loading="loading"
+        stripedRows
+        paginator
+        :rows="15"
+        class="shadow-sm"
+        tableStyle="min-width: auto"
+      >
+        <Column header="序号" style="width: 60px">
           <template #body="{ index }">{{ index + 1 }}</template>
         </Column>
-        <Column field="code" header="编码" style="width:80px" />
-        <Column field="name" header="客户名称" style="width:180px" />
-        <Column field="tax_number" header="税号" style="width:140px" />
-        <Column field="bank_name" header="开户银行" style="width:140px" />
-        <Column field="bank_account" header="银行账号" style="width:150px" />
-        <Column field="contact_person" header="联系人" style="width:80px" />
-        <Column field="phone" header="电话" style="width:110px" />
-        <Column header="操作" style="width:120px">
+        <Column field="code" header="编码" style="width: 80px" />
+        <Column field="name" header="客户名称" style="width: 180px" />
+        <Column field="tax_number" header="税号" style="width: 140px" />
+        <Column field="bank_name" header="开户银行" style="width: 140px" />
+        <Column field="bank_account" header="银行账号" style="width: 150px" />
+        <Column field="contact_person" header="联系人" style="width: 80px" />
+        <Column field="phone" header="电话" style="width: 110px" />
+        <Column header="操作" style="width: 120px">
           <template #body="{ data }">
             <Button label="编辑" text severity="info" size="small" @click="openEdit(data)" />
             <Button label="停用" text severity="danger" size="small" @click="handleDelete(data.id)" />

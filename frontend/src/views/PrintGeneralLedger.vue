@@ -25,7 +25,9 @@ async function load() {
   }
 }
 
-function doPrint() { window.print() }
+function doPrint() {
+  window.print()
+}
 
 onMounted(load)
 </script>
@@ -34,7 +36,12 @@ onMounted(load)
   <div>
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2 items-center">
-        <input v-model="currentPeriod" type="month" class="px-3 py-2 border border-zinc-300 rounded-sm text-sm" @change="load" />
+        <input
+          v-model="currentPeriod"
+          type="month"
+          class="px-3 py-2 border border-zinc-300 rounded-sm text-sm"
+          @change="load"
+        />
         <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!data" />
       </div>
     </div>
@@ -51,7 +58,7 @@ onMounted(load)
       <table class="data-table border-collapse border border-stone-300">
         <thead>
           <tr class="border-b-2 border-stone-400 bg-stone-50">
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width:90px">科目编码</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 90px">科目编码</th>
             <th class="text-left py-1.5 px-2 border border-stone-200">科目名称</th>
             <th class="text-right py-1.5 px-2 border border-stone-200 report-number">期初余额</th>
             <th class="text-right py-1.5 px-2 border border-stone-200 report-number">本期借方</th>
@@ -76,9 +83,23 @@ onMounted(load)
 
 <style scoped>
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0 auto; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 auto;
+  }
 }
 </style>

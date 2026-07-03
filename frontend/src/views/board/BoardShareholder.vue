@@ -12,7 +12,10 @@ import Dropdown from 'primevue/dropdown'
 import DatePicker from 'primevue/datepicker'
 import {
   type BoardShareholderData,
-  listShareholders, createShareholder, updateShareholder, deleteShareholder,
+  listShareholders,
+  createShareholder,
+  updateShareholder,
+  deleteShareholder,
 } from '@/api/board'
 
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
@@ -61,8 +64,11 @@ async function load() {
   try {
     const res = await listShareholders(companyId.value)
     data.value = res.data || []
-  } catch { /* */ }
-  finally { loading.value = false }
+  } catch {
+    /* */
+  } finally {
+    loading.value = false
+  }
 }
 
 function openAdd() {
@@ -130,8 +136,11 @@ async function save() {
     }
     showDialog.value = false
     await load()
-  } catch (e: any) { alert(e?.response?.data?.detail || '保存失败') }
-  finally { saving.value = false }
+  } catch (e: any) {
+    alert(e?.response?.data?.detail || '保存失败')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(id: number) {
@@ -152,29 +161,32 @@ onMounted(load)
 
     <div class="form-card overflow-x-auto">
       <DataTable :value="data" :loading="loading" stripedRows class="text-xs" paginator :rows="15">
-        <Column field="name" header="股东名称" style="min-width:140px" />
-        <Column field="share_type" header="股份类型" style="width:100px" />
-        <Column field="share_count" header="持股数量" style="width:100px">
+        <Column field="name" header="股东名称" style="min-width: 140px" />
+        <Column field="share_type" header="股份类型" style="width: 100px" />
+        <Column field="share_count" header="持股数量" style="width: 100px">
           <template #body="{ data: row }">{{ row.share_count.toLocaleString() }}</template>
         </Column>
-        <Column field="share_ratio" header="持股比例" style="width:100px">
+        <Column field="share_ratio" header="持股比例" style="width: 100px">
           <template #body="{ data: row }">{{ row.share_ratio }}%</template>
         </Column>
-        <Column field="contact_person" header="联系人" style="width:90px">
+        <Column field="contact_person" header="联系人" style="width: 90px">
           <template #body="{ data: row }">{{ row.contact_person || '—' }}</template>
         </Column>
-        <Column field="contact_phone" header="电话" style="width:120px">
+        <Column field="contact_phone" header="电话" style="width: 120px">
           <template #body="{ data: row }">{{ row.contact_phone || '—' }}</template>
         </Column>
-        <Column field="entry_date" header="入股日期" style="width:100px">
+        <Column field="entry_date" header="入股日期" style="width: 100px">
           <template #body="{ data: row }">{{ row.entry_date || '—' }}</template>
         </Column>
-        <Column header="状态" style="width:80px">
+        <Column header="状态" style="width: 80px">
           <template #body="{ data: row }">
-            <Tag :value="row.status === 'active' ? '有效' : '失效'" :severity="row.status === 'active' ? 'success' : 'danger'" />
+            <Tag
+              :value="row.status === 'active' ? '有效' : '失效'"
+              :severity="row.status === 'active' ? 'success' : 'danger'"
+            />
           </template>
         </Column>
-        <Column header="操作" style="width:110px">
+        <Column header="操作" style="width: 110px">
           <template #body="{ data: row }">
             <Button label="编辑" text size="small" @click="openEdit(row)" />
             <Button label="删除" text severity="danger" size="small" @click="handleDelete(row.id)" />
@@ -183,41 +195,81 @@ onMounted(load)
       </DataTable>
     </div>
 
-    <Dialog v-model:visible="showDialog" :header="editingId ? '编辑股东' : '新增股东'" :style="{ width: '500px' }" modal>
+    <Dialog
+      v-model:visible="showDialog"
+      :header="editingId ? '编辑股东' : '新增股东'"
+      :style="{ width: '500px' }"
+      modal
+    >
       <div class="flex flex-col gap-3 py-4 text-sm">
-        <div><label class="text-xs text-zinc-500 mb-1 block">股东名称 *</label>
-          <InputText v-model="form.name" class="w-full" required /></div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-xs text-zinc-500 mb-1 block">股份类型</label>
-            <Dropdown v-model="form.share_type" :options="shareTypeOptions" option-label="label" option-value="value" class="w-full" /></div>
-          <div><label class="text-xs text-zinc-500 mb-1 block">状态</label>
-            <Dropdown v-model="form.status" :options="[{ label: '有效', value: 'active' }, { label: '失效', value: 'inactive' }]" option-label="label" option-value="value" class="w-full" /></div>
+        <div>
+          <label class="text-xs text-zinc-500 mb-1 block">股东名称 *</label>
+          <InputText v-model="form.name" class="w-full" required />
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-xs text-zinc-500 mb-1 block">持股数量</label>
-            <InputNumber v-model="form.share_count" :min="0" class="w-full" /></div>
-          <div><label class="text-xs text-zinc-500 mb-1 block">持股比例 (%)</label>
-            <InputNumber v-model="form.share_ratio" :min="0" :max="100" :minFractionDigits="2" class="w-full" /></div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">股份类型</label>
+            <Dropdown
+              v-model="form.share_type"
+              :options="shareTypeOptions"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">状态</label>
+            <Dropdown
+              v-model="form.status"
+              :options="[
+                { label: '有效', value: 'active' },
+                { label: '失效', value: 'inactive' },
+              ]"
+              option-label="label"
+              option-value="value"
+              class="w-full"
+            />
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-xs text-zinc-500 mb-1 block">联系人</label>
-            <InputText v-model="form.contact_person" class="w-full" /></div>
-          <div><label class="text-xs text-zinc-500 mb-1 block">电话</label>
-            <InputText v-model="form.contact_phone" class="w-full" /></div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">持股数量</label>
+            <InputNumber v-model="form.share_count" :min="0" class="w-full" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">持股比例 (%)</label>
+            <InputNumber v-model="form.share_ratio" :min="0" :max="100" :minFractionDigits="2" class="w-full" />
+          </div>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-xs text-zinc-500 mb-1 block">邮箱</label>
-            <InputText v-model="form.contact_email" class="w-full" /></div>
-          <div><label class="text-xs text-zinc-500 mb-1 block">入股日期</label>
-            <DatePicker v-model="form.entry_date" date-format="yy-mm-dd" class="w-full" /></div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">联系人</label>
+            <InputText v-model="form.contact_person" class="w-full" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">电话</label>
+            <InputText v-model="form.contact_phone" class="w-full" />
+          </div>
         </div>
 
-        <div><label class="text-xs text-zinc-500 mb-1 block">备注</label>
-          <Textarea v-model="form.notes" rows="3" class="w-full" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">邮箱</label>
+            <InputText v-model="form.contact_email" class="w-full" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500 mb-1 block">入股日期</label>
+            <DatePicker v-model="form.entry_date" date-format="yy-mm-dd" class="w-full" />
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-zinc-500 mb-1 block">备注</label>
+          <Textarea v-model="form.notes" rows="3" class="w-full" />
+        </div>
 
         <Button label="保存" icon="pi pi-check" :loading="saving" @click="save" />
       </div>

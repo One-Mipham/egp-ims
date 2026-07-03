@@ -10,7 +10,13 @@ import { listCompanies, createCompany } from '@/api'
 const companies = ref<any[]>([])
 const loading = ref(false)
 const showAddDialog = ref(false)
-const newCompany = ref({ name: '', short_name: '', industry: 'consulting', internal_control_mode: 'standard', currency: 'CNY' })
+const newCompany = ref({
+  name: '',
+  short_name: '',
+  industry: 'consulting',
+  internal_control_mode: 'standard',
+  currency: 'CNY',
+})
 const currentCompanyId = computed(() => Number(localStorage.getItem('companyId')))
 
 async function load() {
@@ -29,9 +35,17 @@ async function handleAdd() {
     const res = await createCompany(newCompany.value)
     localStorage.setItem('companyId', res.data.id)
     showAddDialog.value = false
-    newCompany.value = { name: '', short_name: '', industry: 'consulting', internal_control_mode: 'standard', currency: 'CNY' }
+    newCompany.value = {
+      name: '',
+      short_name: '',
+      industry: 'consulting',
+      internal_control_mode: 'standard',
+      currency: 'CNY',
+    }
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '创建失败') }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '创建失败')
+  }
 }
 
 function selectCompany(id: number) {
@@ -44,16 +58,19 @@ onMounted(load)
 
 <template>
   <div>
-
     <Card class="shadow-sm mb-6 border border-zinc-200">
       <template #title>当前公司</template>
       <template #content>
         <p class="text-sm text-zinc-500 mb-3 tracking-wide">选择当前操作的公司账套</p>
         <div class="flex gap-2 flex-wrap">
-          <Button v-for="c in companies" :key="c.id"
+          <Button
+            v-for="c in companies"
+            :key="c.id"
             :label="c.name"
             :severity="currentCompanyId === c.id ? 'primary' : 'secondary'"
-            text @click="selectCompany(c.id)" />
+            text
+            @click="selectCompany(c.id)"
+          />
           <Button label="新增公司" icon="pi pi-plus" text @click="showAddDialog = true" />
         </div>
       </template>
@@ -72,20 +89,32 @@ onMounted(load)
         </div>
         <div>
           <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">行业</label>
-          <Dropdown v-model="newCompany.industry" :options="[
-            { label: '投资', value: 'investment' },
-            { label: '咨询', value: 'consulting' },
-            { label: '技术开发', value: 'tech_dev' },
-            { label: 'AI', value: 'ai' },
-          ]" option-label="label" option-value="value" class="w-full" />
+          <Dropdown
+            v-model="newCompany.industry"
+            :options="[
+              { label: '投资', value: 'investment' },
+              { label: '咨询', value: 'consulting' },
+              { label: '技术开发', value: 'tech_dev' },
+              { label: 'AI', value: 'ai' },
+            ]"
+            option-label="label"
+            option-value="value"
+            class="w-full"
+          />
         </div>
         <div>
           <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">内控模式</label>
-          <Dropdown v-model="newCompany.internal_control_mode" :options="[
-            { label: '简化模式', value: 'simplified' },
-            { label: '标准模式', value: 'standard' },
-            { label: '严格模式', value: 'strict' },
-          ]" option-label="label" option-value="value" class="w-full" />
+          <Dropdown
+            v-model="newCompany.internal_control_mode"
+            :options="[
+              { label: '简化模式', value: 'simplified' },
+              { label: '标准模式', value: 'standard' },
+              { label: '严格模式', value: 'strict' },
+            ]"
+            option-label="label"
+            option-value="value"
+            class="w-full"
+          />
         </div>
         <Button label="创建" icon="pi pi-check" @click="handleAdd" />
       </div>

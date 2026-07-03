@@ -20,9 +20,17 @@ const page = ref(1)
 const pageSize = 20
 
 const emptyForm = () => ({
-  company_id: companyId, order_no: '', supplier_name: '', order_date: '',
-  product_name: '', quantity: 0, unit: '个', unit_price: 0, total_amount: 0,
-  status: '待入库', notes: '',
+  company_id: companyId,
+  order_no: '',
+  supplier_name: '',
+  order_date: '',
+  product_name: '',
+  quantity: 0,
+  unit: '个',
+  unit_price: 0,
+  total_amount: 0,
+  status: '待入库',
+  notes: '',
 })
 
 const form = ref(emptyForm())
@@ -38,8 +46,18 @@ async function load() {
   items.value = data
 }
 
-function openCreate() { form.value = emptyForm(); isEdit.value = false; editId.value = null; dialogVisible.value = true }
-function openEdit(row: any) { form.value = { ...row }; isEdit.value = true; editId.value = row.id; dialogVisible.value = true }
+function openCreate() {
+  form.value = emptyForm()
+  isEdit.value = false
+  editId.value = null
+  dialogVisible.value = true
+}
+function openEdit(row: any) {
+  form.value = { ...row }
+  isEdit.value = true
+  editId.value = row.id
+  dialogVisible.value = true
+}
 
 async function save() {
   form.value.total_amount = parseFloat((form.value.quantity * form.value.unit_price).toFixed(2))
@@ -55,23 +73,43 @@ async function save() {
 }
 
 async function remove(id: number) {
-  if (confirm('确定删除？')) { await deletePurchase(id); toast.add({ severity: 'success', summary: '已删除', life: 2000 }); await load() }
+  if (confirm('确定删除？')) {
+    await deletePurchase(id)
+    toast.add({ severity: 'success', summary: '已删除', life: 2000 })
+    await load()
+  }
 }
 
 function exportCSV() {
-  const header = ['采购单号','供应商','产品','数量','单位','单价','总金额','状态','日期']
-  const rows = items.value.map((i: any) => [i.order_no, i.supplier_name, i.product_name, i.quantity, i.unit, i.unit_price, i.total_amount, i.status, i.order_date])
-  const csv = [header.join(','), ...rows.map((r: any[]) => r.map((c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))].join('\n')
+  const header = ['采购单号', '供应商', '产品', '数量', '单位', '单价', '总金额', '状态', '日期']
+  const rows = items.value.map((i: any) => [
+    i.order_no,
+    i.supplier_name,
+    i.product_name,
+    i.quantity,
+    i.unit,
+    i.unit_price,
+    i.total_amount,
+    i.status,
+    i.order_date,
+  ])
+  const csv = [
+    header.join(','),
+    ...rows.map((r: any[]) => r.map((c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')),
+  ].join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = '采购单.csv'; a.click()
+  a.href = url
+  a.download = '采购单.csv'
+  a.click()
   URL.revokeObjectURL(url)
 }
 
 onMounted(async () => {
   const [p, w] = await Promise.all([listInventory(companyId), listWarehouses(companyId)])
-  products.value = p.data; warehouses.value = w.data
+  products.value = p.data
+  warehouses.value = w.data
   await load()
 })
 </script>
@@ -82,27 +120,55 @@ onMounted(async () => {
       <h1 class="text-lg font-bold">采购管理</h1>
       <div class="flex gap-2">
         <button @click="exportCSV" class="px-3 py-2 border rounded text-sm hover:bg-zinc-100">导出CSV</button>
-        <button @click="openCreate" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">+ 新增采购单</button>
+        <button @click="openCreate" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
+          + 新增采购单
+        </button>
       </div>
     </div>
 
     <div class="flex gap-2 mb-3 flex-wrap">
-      <input v-model="searchText" @input="page=1; load()" placeholder="搜索单号/供应商/产品..." class="border rounded px-2 py-1 text-sm w-56" />
-      <select v-model="filterStatus" @change="page=1; load()" class="border rounded px-2 py-1 text-sm">
+      <input
+        v-model="searchText"
+        @input="page = 1; load()"
+        placeholder="搜索单号/供应商/产品..."
+        class="border rounded px-2 py-1 text-sm w-56"
+      />
+      <select
+        v-model="filterStatus"
+        @change="page = 1; load()"
+        class="border rounded px-2 py-1 text-sm"
+      >
         <option value="">全部状态</option>
         <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
       </select>
-      <input type="date" v-model="startDate" @change="page=1; load()" class="border rounded px-2 py-1 text-sm" title="开始日期" />
+      <input
+        type="date"
+        v-model="startDate"
+        @change="page = 1; load()"
+        class="border rounded px-2 py-1 text-sm"
+        title="开始日期"
+      />
       <span class="text-xs text-zinc-400 self-center">至</span>
-      <input type="date" v-model="endDate" @change="page=1; load()" class="border rounded px-2 py-1 text-sm" title="结束日期" />
+      <input
+        type="date"
+        v-model="endDate"
+        @change="page = 1; load()"
+        class="border rounded px-2 py-1 text-sm"
+        title="结束日期"
+      />
     </div>
 
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">采购单号</th><th class="p-2 border">供应商</th><th class="p-2 border">产品</th>
-          <th class="p-2 border text-right">数量</th><th class="p-2 border text-right">单价</th><th class="p-2 border text-right">总金额</th>
-          <th class="p-2 border">状态</th><th class="p-2 border">操作</th>
+          <th class="p-2 border">采购单号</th>
+          <th class="p-2 border">供应商</th>
+          <th class="p-2 border">产品</th>
+          <th class="p-2 border text-right">数量</th>
+          <th class="p-2 border text-right">单价</th>
+          <th class="p-2 border text-right">总金额</th>
+          <th class="p-2 border">状态</th>
+          <th class="p-2 border">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -125,8 +191,19 @@ onMounted(async () => {
     <div class="flex items-center justify-between mt-3">
       <span class="text-xs text-zinc-400">第 {{ page }} 页</span>
       <div class="flex gap-1">
-        <button @click="page = Math.max(1, page - 1); load()" :disabled="page <= 1" class="px-3 py-1 border rounded text-sm disabled:opacity-30">上一页</button>
-        <button @click="page = page + 1; load()" class="px-3 py-1 border rounded text-sm">下一页</button>
+        <button
+          @click="page = Math.max(1, page - 1); load()"
+          :disabled="page <= 1"
+          class="px-3 py-1 border rounded text-sm disabled:opacity-30"
+        >
+          上一页
+        </button>
+        <button
+          @click="page = page + 1; load()"
+          class="px-3 py-1 border rounded text-sm"
+        >
+          下一页
+        </button>
       </div>
     </div>
 
@@ -134,17 +211,40 @@ onMounted(async () => {
       <div class="bg-white rounded-lg w-[550px] p-6">
         <h2 class="text-lg font-bold mb-4">{{ isEdit ? '编辑采购单' : '新增采购单' }}</h2>
         <div class="grid grid-cols-2 gap-3">
-          <div><label class="text-xs text-zinc-500">采购单号</label><input v-model="form.order_no" class="w-full border rounded px-2 py-1 text-sm" /></div>
-          <div><label class="text-xs text-zinc-500">供应商</label><input v-model="form.supplier_name" list="supplier-list" class="w-full border rounded px-2 py-1 text-sm" /></div>
-          <div><label class="text-xs text-zinc-500">采购日期</label><input type="date" v-model="form.order_date" class="w-full border rounded px-2 py-1 text-sm" /></div>
+          <div>
+            <label class="text-xs text-zinc-500">采购单号</label
+            ><input v-model="form.order_no" class="w-full border rounded px-2 py-1 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500">供应商</label
+            ><input v-model="form.supplier_name" list="supplier-list" class="w-full border rounded px-2 py-1 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500">采购日期</label
+            ><input type="date" v-model="form.order_date" class="w-full border rounded px-2 py-1 text-sm" />
+          </div>
           <div>
             <label class="text-xs text-zinc-500">状态</label>
-            <select v-model="form.status" class="w-full border rounded px-2 py-1 text-sm"><option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option></select>
+            <select v-model="form.status" class="w-full border rounded px-2 py-1 text-sm">
+              <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
+            </select>
           </div>
-          <div><label class="text-xs text-zinc-500">产品名称</label><input v-model="form.product_name" list="product-list" class="w-full border rounded px-2 py-1 text-sm" /></div>
-          <div><label class="text-xs text-zinc-500">单位</label><input v-model="form.unit" list="unit-list" class="w-full border rounded px-2 py-1 text-sm" /></div>
-          <div><label class="text-xs text-zinc-500">数量</label><input type="number" v-model.number="form.quantity" class="w-full border rounded px-2 py-1 text-sm" /></div>
-          <div><label class="text-xs text-zinc-500">单价</label><input type="number" v-model.number="form.unit_price" class="w-full border rounded px-2 py-1 text-sm" /></div>
+          <div>
+            <label class="text-xs text-zinc-500">产品名称</label
+            ><input v-model="form.product_name" list="product-list" class="w-full border rounded px-2 py-1 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500">单位</label
+            ><input v-model="form.unit" list="unit-list" class="w-full border rounded px-2 py-1 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500">数量</label
+            ><input type="number" v-model.number="form.quantity" class="w-full border rounded px-2 py-1 text-sm" />
+          </div>
+          <div>
+            <label class="text-xs text-zinc-500">单价</label
+            ><input type="number" v-model.number="form.unit_price" class="w-full border rounded px-2 py-1 text-sm" />
+          </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
           <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
@@ -157,10 +257,10 @@ onMounted(async () => {
       <option v-for="p in products" :key="p.id" :value="p.name" />
     </datalist>
     <datalist id="supplier-list">
-      <option v-for="p in products" :key="'s'+p.id" :value="p.name" />
+      <option v-for="p in products" :key="'s' + p.id" :value="p.name" />
     </datalist>
     <datalist id="unit-list">
-      <option v-for="p in products" :key="'u'+p.id" :value="p.unit" />
+      <option v-for="p in products" :key="'u' + p.id" :value="p.unit" />
     </datalist>
   </div>
 </template>

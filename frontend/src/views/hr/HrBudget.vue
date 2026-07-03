@@ -16,7 +16,9 @@ const header = reactive({
 
 // Budget rows: each row has label, type (manual/auto), and 12-month values
 interface BudgetLine {
-  label: string; type: 'section' | 'manual' | 'auto'; indent?: boolean
+  label: string
+  type: 'section' | 'manual' | 'auto'
+  indent?: boolean
 }
 
 const budgetLines: BudgetLine[] = [
@@ -60,17 +62,23 @@ function annualSum(values: (number | null)[]): number | null {
   return values.reduce((a: number, v) => a + (v ?? 0), 0)
 }
 
-function fmt(v: number | null): string { return v != null ? v.toLocaleString() : '' }
+function fmt(v: number | null): string {
+  return v != null ? v.toLocaleString() : ''
+}
 
 // Auto-calculate budget total = sum of all manual rows
 const budgetTotal = computed(() => {
   const result: (number | null)[] = Array(12).fill(null)
   for (let i = 0; i < 12; i++) {
-    let sum = 0; let hasAny = false
+    let sum = 0
+    let hasAny = false
     for (const line of budgetLines) {
       if (line.type === 'manual' && data[line.label]) {
         const v = data[line.label][i]
-        if (v != null) { sum += v; hasAny = true }
+        if (v != null) {
+          sum += v
+          hasAny = true
+        }
       }
     }
     result[i] = hasAny ? sum : null
@@ -86,11 +94,20 @@ function getValue(line: BudgetLine, mi: number): number | null {
 
 // ── Short codes for persistence (≤10 chars) ──
 const labelToCode: Record<string, string> = {
-  '基本薪酬': 'sal_base', '季度绩效': 'sal_perf', '年终奖': 'sal_year',
-  '加班费': 'sal_ot', '手机补贴': 'sub_phone', '交通车辆补贴': 'sub_car',
-  '餐费补贴': 'sub_meal', '职工宿舍': 'sub_dorm', '其他补贴': 'sub_other',
-  '五险一金-企业部分': 'ins5_co', '五险一金-个人部分': 'ins5_per',
-  '商业保险': 'ins_comm', '招聘费用': 'recruit', '培训费用': 'train',
+  基本薪酬: 'sal_base',
+  季度绩效: 'sal_perf',
+  年终奖: 'sal_year',
+  加班费: 'sal_ot',
+  手机补贴: 'sub_phone',
+  交通车辆补贴: 'sub_car',
+  餐费补贴: 'sub_meal',
+  职工宿舍: 'sub_dorm',
+  其他补贴: 'sub_other',
+  '五险一金-企业部分': 'ins5_co',
+  '五险一金-个人部分': 'ins5_per',
+  商业保险: 'ins_comm',
+  招聘费用: 'recruit',
+  培训费用: 'train',
 }
 const codeToLabel = Object.fromEntries(Object.entries(labelToCode).map(([k, v]) => [v, k]))
 
@@ -101,7 +118,8 @@ const loading = ref(false)
 const saveMessage = ref('')
 
 async function saveHrBudget() {
-  saving.value = true; saveMessage.value = ''
+  saving.value = true
+  saveMessage.value = ''
   try {
     const items: { account_code: string; month: string; amount: number }[] = []
     for (const [label, values] of Object.entries(data)) {
@@ -109,7 +127,11 @@ async function saveHrBudget() {
       if (!code) continue
       for (let mi = 0; mi < 12; mi++) {
         if (values[mi] != null) {
-          items.push({ account_code: code, month: `${currentYear}-${String(mi + 1).padStart(2, '0')}`, amount: values[mi]! })
+          items.push({
+            account_code: code,
+            month: `${currentYear}-${String(mi + 1).padStart(2, '0')}`,
+            amount: values[mi]!,
+          })
         }
       }
     }
@@ -122,18 +144,22 @@ async function saveHrBudget() {
     saveMessage.value = '保存成功'
   } catch (e: any) {
     saveMessage.value = '保存失败: ' + (e?.response?.data?.detail || e.message)
-  } finally { saving.value = false }
+  } finally {
+    saving.value = false
+  }
 }
 
 async function loadHrBudget() {
   loading.value = true
   try {
     const res = await listBudgets(companyId.value, currentYear)
-    for (const b of (res.data as BudgetData[])) {
+    for (const b of res.data as BudgetData[]) {
       if (b.name === 'HR预算') {
         hrBudgetId.value = b.id
         const detailR = await getBudget(b.id)
-        for (const key of Object.keys(data)) { data[key].fill(null) }
+        for (const key of Object.keys(data)) {
+          data[key].fill(null)
+        }
         for (const item of (detailR.data as BudgetData).items) {
           const label = codeToLabel[item.account_code]
           if (label && data[label]) {
@@ -144,10 +170,15 @@ async function loadHrBudget() {
         break
       }
     }
-  } catch (_e) {} finally { loading.value = false }
+  } catch (_e) {
+  } finally {
+    loading.value = false
+  }
 }
 
-onMounted(() => { loadHrBudget() })
+onMounted(() => {
+  loadHrBudget()
+})
 </script>
 
 <template>
@@ -155,7 +186,12 @@ onMounted(() => { loadHrBudget() })
     <div class="page-header flex items-center justify-between">
       <h2>人力资源预算管理</h2>
       <div class="flex items-center gap-2">
-        <span v-if="saveMessage" class="text-xs" :class="saveMessage.includes('失败') ? 'text-red-500' : 'text-green-600'">{{ saveMessage }}</span>
+        <span
+          v-if="saveMessage"
+          class="text-xs"
+          :class="saveMessage.includes('失败') ? 'text-red-500' : 'text-green-600'"
+          >{{ saveMessage }}</span
+        >
         <Button label="加载" size="small" severity="secondary" :loading="loading" @click="loadHrBudget" />
         <Button label="保存" size="small" severity="success" :loading="saving" @click="saveHrBudget" />
       </div>
@@ -202,13 +238,17 @@ onMounted(() => { loadHrBudget() })
               </tr>
 
               <!-- Data row -->
-              <tr v-else :class="{ 'bg-stone-50 font-semibold': line.type === 'auto', 'bg-white': line.type === 'manual' }">
+              <tr
+                v-else
+                :class="{ 'bg-stone-50 font-semibold': line.type === 'auto', 'bg-white': line.type === 'manual' }"
+              >
                 <td class="text-center text-stone-400 text-[10px]">{{ line.type === 'auto' ? '' : idx }}</td>
                 <td :class="{ 'pl-6': line.indent, 'font-medium': line.type === 'manual' }">{{ line.label }}</td>
 
-                <td v-for="mi in 12" :key="'m'+line.label+mi" class="text-right p-0">
+                <td v-for="mi in 12" :key="'m' + line.label + mi" class="text-right p-0">
                   <template v-if="line.type === 'manual'">
-                    <input type="number"
+                    <input
+                      type="number"
                       class="w-full text-right px-1 py-1 border border-transparent hover:border-stone-300 focus:border-amber-400 focus:outline-none bg-transparent font-number text-xs"
                       :value="getValue(line, mi) != null ? getValue(line, mi) : ''"
                       @input="(e: Event) => setValue(line.label, mi, (e.target as HTMLInputElement).value)"
@@ -219,12 +259,11 @@ onMounted(() => { loadHrBudget() })
                   </span>
                 </td>
 
-                <td class="text-right font-number font-semibold bg-stone-100 px-1"
+                <td
+                  class="text-right font-number font-semibold bg-stone-100 px-1"
                   :class="line.type === 'auto' ? 'text-stone-700' : 'text-stone-400'"
                 >
-                  {{ fmt(annualSum(
-                    line.type === 'auto' ? budgetTotal : (data[line.label] || [])
-                  )) }}
+                  {{ fmt(annualSum(line.type === 'auto' ? budgetTotal : data[line.label] || [])) }}
                 </td>
               </tr>
             </template>

@@ -32,9 +32,7 @@ const warehouseReport = computed(() => {
   }))
 })
 
-const lowStockItems = computed(() =>
-  stockItems.value.filter((i: any) => (i.quantity || 0) <= (i.min_stock || 0))
-)
+const lowStockItems = computed(() => stockItems.value.filter((i: any) => (i.quantity || 0) <= (i.min_stock || 0)))
 
 async function load() {
   const [r1, r2, r3] = await Promise.all([listInvStock(companyId), listPurchases(companyId), listInvSales(companyId)])
@@ -46,13 +44,18 @@ async function load() {
 onMounted(load)
 
 function exportCSV() {
-  const header = ['仓库','品类数','总数量','总价值','低库存数']
+  const header = ['仓库', '品类数', '总数量', '总价值', '低库存数']
   const rows = warehouseReport.value.map((w: any) => [w.warehouse, w.count, w.totalQty, w.totalValue, w.lowStockCount])
-  const csv = [header.join(','), ...rows.map((r: any[]) => r.map((c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))].join('\n')
+  const csv = [
+    header.join(','),
+    ...rows.map((r: any[]) => r.map((c: any) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')),
+  ].join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
-  a.href = url; a.download = '库存报表.csv'; a.click()
+  a.href = url
+  a.download = '库存报表.csv'
+  a.click()
   URL.revokeObjectURL(url)
 }
 </script>
@@ -83,7 +86,9 @@ function exportCSV() {
       </div>
       <div class="bg-zinc-50 rounded p-3 text-center">
         <div class="text-xs text-zinc-500 mb-1">销售毛利</div>
-        <div class="text-lg font-bold" :class="summary.salesProfit >= 0 ? 'text-green-600' : 'text-red-600'">{{ summary.salesProfit.toLocaleString() }}</div>
+        <div class="text-lg font-bold" :class="summary.salesProfit >= 0 ? 'text-green-600' : 'text-red-600'">
+          {{ summary.salesProfit.toLocaleString() }}
+        </div>
       </div>
     </div>
 
@@ -100,8 +105,10 @@ function exportCSV() {
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">仓库</th><th class="p-2 border text-right">品类数</th>
-          <th class="p-2 border text-right">总数量</th><th class="p-2 border text-right">总价值</th>
+          <th class="p-2 border">仓库</th>
+          <th class="p-2 border text-right">品类数</th>
+          <th class="p-2 border text-right">总数量</th>
+          <th class="p-2 border text-right">总价值</th>
           <th class="p-2 border text-right">低库存</th>
         </tr>
       </thead>

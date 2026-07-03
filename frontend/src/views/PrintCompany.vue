@@ -19,7 +19,9 @@ async function load() {
   }
 }
 
-function doPrint() { window.print() }
+function doPrint() {
+  window.print()
+}
 
 onMounted(load)
 </script>
@@ -41,12 +43,42 @@ onMounted(load)
 
       <table class="data-table border-collapse border border-stone-300 max-w-lg">
         <tbody>
-          <tr class="border-b border-stone-200"><td class="py-2 px-3 font-medium bg-stone-50 w-36 border border-stone-200 text-xs uppercase tracking-wider">公司名称</td><td class="py-2 px-3 border border-stone-200">{{ company.name }}</td></tr>
-          <tr class="border-b border-stone-200"><td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">简称</td><td class="py-2 px-3 border border-stone-200">{{ company.short_name || '-' }}</td></tr>
-          <tr class="border-b border-stone-200"><td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">行业</td><td class="py-2 px-3 border border-stone-200">{{ company.industry }}</td></tr>
-          <tr class="border-b border-stone-200"><td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">币种</td><td class="py-2 px-3 border border-stone-200">{{ company.currency }}</td></tr>
-          <tr class="border-b border-stone-200"><td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">会计年度起始</td><td class="py-2 px-3 border border-stone-200">{{ company.fiscal_year_start }}</td></tr>
-          <tr class="border-b border-stone-200"><td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">内控模式</td><td class="py-2 px-3 border border-stone-200">{{ company.internal_control_mode }}</td></tr>
+          <tr class="border-b border-stone-200">
+            <td class="py-2 px-3 font-medium bg-stone-50 w-36 border border-stone-200 text-xs uppercase tracking-wider">
+              公司名称
+            </td>
+            <td class="py-2 px-3 border border-stone-200">{{ company.name }}</td>
+          </tr>
+          <tr class="border-b border-stone-200">
+            <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
+              简称
+            </td>
+            <td class="py-2 px-3 border border-stone-200">{{ company.short_name || '-' }}</td>
+          </tr>
+          <tr class="border-b border-stone-200">
+            <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
+              行业
+            </td>
+            <td class="py-2 px-3 border border-stone-200">{{ company.industry }}</td>
+          </tr>
+          <tr class="border-b border-stone-200">
+            <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
+              币种
+            </td>
+            <td class="py-2 px-3 border border-stone-200">{{ company.currency }}</td>
+          </tr>
+          <tr class="border-b border-stone-200">
+            <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
+              会计年度起始
+            </td>
+            <td class="py-2 px-3 border border-stone-200">{{ company.fiscal_year_start }}</td>
+          </tr>
+          <tr class="border-b border-stone-200">
+            <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
+              内控模式
+            </td>
+            <td class="py-2 px-3 border border-stone-200">{{ company.internal_control_mode }}</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -55,9 +87,23 @@ onMounted(load)
 
 <style scoped>
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0 auto; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 auto;
+  }
 }
 </style>

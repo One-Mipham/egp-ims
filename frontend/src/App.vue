@@ -32,10 +32,10 @@ function showNotification(msg: string) {
 
 const THEMES = [
   { id: 'classic', name: '墨绿经典', swatch: ['#1a3525', '#6ee7b0', '#991B1B'] },
-  { id: 'light',   name: '极简亮色', swatch: ['#24292f', '#79c0ff', '#cf222e'] },
-  { id: 'dark',    name: '深邃暗色', swatch: ['#0d1117', '#58a6ff', '#f85149'] },
-  { id: 'blue',    name: '蓝调专业', swatch: ['#1a2744', '#fbbf24', '#d97706'] },
-  { id: 'contrast',name: '高对比度', swatch: ['#000000', '#ffff00', '#cc0000'] },
+  { id: 'light', name: '极简亮色', swatch: ['#24292f', '#79c0ff', '#cf222e'] },
+  { id: 'dark', name: '深邃暗色', swatch: ['#0d1117', '#58a6ff', '#f85149'] },
+  { id: 'blue', name: '蓝调专业', swatch: ['#1a2744', '#fbbf24', '#d97706'] },
+  { id: 'contrast', name: '高对比度', swatch: ['#000000', '#ffff00', '#cc0000'] },
 ]
 const currentTheme = ref(localStorage.getItem('theme') || 'classic')
 const showThemePopup = ref(false)
@@ -81,7 +81,7 @@ async function loadCurrentUser() {
 
 onMounted(async () => {
   initTheme()
-  document.addEventListener('click', (e) => {
+  document.addEventListener('click', e => {
     if (showThemePopup.value && !(e.target as HTMLElement).closest('.theme-switcher')) {
       showThemePopup.value = false
     }
@@ -94,7 +94,7 @@ onMounted(async () => {
 // onMounted 不会再次执行，导致 currentUser 保持 null，
 // SidebarMenu 拿不到 role，只显示"知识库"。
 // 通过 watch 检测从登录页到认证页的转换，触发加载。
-watch(isLoginPage, async (nowLogin) => {
+watch(isLoginPage, async nowLogin => {
   if (!nowLogin) {
     await loadCurrentUser()
   }
@@ -115,36 +115,47 @@ function handleLogout() {
     <!-- Sidebar: deep green -->
     <aside class="sidebar w-[340px] text-white flex flex-col shrink-0 no-print">
       <!-- Header -->
-	      <div class="h-10 flex items-center px-3 sidebar-header shrink-0 gap-2">
+      <div class="h-10 flex items-center px-3 sidebar-header shrink-0 gap-2">
         <img src="/company-logo.jpg" alt="MiphamAI" class="h-5 w-auto rounded-sm" />
-	        <span class="ml-2 text-xs font-medium tracking-wider sidebar-header-text">{{ t("app.brand") }}</span>
-	        <div v-if="locale !== 'en-US'" class="ml-auto"><LangToggle /></div>
+        <span class="ml-2 text-xs font-medium tracking-wider sidebar-header-text">{{ t('app.brand') }}</span>
+        <div v-if="locale !== 'en-US'" class="ml-auto"><LangToggle /></div>
       </div>
 
       <!-- Scrolling banner -->
       <div class="overflow-hidden sidebar-banner h-6 shrink-0 flex items-center">
         <div class="marquee-text whitespace-nowrap text-[10px] sidebar-banner-text font-medium">
-          One Mipham Corporation 技术支持 &nbsp;&nbsp;&nbsp; One Mipham Corporation 技术支持 &nbsp;&nbsp;&nbsp; One Mipham Corporation 技术支持
+          One Mipham Corporation 技术支持 &nbsp;&nbsp;&nbsp; One Mipham Corporation 技术支持 &nbsp;&nbsp;&nbsp; One
+          Mipham Corporation 技术支持
         </div>
       </div>
 
       <!-- Navigation -->
-      <SidebarMenu
-        :sections="menuSections"
-        :user-role="currentUser?.role || ''"
-        @locked="showNotification"
-      />
+      <SidebarMenu :sections="menuSections" :user-role="currentUser?.role || ''" @locked="showNotification" />
 
       <!-- Theme switcher -->
       <div class="relative theme-switcher shrink-0">
         <button @click="showThemePopup = !showThemePopup" class="theme-switcher-btn">
-          <span class="w-3 h-3 rounded-full" :style="{ background: THEMES.find(t => t.id === currentTheme)?.swatch[1] || '#6ee7b0' }" />
+          <span
+            class="w-3 h-3 rounded-full"
+            :style="{ background: THEMES.find(t => t.id === currentTheme)?.swatch[1] || '#6ee7b0' }"
+          />
           <span class="flex-1 text-left">{{ THEMES.find(t => t.id === currentTheme)?.name || '经典' }}</span>
-          <i class="pi pi-chevron-up text-[9px] transition-transform" :style="{ transform: showThemePopup ? 'rotate(0deg)' : 'rotate(180deg)' }" />
+          <i
+            class="pi pi-chevron-up text-[9px] transition-transform"
+            :style="{ transform: showThemePopup ? 'rotate(0deg)' : 'rotate(180deg)' }"
+          />
         </button>
         <div v-if="showThemePopup" class="theme-popup">
-          <button v-for="t in THEMES" :key="t.id" :class="['theme-option', { active: currentTheme === t.id }]" @click="applyTheme(t.id)">
-            <span class="theme-swatch" :style="{ background: `linear-gradient(135deg, ${t.swatch[0]} 50%, ${t.swatch[1]} 50%)` }" />
+          <button
+            v-for="t in THEMES"
+            :key="t.id"
+            :class="['theme-option', { active: currentTheme === t.id }]"
+            @click="applyTheme(t.id)"
+          >
+            <span
+              class="theme-swatch"
+              :style="{ background: `linear-gradient(135deg, ${t.swatch[0]} 50%, ${t.swatch[1]} 50%)` }"
+            />
             <span>{{ t.name }}</span>
           </button>
         </div>
@@ -178,7 +189,10 @@ function handleLogout() {
             </div>
           </div>
         </div>
-        <button @click="handleLogout" class="mt-1.5 w-full text-left text-[10px] sidebar-logout-text flex items-center gap-1.5 transition-colors">
+        <button
+          @click="handleLogout"
+          class="mt-1.5 w-full text-left text-[10px] sidebar-logout-text flex items-center gap-1.5 transition-colors"
+        >
           <i class="pi pi-sign-out text-[10px]" /> 退出登录
         </button>
       </div>
@@ -187,12 +201,18 @@ function handleLogout() {
     <!-- Main content with subtle background -->
     <div class="flex-1 flex flex-col overflow-hidden main-content-bg">
       <!-- Top bar -->
-      <header class="h-10 bg-white/80 backdrop-blur-sm border-b border-zinc-200/50 flex items-center justify-between px-6 shrink-0 no-print">
+      <header
+        class="h-10 bg-white/80 backdrop-blur-sm border-b border-zinc-200/50 flex items-center justify-between px-6 shrink-0 no-print"
+      >
         <h1 class="text-sm font-light text-zinc-700 tracking-tight">
           {{ menuItems.find(i => i.to === route.path)?.label || (route.path === '/init' ? '初始化导航' : '首页') }}
         </h1>
         <div class="flex items-center gap-4">
-          <a href="https://www.onemipham.com" target="_blank" class="text-xs text-zinc-400 hover:text-zinc-600 transition-colors">
+          <a
+            href="https://www.onemipham.com"
+            target="_blank"
+            class="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+          >
             公司网站
           </a>
           <button class="p-1.5 rounded hover:bg-zinc-100/50 relative">
@@ -228,7 +248,11 @@ function handleLogout() {
 }
 
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
 </style>

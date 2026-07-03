@@ -23,9 +23,10 @@ const categoryCosting = computed(() => {
     count: list.length,
     totalQty: list.reduce((s, i) => s + (i.quantity || 0), 0),
     totalCost: list.reduce((s, i) => s + (i.total_cost || 0), 0),
-    avgUnitCost: list.reduce((s, i) => s + (i.quantity || 0), 0) > 0
-      ? list.reduce((s, i) => s + (i.total_cost || 0), 0) / list.reduce((s, i) => s + (i.quantity || 0), 0)
-      : 0,
+    avgUnitCost:
+      list.reduce((s, i) => s + (i.quantity || 0), 0) > 0
+        ? list.reduce((s, i) => s + (i.total_cost || 0), 0) / list.reduce((s, i) => s + (i.quantity || 0), 0)
+        : 0,
     items: list,
   }))
 })
@@ -75,8 +76,10 @@ onMounted(load)
     <table class="w-full text-sm border-collapse mb-6">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">类别</th><th class="p-2 border text-right">品类数</th>
-          <th class="p-2 border text-right">总数量</th><th class="p-2 border text-right">总成本</th>
+          <th class="p-2 border">类别</th>
+          <th class="p-2 border text-right">品类数</th>
+          <th class="p-2 border text-right">总数量</th>
+          <th class="p-2 border text-right">总成本</th>
           <th class="p-2 border text-right">加权平均单价</th>
         </tr>
       </thead>
@@ -95,7 +98,9 @@ onMounted(load)
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">仓库</th><th class="p-2 border text-right">品类数</th><th class="p-2 border text-right">总成本</th>
+          <th class="p-2 border">仓库</th>
+          <th class="p-2 border text-right">品类数</th>
+          <th class="p-2 border text-right">总成本</th>
         </tr>
       </thead>
       <tbody>

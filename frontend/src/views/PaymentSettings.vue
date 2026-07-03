@@ -55,7 +55,13 @@ function saveAccounts() {
         </div>
         <div class="w-48">
           <label class="block text-xs text-zinc-500 mb-1">类型</label>
-          <Dropdown v-model="acct.type" :options="BANK_TYPE_OPTIONS" optionLabel="label" optionValue="value" class="w-full" />
+          <Dropdown
+            v-model="acct.type"
+            :options="BANK_TYPE_OPTIONS"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+          />
         </div>
         <div class="flex-1">
           <label class="block text-xs text-zinc-500 mb-1">账号</label>

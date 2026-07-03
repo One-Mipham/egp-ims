@@ -6,14 +6,16 @@ const defaultLocale = (import.meta as any).env?.VITE_DEFAULT_LOCALE as Locale | 
 const savedLocale = (localStorage.getItem('locale') || defaultLocale || 'zh-CN') as Locale
 const currentLocale = ref<Locale>(savedLocale)
 
-watch(currentLocale, (val) => {
+watch(currentLocale, val => {
   localStorage.setItem('locale', val)
 })
 
 export function useI18n() {
   const locale = computed({
     get: () => currentLocale.value,
-    set: (val: Locale) => { currentLocale.value = val },
+    set: (val: Locale) => {
+      currentLocale.value = val
+    },
   })
 
   function t(key: string): string {
@@ -32,12 +34,27 @@ export function useI18n() {
 const messages: Record<Locale, Record<string, any>> = {
   'zh-CN': {
     common: {
-      save: '保存', cancel: '取消', delete: '删除', edit: '修改',
-      search: '查找', export: '导出', import: '导入', print: '打印',
-      confirm: '确认', back: '返回', submit: '提交', close: '关闭',
-      loading: '加载中...', noData: '暂无数据', success: '操作成功',
-      error: '操作失败', required: '必填', optional: '可选',
-      yes: '是', no: '否', all: '全部',
+      save: '保存',
+      cancel: '取消',
+      delete: '删除',
+      edit: '修改',
+      search: '查找',
+      export: '导出',
+      import: '导入',
+      print: '打印',
+      confirm: '确认',
+      back: '返回',
+      submit: '提交',
+      close: '关闭',
+      loading: '加载中...',
+      noData: '暂无数据',
+      success: '操作成功',
+      error: '操作失败',
+      required: '必填',
+      optional: '可选',
+      yes: '是',
+      no: '否',
+      all: '全部',
     },
     login: {
       title: '企业通用智能管理系统 EGP-IMS',
@@ -147,12 +164,27 @@ const messages: Record<Locale, Record<string, any>> = {
 
   'en-US': {
     common: {
-      save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit',
-      search: 'Search', export: 'Export', import: 'Import', print: 'Print',
-      confirm: 'Confirm', back: 'Back', submit: 'Submit', close: 'Close',
-      loading: 'Loading...', noData: 'No data', success: 'Success',
-      error: 'Error', required: 'Required', optional: 'Optional',
-      yes: 'Yes', no: 'No', all: 'All',
+      save: 'Save',
+      cancel: 'Cancel',
+      delete: 'Delete',
+      edit: 'Edit',
+      search: 'Search',
+      export: 'Export',
+      import: 'Import',
+      print: 'Print',
+      confirm: 'Confirm',
+      back: 'Back',
+      submit: 'Submit',
+      close: 'Close',
+      loading: 'Loading...',
+      noData: 'No data',
+      success: 'Success',
+      error: 'Error',
+      required: 'Required',
+      optional: 'Optional',
+      yes: 'Yes',
+      no: 'No',
+      all: 'All',
     },
     login: {
       title: 'EGP-IMS',

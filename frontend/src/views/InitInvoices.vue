@@ -31,13 +31,19 @@ const INVOICE_TYPES = [
 ]
 
 const TYPE_LABELS: Record<string, string> = {
-  vat_special: '专票', vat_normal: '普票', electronic: '电子',
+  vat_special: '专票',
+  vat_normal: '普票',
+  electronic: '电子',
 }
 
 const emptyForm = () => ({
-  invoice_no: '', invoice_type: 'vat_special', counterparty_id: null as number | null,
+  invoice_no: '',
+  invoice_type: 'vat_special',
+  counterparty_id: null as number | null,
   department_id: null as number | null,
-  amount: 0, invoice_date: '', notes: '',
+  amount: 0,
+  invoice_date: '',
+  notes: '',
 })
 const form = ref(emptyForm())
 
@@ -45,9 +51,7 @@ const filteredInvoices = computed(() => {
   let result = invoices.value
   if (searchKeyword.value) {
     const q = searchKeyword.value.toLowerCase()
-    result = result.filter((i: any) =>
-      (i.invoice_no || '').includes(q) || (i.notes || '').includes(q)
-    )
+    result = result.filter((i: any) => (i.invoice_no || '').includes(q) || (i.notes || '').includes(q))
   }
   if (filterDepartment.value) {
     result = result.filter((i: any) => i.department_id === filterDepartment.value)
@@ -69,8 +73,11 @@ async function load() {
     invoices.value = iRes.data
     counterparties.value = cpRes.data
     departments.value = dRes.data
-  } catch { /* API may not exist yet */ }
-  finally { loading.value = false }
+  } catch {
+    /* API may not exist yet */
+  } finally {
+    loading.value = false
+  }
 }
 
 function getCustomerName(id: number | null) {
@@ -94,9 +101,13 @@ function openAdd() {
 function openEdit(row: any) {
   editingId.value = row.id
   form.value = {
-    invoice_no: row.invoice_no, invoice_type: row.invoice_type,
-    counterparty_id: row.counterparty_id, department_id: row.department_id,
-    amount: row.amount, invoice_date: row.invoice_date || '', notes: row.notes || '',
+    invoice_no: row.invoice_no,
+    invoice_type: row.invoice_type,
+    counterparty_id: row.counterparty_id,
+    department_id: row.department_id,
+    amount: row.amount,
+    invoice_date: row.invoice_date || '',
+    notes: row.notes || '',
   }
   showDialog.value = true
 }
@@ -112,8 +123,11 @@ async function handleSave() {
     }
     showDialog.value = false
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '保存失败') }
-  finally { saving.value = false }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '保存失败')
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(id: number) {
@@ -121,7 +135,9 @@ async function handleDelete(id: number) {
   try {
     await api.delete(`/investments/init/invoices/${id}`)
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '删除失败') }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '删除失败')
+  }
 }
 
 onMounted(load)
@@ -140,32 +156,49 @@ onMounted(load)
     <!-- Search filters -->
     <div class="flex gap-2 items-center mb-3 flex-wrap">
       <InputText v-model="searchKeyword" placeholder="发票号码/关键字..." class="w-64" />
-      <Dropdown v-model="filterDepartment" :options="departments" optionLabel="name" optionValue="id"
-                placeholder="经办部门" class="w-36" showClear />
-      <Dropdown v-model="filterCustomer" :options="counterparties" optionLabel="name" optionValue="id"
-                placeholder="客户名称" class="w-40" showClear filter />
+      <Dropdown
+        v-model="filterDepartment"
+        :options="departments"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="经办部门"
+        class="w-36"
+        showClear
+      />
+      <Dropdown
+        v-model="filterCustomer"
+        :options="counterparties"
+        optionLabel="name"
+        optionValue="id"
+        placeholder="客户名称"
+        class="w-40"
+        showClear
+        filter
+      />
     </div>
 
     <DataTable :value="filteredInvoices" :loading="loading" stripedRows size="small" paginator :rows="10">
-      <Column field="invoice_no" header="发票号码" sortable style="width:150px" />
-      <Column field="invoice_type" header="发票类型" sortable style="width:80px">
+      <Column field="invoice_no" header="发票号码" sortable style="width: 150px" />
+      <Column field="invoice_type" header="发票类型" sortable style="width: 80px">
         <template #body="{ data }">
-          <Tag :value="TYPE_LABELS[data.invoice_type] || data.invoice_type"
-               :severity="data.invoice_type === 'vat_special' ? 'info' : 'success'" />
+          <Tag
+            :value="TYPE_LABELS[data.invoice_type] || data.invoice_type"
+            :severity="data.invoice_type === 'vat_special' ? 'info' : 'success'"
+          />
         </template>
       </Column>
-      <Column header="客户名称" sortable style="width:150px">
+      <Column header="客户名称" sortable style="width: 150px">
         <template #body="{ data }">{{ getCustomerName(data.counterparty_id) }}</template>
       </Column>
-      <Column header="经办部门" sortable style="width:100px">
+      <Column header="经办部门" sortable style="width: 100px">
         <template #body="{ data }">{{ getDepartmentName(data.department_id) }}</template>
       </Column>
-      <Column field="amount" header="金额" sortable style="width:120px">
+      <Column field="amount" header="金额" sortable style="width: 120px">
         <template #body="{ data }">{{ data.amount.toLocaleString() }}</template>
       </Column>
-      <Column field="invoice_date" header="开票日期" sortable style="width:100px" />
+      <Column field="invoice_date" header="开票日期" sortable style="width: 100px" />
       <Column field="notes" header="备注" />
-      <Column header="操作" style="width:140px">
+      <Column header="操作" style="width: 140px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
@@ -184,19 +217,38 @@ onMounted(load)
           </div>
           <div>
             <label class="block text-sm mb-1">发票类型</label>
-            <Dropdown v-model="form.invoice_type" :options="INVOICE_TYPES" optionLabel="label" optionValue="value" class="w-full" />
+            <Dropdown
+              v-model="form.invoice_type"
+              :options="INVOICE_TYPES"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm mb-1">客户名称</label>
-            <Dropdown v-model="form.counterparty_id" :options="counterparties" optionLabel="name" optionValue="id"
-                      class="w-full" showClear filter />
+            <Dropdown
+              v-model="form.counterparty_id"
+              :options="counterparties"
+              optionLabel="name"
+              optionValue="id"
+              class="w-full"
+              showClear
+              filter
+            />
           </div>
           <div>
             <label class="block text-sm mb-1">经办部门</label>
-            <Dropdown v-model="form.department_id" :options="departments" optionLabel="name" optionValue="id"
-                      class="w-full" showClear />
+            <Dropdown
+              v-model="form.department_id"
+              :options="departments"
+              optionLabel="name"
+              optionValue="id"
+              class="w-full"
+              showClear
+            />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">

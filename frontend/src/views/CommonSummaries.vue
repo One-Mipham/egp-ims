@@ -18,7 +18,7 @@ const summaries = ref([
     <div class="bg-white rounded-sm border border-zinc-200 shadow-sm p-6">
       <p class="text-sm text-zinc-500 mb-4">录入凭证时可快速选择的摘要，系统预设</p>
       <DataTable :value="summaries" stripedRows class="shadow-sm" tableStyle="min-width: auto">
-        <Column field="summary" header="摘要内容" style="width:200px" />
+        <Column field="summary" header="摘要内容" style="width: 200px" />
       </DataTable>
     </div>
   </div>

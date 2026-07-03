@@ -16,8 +16,11 @@ import Tag from 'primevue/tag'
 import Toolbar from 'primevue/toolbar'
 
 import {
-  listBidSubmissions, getBidOptions,
-  createBidSubmission, updateBidSubmission, deleteBidSubmission,
+  listBidSubmissions,
+  getBidOptions,
+  createBidSubmission,
+  updateBidSubmission,
+  deleteBidSubmission,
 } from '../../api/bids'
 import api from '../../api'
 
@@ -52,8 +55,13 @@ const statusOptions = [
 
 const statusLabels: Record<string, string> = Object.fromEntries(statusOptions.map(o => [o.value, o.label]))
 const statusSeverity: Record<string, string> = {
-  draft: 'info', submitted: 'warn', opened: 'warn',
-  evaluated: 'warn', won: 'success', lost: 'danger', cancelled: 'secondary',
+  draft: 'info',
+  submitted: 'warn',
+  opened: 'warn',
+  evaluated: 'warn',
+  won: 'success',
+  lost: 'danger',
+  cancelled: 'secondary',
 }
 
 const bidTypeOptions = [
@@ -69,7 +77,10 @@ const bondStatusOptions = [
 ]
 
 const bondSeverity: Record<string, string> = {
-  '未缴': 'info', '已缴': 'warn', '已退': 'success', '被没收': 'danger',
+  未缴: 'info',
+  已缴: 'warn',
+  已退: 'success',
+  被没收: 'danger',
 }
 
 // ── 数据状态 ──
@@ -144,7 +155,9 @@ async function loadRefs() {
       api.get('/departments', { params: { company_id: Number(localStorage.getItem('company_id') || '1') } }),
     ])
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 // ── CRUD ──
@@ -207,7 +220,13 @@ onMounted(() => {
       <template #start>
         <div class="flex flex-wrap gap-3">
           <MultiSelect v-model="fBidType" :options="bidTypeOptions" placeholder="投标类型" class="w-36" />
-          <MultiSelect v-if="mode === 'bonds'" v-model="fBondStatus" :options="bondStatusOptions" placeholder="保证金状态" class="w-36" />
+          <MultiSelect
+            v-if="mode === 'bonds'"
+            v-model="fBondStatus"
+            :options="bondStatusOptions"
+            placeholder="保证金状态"
+            class="w-36"
+          />
           <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-32" showClear />
           <InputText v-model="fSearch" placeholder="搜索编号/名称/招标方" class="w-52" @keyup.enter="load" />
           <Button icon="pi pi-search" label="查询" @click="load" />
@@ -216,39 +235,67 @@ onMounted(() => {
     </Toolbar>
 
     <!-- 数据表格 -->
-    <DataTable :value="items" :loading="loading" stripedRows paginator :rows="15" :rowsPerPageOptions="[10, 15, 25, 50]" class="text-sm">
-      <Column field="bid_no" header="投标编号" style="min-width:140px" />
-      <Column field="project_name" header="项目名称" style="min-width:200px" />
-      <Column field="tendering_party" header="招标方" style="min-width:140px" />
-      <Column field="bid_amount" header="投标报价" style="min-width:100px">
+    <DataTable
+      :value="items"
+      :loading="loading"
+      stripedRows
+      paginator
+      :rows="15"
+      :rowsPerPageOptions="[10, 15, 25, 50]"
+      class="text-sm"
+    >
+      <Column field="bid_no" header="投标编号" style="min-width: 140px" />
+      <Column field="project_name" header="项目名称" style="min-width: 200px" />
+      <Column field="tendering_party" header="招标方" style="min-width: 140px" />
+      <Column field="bid_amount" header="投标报价" style="min-width: 100px">
         <template #body="{ data }">{{ data.bid_amount?.toLocaleString() }}</template>
       </Column>
-      <Column field="bond_status" header="保证金" style="min-width:80px">
+      <Column field="bond_status" header="保证金" style="min-width: 80px">
         <template #body="{ data }">
           <Tag :value="data.bond_status" :severity="bondSeverity[data.bond_status] || 'info'" />
         </template>
       </Column>
-      <Column field="opening_date" header="开标日期" style="min-width:100px" />
-      <Column v-if="mode === 'pricing'" field="total_score" header="总得分" style="min-width:80px" />
-      <Column v-if="mode === 'pricing'" field="rank" header="排名" style="min-width:60px" />
-      <Column field="status" header="状态" style="min-width:90px">
+      <Column field="opening_date" header="开标日期" style="min-width: 100px" />
+      <Column v-if="mode === 'pricing'" field="total_score" header="总得分" style="min-width: 80px" />
+      <Column v-if="mode === 'pricing'" field="rank" header="排名" style="min-width: 60px" />
+      <Column field="status" header="状态" style="min-width: 90px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status]" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width:120px">
+      <Column header="操作" style="min-width: 120px">
         <template #body="{ data }">
           <div class="flex gap-1">
-            <Button v-if="mode === 'registrations'" icon="pi pi-pencil" size="small" severity="info" @click="openEdit(data)" v-tooltip.top="'编辑'" />
-            <Button v-if="mode === 'registrations'" icon="pi pi-trash" size="small" severity="danger" @click="remove(data)" v-tooltip.top="'删除'" />
+            <Button
+              v-if="mode === 'registrations'"
+              icon="pi pi-pencil"
+              size="small"
+              severity="info"
+              @click="openEdit(data)"
+              v-tooltip.top="'编辑'"
+            />
+            <Button
+              v-if="mode === 'registrations'"
+              icon="pi pi-trash"
+              size="small"
+              severity="danger"
+              @click="remove(data)"
+              v-tooltip.top="'删除'"
+            />
           </div>
         </template>
       </Column>
     </DataTable>
 
     <!-- 编辑/创建对话框 -->
-    <Dialog v-model:visible="showDialog" :header="(isEdit ? '编辑' : '新建') + '投标项目'" :style="{ width: '800px' }" :modal="true" class="p-fluid">
-      <div class="grid grid-cols-2 gap-4" style="max-height:60vh; overflow-y:auto; padding-right:4px">
+    <Dialog
+      v-model:visible="showDialog"
+      :header="(isEdit ? '编辑' : '新建') + '投标项目'"
+      :style="{ width: '800px' }"
+      :modal="true"
+      class="p-fluid"
+    >
+      <div class="grid grid-cols-2 gap-4" style="max-height: 60vh; overflow-y: auto; padding-right: 4px">
         <!-- 基本信息 -->
         <div class="col-span-2 font-bold text-lg border-b pb-1 mb-1">基本信息</div>
         <div>

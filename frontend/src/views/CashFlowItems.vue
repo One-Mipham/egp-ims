@@ -8,7 +8,13 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import ToggleSwitch from 'primevue/toggleswitch'
-import { listCashFlowItems, createCashFlowItem, updateCashFlowItem, deleteCashFlowItem, seedDefaultCashFlowItems } from '@/api'
+import {
+  listCashFlowItems,
+  createCashFlowItem,
+  updateCashFlowItem,
+  deleteCashFlowItem,
+  seedDefaultCashFlowItems,
+} from '@/api'
 
 const toast = useToast()
 const items = ref<any[]>([])
@@ -28,8 +34,13 @@ interface CFItemForm {
 }
 
 const emptyForm = (): CFItemForm => ({
-  code: '', name: '', category_code: '', direction: 'inflow',
-  debit_accounts: '', credit_accounts: '', is_active: true,
+  code: '',
+  name: '',
+  category_code: '',
+  direction: 'inflow',
+  debit_accounts: '',
+  credit_accounts: '',
+  is_active: true,
 })
 
 const form = ref<CFItemForm>(emptyForm())
@@ -146,41 +157,47 @@ onMounted(() => loadItems())
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-semibold text-zinc-800">现金流量表项目映射</h2>
       <div class="flex gap-2">
-        <Button label="补齐国标预设" icon="pi pi-refresh" severity="secondary" size="small" @click="handleSeedDefaults" />
+        <Button
+          label="补齐国标预设"
+          icon="pi pi-refresh"
+          severity="secondary"
+          size="small"
+          @click="handleSeedDefaults"
+        />
         <Button label="新增项目" icon="pi pi-plus" size="small" @click="openAdd" />
       </div>
     </div>
 
     <div class="bg-white rounded-sm border border-zinc-200 shadow-sm">
       <DataTable :value="items" :loading="loading" stripedRows size="small" tableStyle="min-width: auto">
-        <Column field="code" header="编码" style="width:80px" />
-        <Column field="name" header="项目名称" style="width:260px" />
-        <Column header="报表位置" style="width:150px">
+        <Column field="code" header="编码" style="width: 80px" />
+        <Column field="name" header="项目名称" style="width: 260px" />
+        <Column header="报表位置" style="width: 150px">
           <template #body="{ data }">{{ getCategoryLabel(data.category_code) }}</template>
         </Column>
-        <Column header="方向" style="width:70px">
+        <Column header="方向" style="width: 70px">
           <template #body="{ data }">
             <span :class="data.direction === 'inflow' ? 'text-green-600' : 'text-red-600'">
               {{ data.direction === 'inflow' ? '流入' : '流出' }}
             </span>
           </template>
         </Column>
-        <Column field="debit_accounts" header="借方对方科目" style="width:200px">
+        <Column field="debit_accounts" header="借方对方科目" style="width: 200px">
           <template #body="{ data }">
             <code class="text-xs bg-zinc-100 px-1 rounded">{{ data.debit_accounts || '-' }}</code>
           </template>
         </Column>
-        <Column field="credit_accounts" header="贷方对方科目" style="width:200px">
+        <Column field="credit_accounts" header="贷方对方科目" style="width: 200px">
           <template #body="{ data }">
             <code class="text-xs bg-zinc-100 px-1 rounded">{{ data.credit_accounts || '-' }}</code>
           </template>
         </Column>
-        <Column header="启用" style="width:60px">
+        <Column header="启用" style="width: 60px">
           <template #body="{ data }">
             <i :class="data.is_active ? 'pi pi-check text-green-500' : 'pi pi-times text-red-400'" />
           </template>
         </Column>
-        <Column header="操作" style="width:120px">
+        <Column header="操作" style="width: 120px">
           <template #body="{ data }">
             <Button icon="pi pi-pencil" severity="secondary" text size="small" @click="openEdit(data)" />
             <Button icon="pi pi-trash" severity="danger" text size="small" @click="handleDelete(data)" />
@@ -190,7 +207,12 @@ onMounted(() => loadItems())
     </div>
 
     <!-- Edit / Add Dialog -->
-    <Dialog v-model:visible="showDialog" :header="isEdit ? '编辑现金流量项目' : '新增现金流量项目'" :modal="true" class="w-[520px]">
+    <Dialog
+      v-model:visible="showDialog"
+      :header="isEdit ? '编辑现金流量项目' : '新增现金流量项目'"
+      :modal="true"
+      class="w-[520px]"
+    >
       <div class="flex flex-col gap-3 pt-2">
         <div class="flex gap-3">
           <div class="flex-1">
@@ -199,7 +221,13 @@ onMounted(() => loadItems())
           </div>
           <div>
             <label class="block text-sm text-zinc-600 mb-1">方向</label>
-            <Dropdown v-model="form.direction" :options="DIRECTION_OPTIONS" optionLabel="label" optionValue="value" class="w-32" />
+            <Dropdown
+              v-model="form.direction"
+              :options="DIRECTION_OPTIONS"
+              optionLabel="label"
+              optionValue="value"
+              class="w-32"
+            />
           </div>
         </div>
 
@@ -210,7 +238,15 @@ onMounted(() => loadItems())
 
         <div>
           <label class="block text-sm text-zinc-600 mb-1">映射到报表行</label>
-          <Dropdown v-model="form.category_code" :options="CATEGORY_OPTIONS" optionLabel="label" optionValue="value" class="w-full" showClear placeholder="选择报表行..." />
+          <Dropdown
+            v-model="form.category_code"
+            :options="CATEGORY_OPTIONS"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+            showClear
+            placeholder="选择报表行..."
+          />
         </div>
 
         <div>

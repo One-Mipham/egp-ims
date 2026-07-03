@@ -43,18 +43,21 @@ const statusOptions = [
   { label: '已终止', value: 'terminated' },
 ]
 const statusLabels: Record<string, string> = {
-  draft: '草稿', active: '履行中', completed: '已完成', terminated: '已终止',
+  draft: '草稿',
+  active: '履行中',
+  completed: '已完成',
+  terminated: '已终止',
 }
 const statusSeverity: Record<string, string> = {
-  draft: 'secondary', active: 'success', completed: 'info', terminated: 'danger',
+  draft: 'secondary',
+  active: 'success',
+  completed: 'info',
+  terminated: 'danger',
 }
 
 async function loadRefs() {
   try {
-    const [deptRes, catRes] = await Promise.all([
-      listDepartments(companyId),
-      getContractCategories(),
-    ])
+    const [deptRes, catRes] = await Promise.all([listDepartments(companyId), getContractCategories()])
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
     categories.value = catRes.data
   } catch (_) {}
@@ -69,15 +72,14 @@ async function load() {
     if (fDept.value.length) params.department_id = fDept.value.join(',')
     if (fStatus.value) params.status = fStatus.value
     if (fSearch.value) params.search = fSearch.value
-    const [listRes, statsRes] = await Promise.all([
-      listContracts(params),
-      getContractStats(companyId),
-    ])
+    const [listRes, statsRes] = await Promise.all([listContracts(params), getContractStats(companyId)])
     items.value = listRes.data
     stats.value = statsRes.data
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '加载失败', detail: e.message, life: 3000 })
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 function fmtDate(v: string) {
@@ -136,8 +138,12 @@ onMounted(async () => {
       <Card>
         <template #title><div class="text-sm font-semibold">按合同大类</div></template>
         <template #content>
-          <div v-for="(v, k) in stats.by_type" :key="k" class="flex justify-between text-sm py-1 border-b last:border-0">
-            <span>{{ {supplier:'供应商',customer:'客户',labor:'劳动',lease:'租赁'}[k] || k }}</span>
+          <div
+            v-for="(v, k) in stats.by_type"
+            :key="k"
+            class="flex justify-between text-sm py-1 border-b last:border-0"
+          >
+            <span>{{ { supplier: '供应商', customer: '客户', labor: '劳动', lease: '租赁' }[k] || k }}</span>
             <span class="font-medium">{{ v.count }} 份 / ¥{{ v.amount?.toLocaleString() }}</span>
           </div>
         </template>
@@ -145,7 +151,11 @@ onMounted(async () => {
       <Card>
         <template #title><div class="text-sm font-semibold">按合同类别</div></template>
         <template #content>
-          <div v-for="(v, k) in stats.by_category" :key="k" class="flex justify-between text-sm py-1 border-b last:border-0">
+          <div
+            v-for="(v, k) in stats.by_category"
+            :key="k"
+            class="flex justify-between text-sm py-1 border-b last:border-0"
+          >
             <span>{{ k }}</span>
             <span class="font-medium">{{ v.count }} 份</span>
           </div>
@@ -154,7 +164,11 @@ onMounted(async () => {
       <Card>
         <template #title><div class="text-sm font-semibold">按发起部门</div></template>
         <template #content>
-          <div v-for="(v, k) in stats.by_department" :key="k" class="flex justify-between text-sm py-1 border-b last:border-0">
+          <div
+            v-for="(v, k) in stats.by_department"
+            :key="k"
+            class="flex justify-between text-sm py-1 border-b last:border-0"
+          >
             <span>{{ k }}</span>
             <span class="font-medium">{{ v.count }} 份</span>
           </div>
@@ -165,44 +179,76 @@ onMounted(async () => {
     <!-- Filters -->
     <div class="flex flex-wrap gap-3 mb-4 items-center">
       <Dropdown v-model="fType" :options="typeOptions" placeholder="合同大类" class="w-40" showClear @change="load" />
-      <MultiSelect v-model="fCategory" :options="categories" placeholder="合同类别" class="w-56" display="chip" @change="load" />
-      <MultiSelect v-model="fDept" :options="departments" placeholder="发起部门" class="w-48" display="chip" @change="load" />
+      <MultiSelect
+        v-model="fCategory"
+        :options="categories"
+        placeholder="合同类别"
+        class="w-56"
+        display="chip"
+        @change="load"
+      />
+      <MultiSelect
+        v-model="fDept"
+        :options="departments"
+        placeholder="发起部门"
+        class="w-48"
+        display="chip"
+        @change="load"
+      />
       <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-36" showClear @change="load" />
       <InputText v-model="fSearch" placeholder="搜索..." class="w-48" @keyup.enter="load" />
       <Button icon="pi pi-search" severity="secondary" @click="load" />
     </div>
 
-    <DataTable :value="items" :loading="loading" paginator :rows="15"
-      :rowsPerPageOptions="[15, 30, 50]" stripedRows sortField="id" :sortOrder="-1"
+    <DataTable
+      :value="items"
+      :loading="loading"
+      paginator
+      :rows="15"
+      :rowsPerPageOptions="[15, 30, 50]"
+      stripedRows
+      sortField="id"
+      :sortOrder="-1"
     >
-      <Column field="contract_type" header="大类" style="min-width:90px">
+      <Column field="contract_type" header="大类" style="min-width: 90px">
         <template #body="{ data }">
-          <Tag :value="({supplier:'供应商',customer:'客户',labor:'劳动',lease:'租赁'} as Record<string,string>)[data.contract_type] || data.contract_type" severity="info" />
+          <Tag
+            :value="
+              ({ supplier: '供应商', customer: '客户', labor: '劳动', lease: '租赁' } as Record<string, string>)[
+                data.contract_type
+              ] || data.contract_type
+            "
+            severity="info"
+          />
         </template>
       </Column>
-      <Column field="contract_no" header="合同号码" style="min-width:140px" sortable />
-      <Column field="contract_name" header="合同名称" style="min-width:160px" sortable />
-      <Column field="contract_category" header="类别" style="min-width:110px" sortable />
-      <Column field="party_b" header="乙方" style="min-width:140px" sortable />
-      <Column field="amount" header="金额" style="min-width:100px" sortable>
+      <Column field="contract_no" header="合同号码" style="min-width: 140px" sortable />
+      <Column field="contract_name" header="合同名称" style="min-width: 160px" sortable />
+      <Column field="contract_category" header="类别" style="min-width: 110px" sortable />
+      <Column field="party_b" header="乙方" style="min-width: 140px" sortable />
+      <Column field="amount" header="金额" style="min-width: 100px" sortable>
         <template #body="{ data }">¥{{ data.amount?.toLocaleString() }}</template>
       </Column>
-      <Column field="sign_date" header="签署日期" style="min-width:100px" sortable>
+      <Column field="sign_date" header="签署日期" style="min-width: 100px" sortable>
         <template #body="{ data }">{{ fmtDate(data.sign_date) }}</template>
       </Column>
-      <Column field="end_date" header="到期日期" style="min-width:100px" sortable>
+      <Column field="end_date" header="到期日期" style="min-width: 100px" sortable>
         <template #body="{ data }">{{ fmtDate(data.end_date) }}</template>
       </Column>
-      <Column field="status" header="状态" style="min-width:80px">
+      <Column field="status" header="状态" style="min-width: 80px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status] || data.status" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width:100px">
+      <Column header="操作" style="min-width: 100px">
         <template #body="{ data }">
-          <Button icon="pi pi-print" severity="secondary" size="small"
+          <Button
+            icon="pi pi-print"
+            severity="secondary"
+            size="small"
             @click="router.push(`/finance/contracts/print/${data.id}`)"
-            v-tooltip.top="'打印'" />
+            v-tooltip.top="'打印'"
+          />
         </template>
       </Column>
     </DataTable>

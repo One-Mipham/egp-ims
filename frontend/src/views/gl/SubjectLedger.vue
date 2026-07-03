@@ -9,7 +9,7 @@
       </div>
       <div>
         <label class="block text-sm mb-1">级别</label>
-        <Dropdown v-model="filters.level" :options="[null,1,2,3,4]" class="w-24">
+        <Dropdown v-model="filters.level" :options="[null, 1, 2, 3, 4]" class="w-24">
           <template #value="slotProps">{{ slotProps.value ? slotProps.value + '级' : '全部' }}</template>
           <template #option="slotProps">{{ slotProps.option ? slotProps.option + '级' : '全部' }}</template>
         </Dropdown>
@@ -33,21 +33,26 @@
       <AccordionTab v-for="(item, i) in results" :key="i">
         <template #header>
           <div class="flex justify-between w-full pr-4">
-            <span><strong>{{ item.account_code }}</strong> {{ item.account_name }}</span>
-            <span class="text-sm">期初: {{ item.beginning_balance.toLocaleString() }} | 借: {{ item.total_debit.toLocaleString() }} | 贷: {{ item.total_credit.toLocaleString() }} | 期末: {{ item.ending_balance.toLocaleString() }}</span>
+            <span
+              ><strong>{{ item.account_code }}</strong> {{ item.account_name }}</span
+            >
+            <span class="text-sm"
+              >期初: {{ item.beginning_balance.toLocaleString() }} | 借: {{ item.total_debit.toLocaleString() }} | 贷:
+              {{ item.total_credit.toLocaleString() }} | 期末: {{ item.ending_balance.toLocaleString() }}</span
+            >
           </div>
         </template>
         <DataTable :value="item.entries" size="small" stripedRows>
-          <Column field="date" header="日期" style="width:7rem" />
-          <Column field="voucher_no" header="凭证号" style="width:7rem" />
+          <Column field="date" header="日期" style="width: 7rem" />
+          <Column field="voucher_no" header="凭证号" style="width: 7rem" />
           <Column field="summary" header="摘要" />
-          <Column field="debit" header="借方" style="width:8rem">
+          <Column field="debit" header="借方" style="width: 8rem">
             <template #body="{ data }">{{ data.debit ? data.debit.toLocaleString() : '' }}</template>
           </Column>
-          <Column field="credit" header="贷方" style="width:8rem">
+          <Column field="credit" header="贷方" style="width: 8rem">
             <template #body="{ data }">{{ data.credit ? data.credit.toLocaleString() : '' }}</template>
           </Column>
-          <Column field="balance" header="余额" style="width:8rem">
+          <Column field="balance" header="余额" style="width: 8rem">
             <template #body="{ data }">{{ data.balance.toLocaleString() }}</template>
           </Column>
         </DataTable>

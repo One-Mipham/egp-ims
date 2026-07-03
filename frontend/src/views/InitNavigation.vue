@@ -18,9 +18,7 @@ const sections = [
     label: '选项设置',
     icon: 'pi pi-sliders-h',
     desc: '配置业务流程参数与系统偏好',
-    items: [
-      { label: '进入选项设置', to: '/settings/options' },
-    ],
+    items: [{ label: '进入选项设置', to: '/settings/options' }],
   },
   {
     num: '3',
@@ -40,18 +38,14 @@ const sections = [
     label: '单据设置',
     icon: 'pi pi-file',
     desc: '配置凭证类别与单据模板',
-    items: [
-      { label: '进入单据设置', to: '/settings/voucher-types' },
-    ],
+    items: [{ label: '进入单据设置', to: '/settings/voucher-types' }],
   },
   {
     num: '5',
     label: '期初数据',
     icon: 'pi pi-sync',
     desc: '录入或导入科目期初余额',
-    items: [
-      { label: '进入期初数据', to: '/init/opening-balances' },
-    ],
+    items: [{ label: '进入期初数据', to: '/init/opening-balances' }],
   },
 ]
 </script>
@@ -67,7 +61,9 @@ const sections = [
       <Card v-for="s in sections" :key="s.num" class="shadow-sm border border-zinc-200">
         <template #title>
           <div class="flex items-center gap-3">
-            <span class="w-7 h-7 rounded-full bg-emerald-700 text-white text-xs flex items-center justify-center font-medium shrink-0">
+            <span
+              class="w-7 h-7 rounded-full bg-emerald-700 text-white text-xs flex items-center justify-center font-medium shrink-0"
+            >
               {{ s.num }}
             </span>
             <span class="text-base font-medium text-zinc-800">{{ s.label }}</span>
@@ -80,8 +76,7 @@ const sections = [
               v-for="item in s.items"
               :key="item.to"
               :to="item.to"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium
-                     bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
             >
               <i :class="s.icon" style="font-size: 11px" />
               {{ item.label }}

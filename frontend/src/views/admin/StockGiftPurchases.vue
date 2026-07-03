@@ -8,22 +8,86 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
-import { listGiftPurchases, createGiftPurchase, updateGiftPurchase, deleteGiftPurchase, submitGiftPurchase } from '@/api'
+import {
+  listGiftPurchases,
+  createGiftPurchase,
+  updateGiftPurchase,
+  deleteGiftPurchase,
+  submitGiftPurchase,
+} from '@/api'
 
-const items = ref<any[]>([]); const loading = ref(false); const showDialog = ref(false)
-const isEdit = ref(false); const editId = ref<number | null>(null); const companyId = ref(1)
-const emptyForm = () => ({ company_id: companyId.value, gift_id: null, applicant: '', department: '', gift_name: '', quantity: 0, unit_price: 0, total_price: 0, supplier: '', reason: '' })
+const items = ref<any[]>([])
+const loading = ref(false)
+const showDialog = ref(false)
+const isEdit = ref(false)
+const editId = ref<number | null>(null)
+const companyId = ref(1)
+const emptyForm = () => ({
+  company_id: companyId.value,
+  gift_id: null,
+  applicant: '',
+  department: '',
+  gift_name: '',
+  quantity: 0,
+  unit_price: 0,
+  total_price: 0,
+  supplier: '',
+  reason: '',
+})
 const form = ref(emptyForm())
 
-async function load() { loading.value = true; try { const { data } = await listGiftPurchases(companyId.value); items.value = data } finally { loading.value = false } }
-function openCreate() { form.value = emptyForm(); isEdit.value = false; showDialog.value = true }
-function openEdit(r: any) { form.value = { ...r }; isEdit.value = true; editId.value = r.id; showDialog.value = true }
+async function load() {
+  loading.value = true
+  try {
+    const { data } = await listGiftPurchases(companyId.value)
+    items.value = data
+  } finally {
+    loading.value = false
+  }
+}
+function openCreate() {
+  form.value = emptyForm()
+  isEdit.value = false
+  showDialog.value = true
+}
+function openEdit(r: any) {
+  form.value = { ...r }
+  isEdit.value = true
+  editId.value = r.id
+  showDialog.value = true
+}
 async function save() {
   form.value.total_price = form.value.quantity * form.value.unit_price
-  try { if (isEdit.value && editId.value) await updateGiftPurchase(editId.value, form.value); else await createGiftPurchase(form.value); showDialog.value = false; await load() } catch (e: any) { alert(e.response?.data?.detail || '操作失败') } }
-async function remove(id: number) { if (!confirm('确定删除？')) return; try { await deleteGiftPurchase(id); await load() } catch (e: any) { alert('删除失败') } }
-async function doSubmit(id: number) { const ids = prompt('请输入审批人ID（逗号分隔）：'); if (!ids) return; try { await submitGiftPurchase(id, ids.split(',').map(Number)); await load() } catch (e: any) { alert('提交失败') } }
-const statusSeverity = (s: string) => ({ draft: 'secondary', pending_approval: 'warn', approved: 'success', rejected: 'danger' } as any)[s] || 'secondary'
+  try {
+    if (isEdit.value && editId.value) await updateGiftPurchase(editId.value, form.value)
+    else await createGiftPurchase(form.value)
+    showDialog.value = false
+    await load()
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '操作失败')
+  }
+}
+async function remove(id: number) {
+  if (!confirm('确定删除？')) return
+  try {
+    await deleteGiftPurchase(id)
+    await load()
+  } catch (e: any) {
+    alert('删除失败')
+  }
+}
+async function doSubmit(id: number) {
+  const ids = prompt('请输入审批人ID（逗号分隔）：')
+  if (!ids) return
+  try {
+    await submitGiftPurchase(id, ids.split(',').map(Number))
+    await load()
+  } catch (e: any) {
+    alert('提交失败')
+  }
+}
+const statusSeverity = (s: string) =>
+  (({ draft: 'secondary', pending_approval: 'warn', approved: 'success', rejected: 'danger' }) as any)[s] || 'secondary'
 onMounted(load)
 </script>
 
@@ -36,24 +100,70 @@ onMounted(load)
         <Column field="applicant" header="申请人" />
         <Column field="quantity" header="数量" />
         <Column field="total_price" header="总价" />
-        <Column header="状态"><template #body="{ data }"><Tag :value="data.status" :severity="statusSeverity(data.status)" /></template></Column>
-        <Column header="操作" style="min-width:160px">
-          <template #body="{ data }"><Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" /><Button v-if="data.status === 'draft'" text size="small" icon="pi pi-send" @click="doSubmit(data.id)" /><Button v-if="data.status === 'draft'" text size="small" icon="pi pi-trash" severity="danger" @click="remove(data.id)" /></template>
+        <Column header="状态"
+          ><template #body="{ data }"><Tag :value="data.status" :severity="statusSeverity(data.status)" /></template
+        ></Column>
+        <Column header="操作" style="min-width: 160px">
+          <template #body="{ data }"
+            ><Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" /><Button
+              v-if="data.status === 'draft'"
+              text
+              size="small"
+              icon="pi pi-send"
+              @click="doSubmit(data.id)" /><Button
+              v-if="data.status === 'draft'"
+              text
+              size="small"
+              icon="pi pi-trash"
+              severity="danger"
+              @click="remove(data.id)"
+          /></template>
         </Column>
       </DataTable>
     </div>
-    <Dialog v-model:visible="showDialog" :header="isEdit ? '编辑采购申请' : '新建采购申请'" :style="{ width: '500px' }" :modal="true">
+    <Dialog
+      v-model:visible="showDialog"
+      :header="isEdit ? '编辑采购申请' : '新建采购申请'"
+      :style="{ width: '500px' }"
+      :modal="true"
+    >
       <div class="grid grid-cols-2 gap-3">
-        <div class="col-span-2"><label class="block text-xs text-zinc-500 mb-1">礼品名称</label><InputText v-model="form.gift_name" class="w-full" /></div>
-        <div><label class="block text-xs text-zinc-500 mb-1">申请人</label><InputText v-model="form.applicant" class="w-full" /></div>
-        <div><label class="block text-xs text-zinc-500 mb-1">部门</label><InputText v-model="form.department" class="w-full" /></div>
-        <div><label class="block text-xs text-zinc-500 mb-1">数量</label><InputNumber v-model="form.quantity" class="w-full" /></div>
-        <div><label class="block text-xs text-zinc-500 mb-1">单价</label><InputNumber v-model="form.unit_price" class="w-full" /></div>
-        <div><label class="block text-xs text-zinc-500 mb-1">总价（自动计算）</label><InputText :model-value="String(form.quantity * form.unit_price)" readonly class="w-full" /></div>
-        <div><label class="block text-xs text-zinc-500 mb-1">供应商</label><InputText v-model="form.supplier" class="w-full" /></div>
-        <div class="col-span-2"><label class="block text-xs text-zinc-500 mb-1">采购理由</label><Textarea v-model="form.reason" rows="2" class="w-full" /></div>
+        <div class="col-span-2">
+          <label class="block text-xs text-zinc-500 mb-1">礼品名称</label
+          ><InputText v-model="form.gift_name" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">申请人</label
+          ><InputText v-model="form.applicant" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">部门</label
+          ><InputText v-model="form.department" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">数量</label
+          ><InputNumber v-model="form.quantity" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">单价</label
+          ><InputNumber v-model="form.unit_price" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">总价（自动计算）</label
+          ><InputText :model-value="String(form.quantity * form.unit_price)" readonly class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1">供应商</label
+          ><InputText v-model="form.supplier" class="w-full" />
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-zinc-500 mb-1">采购理由</label
+          ><Textarea v-model="form.reason" rows="2" class="w-full" />
+        </div>
       </div>
-      <template #footer><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save" /></template>
+      <template #footer
+        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+      /></template>
     </Dialog>
   </div>
 </template>

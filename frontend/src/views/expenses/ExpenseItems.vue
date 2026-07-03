@@ -32,7 +32,9 @@ const fetchItems = async () => {
       .map((i: any) => ({ label: `${i.code} ${i.name}`, value: i.code }))
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '加载失败', detail: e.response?.data?.detail || e.message, life: 3000 })
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 const openCreate = () => {
@@ -45,9 +47,11 @@ const openCreate = () => {
 const openEdit = (item: any) => {
   isEdit.value = true
   form.value = {
-    code: item.code, name: item.name,
+    code: item.code,
+    name: item.name,
     parent_code: item.parent_code || '',
-    tax_rate: item.tax_rate || 0, is_active: item.is_active,
+    tax_rate: item.tax_rate || 0,
+    is_active: item.is_active,
   }
   editId.value = item.id
   dialog.value = true
@@ -56,9 +60,12 @@ const openEdit = (item: any) => {
 const save = async () => {
   try {
     const data = {
-      company_id: companyId, code: form.value.code, name: form.value.name,
+      company_id: companyId,
+      code: form.value.code,
+      name: form.value.name,
       parent_code: form.value.parent_code || undefined,
-      tax_rate: form.value.tax_rate, is_active: form.value.is_active,
+      tax_rate: form.value.tax_rate,
+      is_active: form.value.is_active,
     }
     if (isEdit.value && editId.value) {
       await updateExpenseItem(editId.value, data)
@@ -94,7 +101,7 @@ onMounted(fetchItems)
             {{ slotProps.data.tax_rate ? (slotProps.data.tax_rate * 100).toFixed(0) : '-' }}
           </template>
         </Column>
-        <Column header="操作" style="width:6rem">
+        <Column header="操作" style="width: 6rem">
           <template #body="slotProps">
             <Button icon="pi pi-pencil" size="small" text rounded @click="openEdit(slotProps.data)" />
           </template>
@@ -102,7 +109,12 @@ onMounted(fetchItems)
       </DataTable>
     </div>
 
-    <Dialog v-model:visible="dialog" :header="isEdit ? '编辑费用项目' : '新增费用项目'" :modal="true" :style="{ width: '28rem' }">
+    <Dialog
+      v-model:visible="dialog"
+      :header="isEdit ? '编辑费用项目' : '新增费用项目'"
+      :modal="true"
+      :style="{ width: '28rem' }"
+    >
       <div class="flex flex-col gap-3">
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium">编码 <span class="text-red-500">*</span></label>
@@ -114,11 +126,23 @@ onMounted(fetchItems)
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium">上级编码</label>
-          <Dropdown v-model="form.parent_code" :options="parentOptions" class="w-full" showClear placeholder="留空为一级项目" />
+          <Dropdown
+            v-model="form.parent_code"
+            :options="parentOptions"
+            class="w-full"
+            showClear
+            placeholder="留空为一级项目"
+          />
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium">税率</label>
-          <InputNumber v-model="form.tax_rate" class="w-full" :minFractionDigits="2" :maxFractionDigits="2" suffix="%" />
+          <InputNumber
+            v-model="form.tax_rate"
+            class="w-full"
+            :minFractionDigits="2"
+            :maxFractionDigits="2"
+            suffix="%"
+          />
         </div>
       </div>
       <template #footer>

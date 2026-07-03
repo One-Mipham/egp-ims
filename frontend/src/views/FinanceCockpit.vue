@@ -7,20 +7,20 @@ const router = useRouter()
 
 const indicators = ref([
   { label: '预算完成表现', status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '现金流安全',   status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '偿债能力',     status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '营运能力',     status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '盈利能力',     status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '成长能力',     status: 'green' as 'green' | 'yellow' | 'red' },
+  { label: '现金流安全', status: 'green' as 'green' | 'yellow' | 'red' },
+  { label: '偿债能力', status: 'green' as 'green' | 'yellow' | 'red' },
+  { label: '营运能力', status: 'green' as 'green' | 'yellow' | 'red' },
+  { label: '盈利能力', status: 'green' as 'green' | 'yellow' | 'red' },
+  { label: '成长能力', status: 'green' as 'green' | 'yellow' | 'red' },
 ])
 
 const cockpitPaths: Record<string, string> = {
-  '预算完成表现': '/cockpit/budget',
-  '现金流安全':   '/cockpit/cashflow',
-  '偿债能力':     '/cockpit/indicators',
-  '营运能力':     '/cockpit/indicators',
-  '盈利能力':     '/cockpit/indicators',
-  '成长能力':     '/cockpit/indicators',
+  预算完成表现: '/cockpit/budget',
+  现金流安全: '/cockpit/cashflow',
+  偿债能力: '/cockpit/indicators',
+  营运能力: '/cockpit/indicators',
+  盈利能力: '/cockpit/indicators',
+  成长能力: '/cockpit/indicators',
 }
 
 function goCockpit(label: string) {
@@ -30,16 +30,24 @@ function goCockpit(label: string) {
 
 const loading = ref(false)
 const STATUS_CIRCLE_CLASS: Record<string, string> = {
-  green: 'circle-green', yellow: 'circle-yellow', red: 'circle-red',
+  green: 'circle-green',
+  yellow: 'circle-yellow',
+  red: 'circle-red',
 }
 const STATUS_ICON: Record<string, string> = {
-  green: 'pi-check-circle', yellow: 'pi-exclamation-circle', red: 'pi-times-circle',
+  green: 'pi-check-circle',
+  yellow: 'pi-exclamation-circle',
+  red: 'pi-times-circle',
 }
 const STATUS_ICON_COLOR: Record<string, string> = {
-  green: '#059669', yellow: '#d97706', red: '#dc2626',
+  green: '#059669',
+  yellow: '#d97706',
+  red: '#dc2626',
 }
 const STATUS_LABEL: Record<string, string> = {
-  green: '绿灯', yellow: '黄灯', red: '红灯',
+  green: '绿灯',
+  yellow: '黄灯',
+  red: '红灯',
 }
 
 onMounted(async () => {
@@ -51,8 +59,11 @@ onMounted(async () => {
         if (res.data[ind.label]) ind.status = res.data[ind.label]
       }
     }
-  } catch { /* use defaults */ }
-  finally { loading.value = false }
+  } catch {
+    /* use defaults */
+  } finally {
+    loading.value = false
+  }
 })
 
 const financeMenu = [
@@ -98,10 +109,9 @@ const financeMenu = [
               :style="{ color: STATUS_ICON_COLOR[ind.status] }"
             />
             <div class="circle-label">{{ ind.label }}</div>
-            <div
-              class="text-[10px] mt-1 font-medium"
-              :style="{ color: STATUS_ICON_COLOR[ind.status] }"
-            >{{ STATUS_LABEL[ind.status] }}</div>
+            <div class="text-[10px] mt-1 font-medium" :style="{ color: STATUS_ICON_COLOR[ind.status] }">
+              {{ STATUS_LABEL[ind.status] }}
+            </div>
           </div>
         </div>
       </div>

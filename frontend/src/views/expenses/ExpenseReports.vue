@@ -16,9 +16,15 @@ const loading = ref(false)
 const filters = ref({ start_date: '', end_date: '' })
 
 const statusLabels: Record<string, string> = {
-  draft: '草稿', submitted: '待审批', dept_approved: '部门已批',
-  finance_approved: '财务已批', director_approved: '总监已批',
-  unit_head_approved: '已审批', paid: '已付款', closed: '已归档', rejected: '已驳回',
+  draft: '草稿',
+  submitted: '待审批',
+  dept_approved: '部门已批',
+  finance_approved: '财务已批',
+  director_approved: '总监已批',
+  unit_head_approved: '已审批',
+  paid: '已付款',
+  closed: '已归档',
+  rejected: '已驳回',
 }
 
 const fetchAll = async () => {
@@ -32,7 +38,9 @@ const fetchAll = async () => {
     stats.value = sRes.data
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '加载失败', detail: e.message, life: 3000 })
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(fetchAll)

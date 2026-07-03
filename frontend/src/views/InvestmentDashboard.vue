@@ -30,25 +30,61 @@ const typeDistribution = computed(() => {
     map[t] = (map[t] || 0) + (p.fair_value || 0)
   })
   const total = Object.values(map).reduce((s, v) => s + v, 0) || 1
-  return Object.entries(map).map(([k, v]) => ({ type: k, value: v, pct: Math.round(v / total * 100) }))
+  return Object.entries(map).map(([k, v]) => ({ type: k, value: v, pct: Math.round((v / total) * 100) }))
 })
 
 const TYPE_LABELS: Record<string, string> = {
-  vc: 'VC', pe: 'PE', angel: '天使', general_equity: '一般股权', secondary_market: '二级市场',
-  fixed_income: '固定收益', mutual_fund: '公募基金', private_fund: '私募基金', etf: 'ETF',
-  alternative: '另类', real_estate: '房地产', infrastructure: '基础设施',
-  private_credit: '私募信贷', commodity: '大宗商品', digital_asset: '数字资产',
-  trust: '信托', derivatives: '衍生品',
+  vc: 'VC',
+  pe: 'PE',
+  angel: '天使',
+  general_equity: '一般股权',
+  secondary_market: '二级市场',
+  fixed_income: '固定收益',
+  mutual_fund: '公募基金',
+  private_fund: '私募基金',
+  etf: 'ETF',
+  alternative: '另类',
+  real_estate: '房地产',
+  infrastructure: '基础设施',
+  private_credit: '私募信贷',
+  commodity: '大宗商品',
+  digital_asset: '数字资产',
+  trust: '信托',
+  derivatives: '衍生品',
 }
 
 const TXN_LABELS: Record<string, string> = {
-  buy: '买入', sell: '卖出', capital_call: '资本召唤', distribution: '分配返还',
-  dividend: '分红', interest: '利息',
+  buy: '买入',
+  sell: '卖出',
+  capital_call: '资本召唤',
+  distribution: '分配返还',
+  dividend: '分红',
+  interest: '利息',
 }
 
-const COLORS = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#06b6d4','#3b82f6','#ef4444','#84cc16','#f97316','#14b8a6','#a855f7','#e11d48','#0ea5e9','#d946ef','#22c55e','#64748b']
+const COLORS = [
+  '#6366f1',
+  '#8b5cf6',
+  '#ec4899',
+  '#f59e0b',
+  '#10b981',
+  '#06b6d4',
+  '#3b82f6',
+  '#ef4444',
+  '#84cc16',
+  '#f97316',
+  '#14b8a6',
+  '#a855f7',
+  '#e11d48',
+  '#0ea5e9',
+  '#d946ef',
+  '#22c55e',
+  '#64748b',
+]
 
-function fmt(n: number) { return n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
+function fmt(n: number) {
+  return n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
 
 async function load() {
   loading.value = true
@@ -63,7 +99,9 @@ async function load() {
     positions.value = posRes.data
     recentTransactions.value = txnRes.data.slice(0, 5)
     incomeTotal.value = incRes.data?.total || 0
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(load)
@@ -96,7 +134,7 @@ onMounted(load)
             ¥{{ fmt(unrealizedPnL) }}
           </div>
           <div class="text-xs text-stone-400 mt-1">
-            {{ totalCost ? (unrealizedPnL / totalCost * 100).toFixed(1) : '0.0' }}%
+            {{ totalCost ? ((unrealizedPnL / totalCost) * 100).toFixed(1) : '0.0' }}%
           </div>
         </template>
       </Card>
@@ -119,7 +157,10 @@ onMounted(load)
             <div v-for="(item, i) in typeDistribution" :key="item.type" class="flex items-center gap-3">
               <span class="text-xs text-stone-500 w-16 text-right">{{ TYPE_LABELS[item.type] || item.type }}</span>
               <div class="flex-1 bg-stone-100 rounded-full h-4 overflow-hidden">
-                <div class="h-full rounded-full transition-all" :style="{ width: item.pct + '%', backgroundColor: COLORS[i % COLORS.length] }" />
+                <div
+                  class="h-full rounded-full transition-all"
+                  :style="{ width: item.pct + '%', backgroundColor: COLORS[i % COLORS.length] }"
+                />
               </div>
               <span class="text-xs text-stone-500 w-12">{{ item.pct }}%</span>
               <span class="text-xs text-stone-400 w-20 text-right">¥{{ Math.round(item.value).toLocaleString() }}</span>
@@ -133,12 +174,48 @@ onMounted(load)
         <template #title><span class="text-base font-semibold text-zinc-700">快捷操作</span></template>
         <template #content>
           <div class="grid grid-cols-2 gap-3">
-            <Button label="投资组合" icon="pi pi-folder" severity="secondary" size="small" @click="router.push('/investments/portfolio')" />
-            <Button label="投资持仓" icon="pi pi-list" severity="secondary" size="small" @click="router.push('/investments/positions')" />
-            <Button label="新增交易" icon="pi pi-arrow-right-arrow-left" severity="secondary" size="small" @click="router.push('/investments/transactions')" />
-            <Button label="公允价值调整" icon="pi pi-chart-line" severity="secondary" size="small" @click="router.push('/investments/adjustments')" />
-            <Button label="投资收益" icon="pi pi-dollar" severity="secondary" size="small" @click="router.push('/investments/income')" />
-            <Button label="投资报表" icon="pi pi-file" severity="secondary" size="small" @click="router.push('/investments/reports')" />
+            <Button
+              label="投资组合"
+              icon="pi pi-folder"
+              severity="secondary"
+              size="small"
+              @click="router.push('/investments/portfolio')"
+            />
+            <Button
+              label="投资持仓"
+              icon="pi pi-list"
+              severity="secondary"
+              size="small"
+              @click="router.push('/investments/positions')"
+            />
+            <Button
+              label="新增交易"
+              icon="pi pi-arrow-right-arrow-left"
+              severity="secondary"
+              size="small"
+              @click="router.push('/investments/transactions')"
+            />
+            <Button
+              label="公允价值调整"
+              icon="pi pi-chart-line"
+              severity="secondary"
+              size="small"
+              @click="router.push('/investments/adjustments')"
+            />
+            <Button
+              label="投资收益"
+              icon="pi pi-dollar"
+              severity="secondary"
+              size="small"
+              @click="router.push('/investments/income')"
+            />
+            <Button
+              label="投资报表"
+              icon="pi pi-file"
+              severity="secondary"
+              size="small"
+              @click="router.push('/investments/reports')"
+            />
           </div>
         </template>
       </Card>
@@ -152,9 +229,13 @@ onMounted(load)
           <Column field="transaction_date" header="日期" sortable />
           <Column header="类型">
             <template #body="{ data }">
-              <Tag :value="TXN_LABELS[data.transaction_type] || data.transaction_type"
-                   :severity="data.transaction_type === 'buy' ? 'success' : data.transaction_type === 'sell' ? 'danger' : 'info'"
-                   class="text-xs" />
+              <Tag
+                :value="TXN_LABELS[data.transaction_type] || data.transaction_type"
+                :severity="
+                  data.transaction_type === 'buy' ? 'success' : data.transaction_type === 'sell' ? 'danger' : 'info'
+                "
+                class="text-xs"
+              />
             </template>
           </Column>
           <Column field="quantity" header="数量" />
@@ -166,7 +247,9 @@ onMounted(load)
           </Column>
           <Column field="notes" header="备注" />
         </DataTable>
-        <div v-if="recentTransactions.length === 0 && !loading" class="text-sm text-stone-400 py-4 text-center">暂无交易记录</div>
+        <div v-if="recentTransactions.length === 0 && !loading" class="text-sm text-stone-400 py-4 text-center">
+          暂无交易记录
+        </div>
       </template>
     </Card>
   </div>

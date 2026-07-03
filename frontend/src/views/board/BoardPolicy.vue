@@ -44,8 +44,11 @@ async function loadPolicy() {
       policyContent.value = ''
       policyTitle.value = tabs[activeTab.value].title
     }
-  } catch { /* */ }
-  finally { loading.value = false }
+  } catch {
+    /* */
+  } finally {
+    loading.value = false
+  }
 }
 
 async function savePolicy() {
@@ -58,11 +61,17 @@ async function savePolicy() {
       title: policyTitle.value,
       content: policyContent.value,
     })
-  } catch (e: any) { alert(e?.response?.data?.detail || '保存失败') }
-  finally { saving.value = false }
+  } catch (e: any) {
+    alert(e?.response?.data?.detail || '保存失败')
+  } finally {
+    saving.value = false
+  }
 }
 
-onMounted(() => { policyTitle.value = tabs[0].title; loadPolicy() })
+onMounted(() => {
+  policyTitle.value = tabs[0].title
+  loadPolicy()
+})
 </script>
 
 <template>
@@ -76,10 +85,14 @@ onMounted(() => { policyTitle.value = tabs[0].title; loadPolicy() })
         :key="idx"
         @click="switchTab(idx)"
         class="px-3 py-2 text-xs font-medium transition-colors border-b-2"
-        :class="activeTab === idx
-          ? 'text-amber-700 border-amber-500 bg-amber-50'
-          : 'text-stone-500 border-transparent hover:text-stone-700 hover:border-stone-300'"
-      >{{ tab.label }}</button>
+        :class="
+          activeTab === idx
+            ? 'text-amber-700 border-amber-500 bg-amber-50'
+            : 'text-stone-500 border-transparent hover:text-stone-700 hover:border-stone-300'
+        "
+      >
+        {{ tab.label }}
+      </button>
     </div>
 
     <div class="form-card">

@@ -42,7 +42,9 @@ async function load() {
     }
 
     summaries.value = data
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(load)
@@ -96,8 +98,12 @@ onMounted(load)
             <td class="px-4 py-3 font-medium text-zinc-800">{{ s.label }}</td>
             <td class="px-4 py-3 text-right text-zinc-600">{{ s.count }}</td>
             <td class="px-4 py-3 text-right text-amber-600">¥{{ Number(s.total_tax_amount || 0).toLocaleString() }}</td>
-            <td class="px-4 py-3 text-right text-green-600">¥{{ Number(s.total_paid_amount || 0).toLocaleString() }}</td>
-            <td class="px-4 py-3 text-right text-red-600">¥{{ Number(s.total_unpaid_amount || 0).toLocaleString() }}</td>
+            <td class="px-4 py-3 text-right text-green-600">
+              ¥{{ Number(s.total_paid_amount || 0).toLocaleString() }}
+            </td>
+            <td class="px-4 py-3 text-right text-red-600">
+              ¥{{ Number(s.total_unpaid_amount || 0).toLocaleString() }}
+            </td>
           </tr>
         </tbody>
       </table>

@@ -8,9 +8,7 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import Calendar from 'primevue/calendar'
-import {
-  listDeclarations, createDeclaration, updateDeclaration, deleteDeclaration,
-} from '@/api/taxes'
+import { listDeclarations, createDeclaration, updateDeclaration, deleteDeclaration } from '@/api/taxes'
 
 const route = useRoute()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
@@ -92,15 +90,15 @@ async function load() {
       tax_type: taxType.value,
     })
     items.value = res.data
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 const filteredItems = computed(() => {
   if (!search.value) return items.value
   const q = search.value.toLowerCase()
-  return items.value.filter((i: any) =>
-    (i.notes || '').toLowerCase().includes(q)
-  )
+  return items.value.filter((i: any) => (i.notes || '').toLowerCase().includes(q))
 })
 
 function openAdd() {
@@ -182,53 +180,55 @@ onMounted(load)
 
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="filteredItems" :loading="loading" stripedRows paginator :rows="15" class="shadow-sm">
-        <Column header="序号" style="width:60px">
+        <Column header="序号" style="width: 60px">
           <template #body="{ index }">{{ index + 1 }}</template>
         </Column>
-        <Column header="计税期间" style="width:200px">
+        <Column header="计税期间" style="width: 200px">
           <template #body="{ data }">
             {{ data.period_start?.slice(0, 10) || '-' }} ~ {{ data.period_end?.slice(0, 10) || '-' }}
           </template>
         </Column>
-        <Column v-if="!isPenalty" field="tax_base" header="税基" style="width:120px">
+        <Column v-if="!isPenalty" field="tax_base" header="税基" style="width: 120px">
           <template #body="{ data }">
             {{ data.tax_base != null ? `¥${Number(data.tax_base).toLocaleString()}` : '-' }}
           </template>
         </Column>
-        <Column v-if="!isPenalty" field="tax_rate" header="税率" style="width:70px">
+        <Column v-if="!isPenalty" field="tax_rate" header="税率" style="width: 70px">
           <template #body="{ data }">
             {{ data.tax_rate != null ? `${data.tax_rate}%` : '-' }}
           </template>
         </Column>
-        <Column field="tax_amount" header="税额" style="width:120px">
+        <Column field="tax_amount" header="税额" style="width: 120px">
           <template #body="{ data }">¥{{ Number(data.tax_amount || 0).toLocaleString() }}</template>
         </Column>
-        <Column field="paid_amount" header="已缴金额" style="width:120px">
+        <Column field="paid_amount" header="已缴金额" style="width: 120px">
           <template #body="{ data }">¥{{ Number(data.paid_amount || 0).toLocaleString() }}</template>
         </Column>
-        <Column header="未缴金额" style="width:120px">
+        <Column header="未缴金额" style="width: 120px">
           <template #body="{ data }">
             ¥{{ (Number(data.tax_amount || 0) - Number(data.paid_amount || 0)).toLocaleString() }}
           </template>
         </Column>
-        <Column field="status" header="状态" style="width:80px">
+        <Column field="status" header="状态" style="width: 80px">
           <template #body="{ data }">
-            <span :class="{
-              'text-amber-600': data.status === 'pending',
-              'text-blue-600': data.status === 'filed',
-              'text-green-600': data.status === 'paid',
-            }">
+            <span
+              :class="{
+                'text-amber-600': data.status === 'pending',
+                'text-blue-600': data.status === 'filed',
+                'text-green-600': data.status === 'paid',
+              }"
+            >
               {{ data.status === 'pending' ? '待申报' : data.status === 'filed' ? '已申报' : '已缴纳' }}
             </span>
           </template>
         </Column>
-        <Column header="申报日期" style="width:110px">
+        <Column header="申报日期" style="width: 110px">
           <template #body="{ data }">{{ data.declaration_date?.slice(0, 10) || '-' }}</template>
         </Column>
-        <Column header="缴纳日期" style="width:110px">
+        <Column header="缴纳日期" style="width: 110px">
           <template #body="{ data }">{{ data.payment_date?.slice(0, 10) || '-' }}</template>
         </Column>
-        <Column header="操作" style="width:130px">
+        <Column header="操作" style="width: 130px">
           <template #body="{ data }">
             <Button label="编辑" text severity="info" size="small" @click="openEdit(data)" />
             <Button label="删除" text severity="danger" size="small" @click="handleDelete(data.id)" />
@@ -237,7 +237,11 @@ onMounted(load)
       </DataTable>
     </div>
 
-    <Dialog v-model:visible="showDialog" :header="editingId ? '编辑申报记录' : '新增申报记录'" :style="{ width: '780px' }">
+    <Dialog
+      v-model:visible="showDialog"
+      :header="editingId ? '编辑申报记录' : '新增申报记录'"
+      :style="{ width: '780px' }"
+    >
       <div class="flex flex-col gap-4 py-4">
         <div class="flex gap-4">
           <div class="flex-1">
@@ -250,36 +254,65 @@ onMounted(load)
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">状态</label>
-            <Select v-model="form.status" :options="statusOptions"
-              optionLabel="label" optionValue="value" class="w-full" />
+            <Select
+              v-model="form.status"
+              :options="statusOptions"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
         </div>
         <div v-if="!isPenalty" class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">税基（计税依据）</label>
-            <input type="number" v-model.number="form.tax_base" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" />
+            <input
+              type="number"
+              v-model.number="form.tax_base"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">税率（%）</label>
-            <input type="number" v-model.number="form.tax_rate" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" />
+            <input
+              type="number"
+              v-model.number="form.tax_rate"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">税额 *</label>
-            <input type="number" v-model.number="form.tax_amount" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" />
+            <input
+              type="number"
+              v-model.number="form.tax_amount"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">已缴金额</label>
-            <input type="number" v-model.number="form.paid_amount" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" />
+            <input
+              type="number"
+              v-model.number="form.paid_amount"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm"
+            />
           </div>
         </div>
         <div v-else class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">罚款金额 *</label>
-            <input type="number" v-model.number="form.tax_amount" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" />
+            <input
+              type="number"
+              v-model.number="form.tax_amount"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">已缴金额</label>
-            <input type="number" v-model.number="form.paid_amount" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" />
+            <input
+              type="number"
+              v-model.number="form.paid_amount"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm"
+            />
           </div>
         </div>
         <div class="flex gap-4">

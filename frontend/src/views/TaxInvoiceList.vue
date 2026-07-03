@@ -8,9 +8,7 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Select from 'primevue/select'
 import Calendar from 'primevue/calendar'
-import {
-  listInvoices, createInvoice, updateInvoice, deleteInvoice,
-} from '@/api/taxes'
+import { listInvoices, createInvoice, updateInvoice, deleteInvoice } from '@/api/taxes'
 import { listCounterparties } from '@/api'
 
 const route = useRoute()
@@ -56,12 +54,15 @@ const emptyForm = () => ({
 })
 const form = ref(emptyForm())
 
-watch(() => [form.value.amount, form.value.tax_rate], () => {
-  const amt = Number(form.value.amount) || 0
-  const rate = Number(form.value.tax_rate) || 0
-  form.value.tax_amount = Math.round(amt * rate) / 100
-  form.value.total_amount = amt + form.value.tax_amount
-})
+watch(
+  () => [form.value.amount, form.value.tax_rate],
+  () => {
+    const amt = Number(form.value.amount) || 0
+    const rate = Number(form.value.tax_rate) || 0
+    form.value.tax_amount = Math.round(amt * rate) / 100
+    form.value.total_amount = amt + form.value.tax_amount
+  },
+)
 
 function fmtDate(d: Date | null): string | undefined {
   if (!d) return undefined
@@ -82,7 +83,9 @@ async function load() {
   try {
     const res = await listInvoices(getFilters())
     items.value = res.data
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 async function loadCounterparties() {
@@ -95,9 +98,8 @@ async function loadCounterparties() {
 const filteredItems = computed(() => {
   if (!search.value) return items.value
   const q = search.value.toLowerCase()
-  return items.value.filter((i: any) =>
-    (i.invoice_number || '').toLowerCase().includes(q) ||
-    (i.category || '').toLowerCase().includes(q)
+  return items.value.filter(
+    (i: any) => (i.invoice_number || '').toLowerCase().includes(q) || (i.category || '').toLowerCase().includes(q),
   )
 })
 
@@ -186,36 +188,36 @@ onMounted(load)
 
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="filteredItems" :loading="loading" stripedRows paginator :rows="15" class="shadow-sm">
-        <Column header="序号" style="width:60px">
+        <Column header="序号" style="width: 60px">
           <template #body="{ index }">{{ index + 1 }}</template>
         </Column>
-        <Column field="invoice_number" header="发票号码" style="width:150px" />
-        <Column field="invoice_date" header="开票日期" style="width:110px">
+        <Column field="invoice_number" header="发票号码" style="width: 150px" />
+        <Column field="invoice_date" header="开票日期" style="width: 110px">
           <template #body="{ data }">{{ data.invoice_date?.slice(0, 10) }}</template>
         </Column>
-        <Column v-if="mode === 'query'" field="invoice_type" header="类型" style="width:80px">
+        <Column v-if="mode === 'query'" field="invoice_type" header="类型" style="width: 80px">
           <template #body="{ data }">{{ data.invoice_type === 'sales' ? '销项' : '进项' }}</template>
         </Column>
-        <Column header="对方单位" style="width:160px">
+        <Column header="对方单位" style="width: 160px">
           <template #body="{ data }">{{ getCounterpartyName(data.counterparty_id) || '-' }}</template>
         </Column>
-        <Column field="amount" header="金额（不含税）" style="width:130px">
+        <Column field="amount" header="金额（不含税）" style="width: 130px">
           <template #body="{ data }">¥{{ Number(data.amount || 0).toLocaleString() }}</template>
         </Column>
-        <Column field="tax_rate" header="税率" style="width:70px">
+        <Column field="tax_rate" header="税率" style="width: 70px">
           <template #body="{ data }">{{ data.tax_rate }}%</template>
         </Column>
-        <Column field="tax_amount" header="税额" style="width:110px">
+        <Column field="tax_amount" header="税额" style="width: 110px">
           <template #body="{ data }">¥{{ Number(data.tax_amount || 0).toLocaleString() }}</template>
         </Column>
-        <Column field="total_amount" header="价税合计" style="width:130px">
+        <Column field="total_amount" header="价税合计" style="width: 130px">
           <template #body="{ data }">¥{{ Number(data.total_amount || 0).toLocaleString() }}</template>
         </Column>
-        <Column field="category" header="类别" style="width:90px" />
-        <Column field="status" header="状态" style="width:80px">
+        <Column field="category" header="类别" style="width: 90px" />
+        <Column field="status" header="状态" style="width: 80px">
           <template #body="{ data }">{{ statusLabels[data.status] || data.status }}</template>
         </Column>
-        <Column header="操作" style="width:130px">
+        <Column header="操作" style="width: 130px">
           <template #body="{ data }">
             <Button label="编辑" text severity="info" size="small" @click="openEdit(data)" />
             <Button label="删除" text severity="danger" size="small" @click="handleDelete(data.id)" />
@@ -229,10 +231,16 @@ onMounted(load)
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">发票类型</label>
-            <Select v-model="form.invoice_type" :options="[
-              { label: '销项发票', value: 'sales' },
-              { label: '进项发票', value: 'purchase' },
-            ]" optionLabel="label" optionValue="value" class="w-full" />
+            <Select
+              v-model="form.invoice_type"
+              :options="[
+                { label: '销项发票', value: 'sales' },
+                { label: '进项发票', value: 'purchase' },
+              ]"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">发票号码 *</label>
@@ -246,9 +254,16 @@ onMounted(load)
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">对方单位</label>
-            <Select v-model="form.counterparty_id" :options="counterparties"
-              optionLabel="name" optionValue="id" showClear filter
-              placeholder="选择往来单位" class="w-full" />
+            <Select
+              v-model="form.counterparty_id"
+              :options="counterparties"
+              optionLabel="name"
+              optionValue="id"
+              showClear
+              filter
+              placeholder="选择往来单位"
+              class="w-full"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">商品/服务类别</label>
@@ -258,29 +273,51 @@ onMounted(load)
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">金额（不含税）</label>
-            <input type="number" v-model.number="form.amount" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" />
+            <input
+              type="number"
+              v-model.number="form.amount"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">税率（%）</label>
-            <input type="number" v-model.number="form.tax_rate" class="w-full border border-stone-300 rounded px-3 py-2 text-sm" />
+            <input
+              type="number"
+              v-model.number="form.tax_rate"
+              class="w-full border border-stone-300 rounded px-3 py-2 text-sm"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">税额（自动）</label>
-            <input :value="form.tax_amount" disabled class="w-full border border-stone-200 rounded px-3 py-2 text-sm bg-stone-50" />
+            <input
+              :value="form.tax_amount"
+              disabled
+              class="w-full border border-stone-200 rounded px-3 py-2 text-sm bg-stone-50"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">价税合计（自动）</label>
-            <input :value="form.total_amount" disabled class="w-full border border-stone-200 rounded px-3 py-2 text-sm bg-stone-50" />
+            <input
+              :value="form.total_amount"
+              disabled
+              class="w-full border border-stone-200 rounded px-3 py-2 text-sm bg-stone-50"
+            />
           </div>
         </div>
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">状态</label>
-            <Select v-model="form.status" :options="[
-              { label: '草稿', value: 'draft' },
-              { label: '已开票', value: 'issued' },
-              { label: '已核验', value: 'verified' },
-            ]" optionLabel="label" optionValue="value" class="w-full" />
+            <Select
+              v-model="form.status"
+              :options="[
+                { label: '草稿', value: 'draft' },
+                { label: '已开票', value: 'issued' },
+                { label: '已核验', value: 'verified' },
+              ]"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
           <div class="flex-[2]">
             <label class="block text-xs text-zinc-500 mb-1">备注</label>

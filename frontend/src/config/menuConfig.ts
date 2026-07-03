@@ -19,8 +19,8 @@ export interface MenuSection {
   icon: string
   title: string
   shortTitle: string
-  roles?: string[]  // 哪些角色可见此模块
-  module?: string   // 关联的模块标识（用于订阅检查）
+  roles?: string[] // 哪些角色可见此模块
+  module?: string // 关联的模块标识（用于订阅检查）
   items: MenuItem[]
 }
 
@@ -54,7 +54,8 @@ export const menuSections: MenuSection[] = [
     items: [
       { label: '2.1 文件管理', to: '/admin/documents', icon: 'pi pi-file' },
       {
-        label: '2.2 车辆管理', icon: 'pi pi-car',
+        label: '2.2 车辆管理',
+        icon: 'pi pi-car',
         children: [
           { label: '车辆采购审批', to: '/admin/vehicles/purchases' },
           { label: '车辆档案管理', to: '/admin/vehicles/registry' },
@@ -65,7 +66,8 @@ export const menuSections: MenuSection[] = [
       { label: '2.3 财产保险', to: '/admin/insurance', icon: 'pi pi-shield' },
       { label: '2.4 门禁管理', to: '/admin/access', icon: 'pi pi-lock' },
       {
-        label: '2.5 资产管理', icon: 'pi pi-box',
+        label: '2.5 资产管理',
+        icon: 'pi pi-box',
         children: [
           { label: '实物资产台账', to: '/admin/stock/assets' },
           { label: '资产采购审批', to: '/admin/stock/assets/purchases' },
@@ -406,9 +408,7 @@ export const menuSections: MenuSection[] = [
     icon: 'pi pi-bookmark',
     title: '内容导航',
     shortTitle: '知识库',
-    items: [
-      { label: '', to: '/knowledge-base', icon: 'pi pi-book' },
-    ],
+    items: [{ label: '', to: '/knowledge-base', icon: 'pi pi-book' }],
   },
 ]
 

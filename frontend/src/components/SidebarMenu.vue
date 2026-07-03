@@ -30,7 +30,9 @@ function getEnabledModules(): string[] {
   try {
     const raw = localStorage.getItem('enabledModules')
     if (raw) return JSON.parse(raw)
-  } catch (_) { /* ignore */ }
+  } catch (_) {
+    /* ignore */
+  }
   return []
 }
 
@@ -45,18 +47,21 @@ const visibleSections = computed(() =>
     if (isTrialing.value) return true
     if (!s.module || s.module === 'knowledge') return true
     const enabled = getEnabledModules()
-    if (enabled.length === 0) return true  // no data yet, show all
+    if (enabled.length === 0) return true // no data yet, show all
     return enabled.includes(s.module)
-  })
+  }),
 )
 
 const activeSection = ref<MenuSection>(findSectionForRoute() || visibleSections.value[0] || props.sections[0])
 
 // Keep active section in sync with route changes
-watch(() => route.path, () => {
-  const match = findSectionForRoute()
-  if (match) activeSection.value = match
-})
+watch(
+  () => route.path,
+  () => {
+    const match = findSectionForRoute()
+    if (match) activeSection.value = match
+  },
+)
 
 const expandedSubmenus = ref<Set<string>>(new Set())
 
@@ -97,9 +102,7 @@ function isItemActive(item: { to?: string; children?: Array<{ to: string }> }): 
         :key="section.title"
         @click="selectSection(section)"
         class="w-full flex flex-col items-center gap-1 px-1 py-2.5 text-[10px] transition-colors tracking-wide"
-        :class="activeSection.title === section.title
-          ? 'sidebar-col1-active'
-          : 'sidebar-col1-item'"
+        :class="activeSection.title === section.title ? 'sidebar-col1-active' : 'sidebar-col1-item'"
       >
         <i :class="[section.icon, 'text-sm']" />
         <span class="leading-tight text-center">{{ section.shortTitle }}</span>
@@ -125,7 +128,7 @@ function isItemActive(item: { to?: string; children?: Array<{ to: string }> }): 
             <i
               :class="[
                 'pi text-[10px] sidebar-item-sub transition-transform',
-                expandedSubmenus.has(item.label) ? 'pi-angle-up' : 'pi-angle-down'
+                expandedSubmenus.has(item.label) ? 'pi-angle-up' : 'pi-angle-down',
               ]"
             />
           </button>
@@ -152,7 +155,6 @@ function isItemActive(item: { to?: string; children?: Array<{ to: string }> }): 
           <i :class="['pi', item.icon, 'text-[10px] w-4 text-center']" />
           <span>{{ item.label }}</span>
         </router-link>
-
       </template>
     </div>
   </div>

@@ -120,7 +120,11 @@ export const getCockpitLights = (companyId: number) =>
 // ── BoardFiling ──
 export const listFilings = (companyId: number, docType?: string, docSubtype?: string) =>
   api.get('/board/filings', {
-    params: { company_id: companyId, ...(docType ? { doc_type: docType } : {}), ...(docSubtype ? { doc_subtype: docSubtype } : {}) },
+    params: {
+      company_id: companyId,
+      ...(docType ? { doc_type: docType } : {}),
+      ...(docSubtype ? { doc_subtype: docSubtype } : {}),
+    },
   })
 
 export const getFiling = (id: number) => api.get(`/board/filings/${id}`)
@@ -134,5 +138,6 @@ export const listShareholders = (companyId: number) =>
   api.get('/board/shareholders', { params: { company_id: companyId } })
 
 export const createShareholder = (data: BoardShareholderCreateData) => api.post('/board/shareholders', data)
-export const updateShareholder = (id: number, data: BoardShareholderUpdateData) => api.put(`/board/shareholders/${id}`, data)
+export const updateShareholder = (id: number, data: BoardShareholderUpdateData) =>
+  api.put(`/board/shareholders/${id}`, data)
 export const deleteShareholder = (id: number) => api.delete(`/board/shareholders/${id}`)

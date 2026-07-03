@@ -14,7 +14,9 @@ async function load() {
   try {
     const res = await getYearlySummary(companyId.value, year.value)
     summary.value = res.data
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(load)
@@ -25,17 +27,30 @@ onMounted(load)
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-bold text-zinc-700">年度结账</h2>
       <div class="flex gap-2 items-center">
-        <Button icon="pi pi-chevron-left" text rounded @click="year--; load()" />
+        <Button
+          icon="pi pi-chevron-left"
+          text
+          rounded
+          @click="year--; load()"
+        />
         <span class="text-xl font-bold text-zinc-700 w-20 text-center">{{ year }}</span>
-        <Button icon="pi pi-chevron-right" text rounded @click="year++; load()" />
+        <Button
+          icon="pi pi-chevron-right"
+          text
+          rounded
+          @click="year++; load()"
+        />
       </div>
     </div>
 
     <div v-if="summary" class="grid grid-cols-4 gap-3 mb-4">
       <div class="bg-white rounded-sm border border-stone-200 p-4 text-center">
         <div class="text-sm text-zinc-500">年度状态</div>
-        <Tag :value="summary.is_year_closed ? '已年结' : '未年结'"
-          :severity="summary.is_year_closed ? 'success' : 'warning'" class="mt-2" />
+        <Tag
+          :value="summary.is_year_closed ? '已年结' : '未年结'"
+          :severity="summary.is_year_closed ? 'success' : 'warning'"
+          class="mt-2"
+        />
       </div>
       <div class="bg-white rounded-sm border border-stone-200 p-4 text-center">
         <div class="text-sm text-zinc-500">已关账月</div>
@@ -52,12 +67,18 @@ onMounted(load)
     </div>
 
     <div class="grid grid-cols-6 gap-2">
-      <div v-for="m in summary?.months" :key="m.period"
+      <div
+        v-for="m in summary?.months"
+        :key="m.period"
         class="bg-white rounded-sm border p-3 text-center"
-        :class="m.is_closed ? 'border-green-300' : 'border-stone-200'">
+        :class="m.is_closed ? 'border-green-300' : 'border-stone-200'"
+      >
         <div class="text-sm font-bold text-zinc-700">{{ m.period }}</div>
-        <Tag :value="m.is_closed ? '已关' : '未关'"
-          :severity="m.is_closed ? 'success' : 'warning'" class="mt-1 text-xs" />
+        <Tag
+          :value="m.is_closed ? '已关' : '未关'"
+          :severity="m.is_closed ? 'success' : 'warning'"
+          class="mt-1 text-xs"
+        />
       </div>
     </div>
   </div>

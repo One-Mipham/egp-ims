@@ -116,11 +116,24 @@ onMounted(load)
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">所属行业</label>
-            <Dropdown v-model="companyForm.industry" :options="INDUSTRY_OPTIONS" optionLabel="label" optionValue="value" class="w-full" placeholder="选择行业" />
+            <Dropdown
+              v-model="companyForm.industry"
+              :options="INDUSTRY_OPTIONS"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+              placeholder="选择行业"
+            />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">内控模式</label>
-            <Dropdown v-model="companyForm.internal_control_mode" :options="IC_OPTIONS" optionLabel="label" optionValue="value" class="w-full" />
+            <Dropdown
+              v-model="companyForm.internal_control_mode"
+              :options="IC_OPTIONS"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
           </div>
         </div>
         <div class="flex gap-4">

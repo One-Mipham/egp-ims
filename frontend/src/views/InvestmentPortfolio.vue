@@ -38,15 +38,29 @@ const INVEST_TYPES = [
 ]
 
 const TYPE_LABELS: Record<string, string> = {
-  vc: 'VC', pe: 'PE', angel: '天使', general_equity: '一般股权', secondary_market: '二级市场',
-  fixed_income: '固定收益', mutual_fund: '公募基金', private_fund: '私募基金', etf: 'ETF',
-  alternative: '另类', real_estate: '房地产', infrastructure: '基础设施',
-  private_credit: '私募信贷', commodity: '大宗商品', digital_asset: '数字资产',
-  trust: '信托', derivatives: '衍生品',
+  vc: 'VC',
+  pe: 'PE',
+  angel: '天使',
+  general_equity: '一般股权',
+  secondary_market: '二级市场',
+  fixed_income: '固定收益',
+  mutual_fund: '公募基金',
+  private_fund: '私募基金',
+  etf: 'ETF',
+  alternative: '另类',
+  real_estate: '房地产',
+  infrastructure: '基础设施',
+  private_credit: '私募信贷',
+  commodity: '大宗商品',
+  digital_asset: '数字资产',
+  trust: '信托',
+  derivatives: '衍生品',
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  active: '活跃', closed: '已关闭', liquidated: '已清算',
+  active: '活跃',
+  closed: '已关闭',
+  liquidated: '已清算',
 }
 
 const emptyForm = () => ({ name: '', investment_type: 'general_equity', currency: 'CNY', description: '' })
@@ -57,7 +71,9 @@ async function load() {
   try {
     const res = await listPortfolios(companyId.value)
     portfolios.value = res.data
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 function openAdd() {
@@ -68,7 +84,12 @@ function openAdd() {
 
 function openEdit(row: any) {
   editingId.value = row.id
-  form.value = { name: row.name, investment_type: row.investment_type, currency: row.currency, description: row.description || '' }
+  form.value = {
+    name: row.name,
+    investment_type: row.investment_type,
+    currency: row.currency,
+    description: row.description || '',
+  }
   showDialog.value = true
 }
 
@@ -85,7 +106,9 @@ async function handleSave() {
     await load()
   } catch (e: any) {
     alert(e.response?.data?.detail || '保存失败')
-  } finally { saving.value = false }
+  } finally {
+    saving.value = false
+  }
 }
 
 async function handleDelete(id: number) {
@@ -93,7 +116,9 @@ async function handleDelete(id: number) {
   try {
     await deletePortfolio(id)
     await load()
-  } catch (e: any) { alert(e.response?.data?.detail || '删除失败') }
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '删除失败')
+  }
 }
 
 onMounted(load)
@@ -113,15 +138,17 @@ onMounted(load)
           <Tag :value="TYPE_LABELS[data.investment_type] || data.investment_type" />
         </template>
       </Column>
-      <Column field="currency" header="币种" sortable style="width:80px" />
-      <Column field="status" header="状态" sortable style="width:100px">
+      <Column field="currency" header="币种" sortable style="width: 80px" />
+      <Column field="status" header="状态" sortable style="width: 100px">
         <template #body="{ data }">
-          <Tag :value="STATUS_LABELS[data.status] || data.status"
-               :severity="data.status === 'active' ? 'success' : data.status === 'closed' ? 'warn' : 'danger'" />
+          <Tag
+            :value="STATUS_LABELS[data.status] || data.status"
+            :severity="data.status === 'active' ? 'success' : data.status === 'closed' ? 'warn' : 'danger'"
+          />
         </template>
       </Column>
       <Column field="description" header="备注" />
-      <Column header="操作" style="width:140px">
+      <Column header="操作" style="width: 140px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
@@ -134,9 +161,33 @@ onMounted(load)
     <Dialog v-model:visible="showDialog" :header="editingId ? '编辑组合' : '新增组合'" :modal="true" class="w-[450px]">
       <div class="flex flex-col gap-3">
         <div><label class="block text-sm mb-1">组合名称 *</label><InputText v-model="form.name" class="w-full" /></div>
-        <div><label class="block text-sm mb-1">投资类型</label><Dropdown v-model="form.investment_type" :options="INVEST_TYPES" optionLabel="label" optionValue="value" class="w-full" /></div>
-        <div><label class="block text-sm mb-1">币种</label><Dropdown v-model="form.currency" :options="[{label:'CNY',value:'CNY'},{label:'USD',value:'USD'},{label:'HKD',value:'HKD'}]" optionLabel="label" optionValue="value" class="w-full" /></div>
-        <div><label class="block text-sm mb-1">备注</label><Textarea v-model="form.description" rows="2" class="w-full" /></div>
+        <div>
+          <label class="block text-sm mb-1">投资类型</label
+          ><Dropdown
+            v-model="form.investment_type"
+            :options="INVEST_TYPES"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">币种</label
+          ><Dropdown
+            v-model="form.currency"
+            :options="[
+              { label: 'CNY', value: 'CNY' },
+              { label: 'USD', value: 'USD' },
+              { label: 'HKD', value: 'HKD' },
+            ]"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">备注</label><Textarea v-model="form.description" rows="2" class="w-full" />
+        </div>
       </div>
       <template #footer>
         <Button label="取消" text @click="showDialog = false" />

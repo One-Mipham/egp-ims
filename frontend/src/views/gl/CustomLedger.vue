@@ -9,10 +9,13 @@
           <span class="text-xs text-gray-500">({{ queries.length }})</span>
         </div>
         <div class="border rounded p-2 space-y-1" style="min-height: 200px">
-          <div v-for="q in queries" :key="q.id"
-               class="p-2 rounded cursor-pointer hover:bg-blue-50"
-               :class="{ 'bg-blue-100': selectedQuery?.id === q.id }"
-               @click="selectQuery(q)">
+          <div
+            v-for="q in queries"
+            :key="q.id"
+            class="p-2 rounded cursor-pointer hover:bg-blue-50"
+            :class="{ 'bg-blue-100': selectedQuery?.id === q.id }"
+            @click="selectQuery(q)"
+          >
             <div class="text-sm font-medium">{{ q.name }}</div>
             <div class="text-xs text-gray-500">{{ typeLabel(q.query_type) }}</div>
           </div>
@@ -20,7 +23,14 @@
         </div>
         <div class="flex gap-2 mt-2">
           <Button label="保存当前" icon="pi pi-save" size="small" @click="openSave" />
-          <Button label="删除选中" icon="pi pi-trash" size="small" severity="danger" :disabled="!selectedQuery" @click="confirmDelete" />
+          <Button
+            label="删除选中"
+            icon="pi pi-trash"
+            size="small"
+            severity="danger"
+            :disabled="!selectedQuery"
+            @click="confirmDelete"
+          />
         </div>
       </div>
 
@@ -29,7 +39,13 @@
           <div class="flex gap-2 items-end flex-wrap">
             <div>
               <label class="text-xs block mb-1">查询类型</label>
-              <Dropdown v-model="queryForm.query_type" :options="queryTypeOptions" optionLabel="label" optionValue="value" class="w-32" />
+              <Dropdown
+                v-model="queryForm.query_type"
+                :options="queryTypeOptions"
+                optionLabel="label"
+                optionValue="value"
+                class="w-32"
+              />
             </div>
             <div v-if="queryForm.query_type === 'subject'">
               <label class="text-xs block mb-1">科目代码</label>
@@ -37,11 +53,24 @@
             </div>
             <div v-if="queryForm.query_type === 'aux'">
               <label class="text-xs block mb-1">维度</label>
-              <Dropdown v-model="queryForm.filters.aux_type" :options="auxTypes" optionLabel="label" optionValue="value" size="small" class="w-28" />
+              <Dropdown
+                v-model="queryForm.filters.aux_type"
+                :options="auxTypes"
+                optionLabel="label"
+                optionValue="value"
+                size="small"
+                class="w-28"
+              />
             </div>
             <div v-if="queryForm.query_type === 'aux'">
               <label class="text-xs block mb-1">对象ID</label>
-              <InputText v-model="queryForm.filters.aux_id_str" size="small" placeholder="ID" class="w-20" @update:model-value="queryForm.filters.aux_id = $event ? Number($event) : null" />
+              <InputText
+                v-model="queryForm.filters.aux_id_str"
+                size="small"
+                placeholder="ID"
+                class="w-20"
+                @update:model-value="queryForm.filters.aux_id = $event ? Number($event) : null"
+              />
             </div>
             <div>
               <label class="text-xs block mb-1">起始期间</label>
@@ -85,8 +114,12 @@ import Dialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import {
-  listCustomQueries, createCustomQuery, deleteCustomQuery, executeCustomQuery,
-  getSubjectLedger, getAuxLedger,
+  listCustomQueries,
+  createCustomQuery,
+  deleteCustomQuery,
+  executeCustomQuery,
+  getSubjectLedger,
+  getAuxLedger,
 } from '../../api'
 
 const toast = useToast()
@@ -157,14 +190,17 @@ async function runQuery() {
     ran.value = true
     if (selectedQuery.value) {
       const { data } = await executeCustomQuery(
-        selectedQuery.value.id, companyId,
+        selectedQuery.value.id,
+        companyId,
         queryForm.value.filters.start_period,
         queryForm.value.filters.end_period,
       )
       results.value = Array.isArray(data) ? data : []
     } else if (queryForm.value.query_type === 'subject') {
       const { data } = await getSubjectLedger(
-        companyId, queryForm.value.filters.start_period, queryForm.value.filters.end_period,
+        companyId,
+        queryForm.value.filters.start_period,
+        queryForm.value.filters.end_period,
         { account_code: queryForm.value.filters.account_code || undefined },
       )
       results.value = data
@@ -174,8 +210,11 @@ async function runQuery() {
         return
       }
       const { data } = await getAuxLedger(
-        companyId, queryForm.value.filters.aux_type, queryForm.value.filters.aux_id,
-        queryForm.value.filters.start_period, queryForm.value.filters.end_period,
+        companyId,
+        queryForm.value.filters.aux_type,
+        queryForm.value.filters.aux_id,
+        queryForm.value.filters.start_period,
+        queryForm.value.filters.end_period,
       )
       results.value = data.entries || []
     }
@@ -184,12 +223,17 @@ async function runQuery() {
   }
 }
 
-function openSave() { saveName.value = ''; saveVisible.value = true }
+function openSave() {
+  saveName.value = ''
+  saveVisible.value = true
+}
 
 async function doSave() {
   await createCustomQuery({
-    company_id: companyId, name: saveName.value,
-    query_type: queryForm.value.query_type, filters: queryForm.value.filters,
+    company_id: companyId,
+    name: saveName.value,
+    query_type: queryForm.value.query_type,
+    filters: queryForm.value.filters,
   })
   toast.add({ severity: 'success', summary: '已保存', life: 3000 })
   saveVisible.value = false

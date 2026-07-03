@@ -28,7 +28,9 @@ async function load() {
   }
 }
 
-function doPrint() { window.print() }
+function doPrint() {
+  window.print()
+}
 
 onMounted(load)
 </script>
@@ -37,7 +39,15 @@ onMounted(load)
   <div>
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2 items-center">
-        <Dropdown v-model="selectedLevel" :options="LEVEL_OPTIONS" optionLabel="label" optionValue="value" class="w-40" @change="load" placeholder="选择级别" />
+        <Dropdown
+          v-model="selectedLevel"
+          :options="LEVEL_OPTIONS"
+          optionLabel="label"
+          optionValue="value"
+          class="w-40"
+          @change="load"
+          placeholder="选择级别"
+        />
         <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!subjects.length" />
       </div>
     </div>
@@ -50,16 +60,20 @@ onMounted(load)
       <table class="data-table border-collapse border border-stone-300">
         <thead>
           <tr class="border-b-2 border-stone-400 bg-stone-50">
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width:90px">科目编码</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 90px">科目编码</th>
             <th class="text-left py-1.5 px-2 border border-stone-200">科目名称</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200" style="width:70px">级别</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200" style="width:80px">科目类别</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200" style="width:70px">余额方向</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 70px">级别</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 80px">科目类别</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 70px">余额方向</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="s in subjects" :key="s.code" class="border-b border-stone-200"
-              :class="{ 'font-bold': s.level === '一级科目' }">
+          <tr
+            v-for="s in subjects"
+            :key="s.code"
+            class="border-b border-stone-200"
+            :class="{ 'font-bold': s.level === '一级科目' }"
+          >
             <td class="py-1.5 px-2 border border-stone-200">{{ s.code }}</td>
             <td class="py-1.5 px-2 border border-stone-200">{{ s.name }}</td>
             <td class="text-center py-1.5 px-2 border border-stone-200">{{ s.level }}</td>
@@ -74,9 +88,23 @@ onMounted(load)
 
 <style scoped>
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
-  body * { visibility: hidden; }
-  .print-area, .print-area * { visibility: visible; }
-  .print-area { position: absolute; left: 0; top: 0; width: 100%; margin: 0 auto; }
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 auto;
+  }
 }
 </style>

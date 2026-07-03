@@ -11,14 +11,11 @@ export const listContracts = (params: {
   search?: string
 }) => api.get('/contracts', { params })
 
-export const getContractCategories = () =>
-  api.get('/contracts/categories')
+export const getContractCategories = () => api.get('/contracts/categories')
 
-export const getLegalBasisOptions = () =>
-  api.get('/contracts/legal-basis')
+export const getLegalBasisOptions = () => api.get('/contracts/legal-basis')
 
-export const getContract = (id: number) =>
-  api.get(`/contracts/${id}`)
+export const getContract = (id: number) => api.get(`/contracts/${id}`)
 
 export const createContract = (data: {
   company_id: number
@@ -51,22 +48,17 @@ export const createContract = (data: {
   notes?: string
 }) => api.post('/contracts', data)
 
-export const updateContract = (id: number, data: Record<string, any>) =>
-  api.put(`/contracts/${id}`, data)
+export const updateContract = (id: number, data: Record<string, any>) => api.put(`/contracts/${id}`, data)
 
-export const deleteContract = (id: number) =>
-  api.delete(`/contracts/${id}`)
+export const deleteContract = (id: number) => api.delete(`/contracts/${id}`)
 
 // ── 审批流程（非强制） ──
 
-export const reviewContract = (contractId: number) =>
-  api.post(`/contracts/${contractId}/review`)
+export const reviewContract = (contractId: number) => api.post(`/contracts/${contractId}/review`)
 
-export const approveContract = (contractId: number) =>
-  api.post(`/contracts/${contractId}/approve`)
+export const approveContract = (contractId: number) => api.post(`/contracts/${contractId}/approve`)
 
-export const sealContract = (contractId: number) =>
-  api.post(`/contracts/${contractId}/seal`)
+export const sealContract = (contractId: number) => api.post(`/contracts/${contractId}/seal`)
 
 // ── 扫描件 ──
 
@@ -80,8 +72,7 @@ export const uploadContractScan = (contractId: number, file: File) => {
 
 // ── 闭环确认 ──
 
-export const confirmContractClosure = (contractId: number) =>
-  api.post(`/contracts/${contractId}/closure-confirm`)
+export const confirmContractClosure = (contractId: number) => api.post(`/contracts/${contractId}/closure-confirm`)
 
 // ── 统计 ──
 

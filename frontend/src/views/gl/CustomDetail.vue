@@ -22,17 +22,26 @@
       <div>
         <label class="text-xs block mb-1">选择列</label>
         <div class="flex flex-wrap gap-1">
-          <Chip v-for="col in columns" :key="col.field"
-                :class="{ 'bg-blue-100': selectedCols.includes(col.field) }"
-                :label="col.header"
-                class="cursor-pointer"
-                @click="toggleCol(col.field)" />
+          <Chip
+            v-for="col in columns"
+            :key="col.field"
+            :class="{ 'bg-blue-100': selectedCols.includes(col.field) }"
+            :label="col.header"
+            class="cursor-pointer"
+            @click="toggleCol(col.field)"
+          />
         </div>
       </div>
     </div>
 
     <DataTable :value="results" stripedRows size="small" class="mb-4" scrollable scrollHeight="600px">
-      <Column v-for="col in visibleCols" :key="col.field" :field="col.field" :header="col.header" style="min-width: 6rem" />
+      <Column
+        v-for="col in visibleCols"
+        :key="col.field"
+        :field="col.field"
+        :header="col.header"
+        style="min-width: 6rem"
+      />
     </DataTable>
     <div class="text-sm text-gray-500">{{ results.length }} 条记录</div>
   </div>
@@ -53,9 +62,7 @@ const companyId = Number(localStorage.getItem('company_id') || '1')
 const now = new Date()
 
 const columns = ref<{ field: string; header: string }[]>([])
-const selectedCols = ref<string[]>([
-  'date', 'voucher_no', 'account_code', 'account_name', 'summary', 'debit', 'credit',
-])
+const selectedCols = ref<string[]>(['date', 'voucher_no', 'account_code', 'account_name', 'summary', 'debit', 'credit'])
 
 const filters = ref({
   start_date: `${now.getFullYear()}-01-01`,
@@ -65,9 +72,7 @@ const filters = ref({
 
 const results = ref<any[]>([])
 
-const visibleCols = computed(() =>
-  columns.value.filter(c => selectedCols.value.includes(c.field))
-)
+const visibleCols = computed(() => columns.value.filter(c => selectedCols.value.includes(c.field)))
 
 function toggleCol(field: string) {
   const idx = selectedCols.value.indexOf(field)
@@ -94,7 +99,9 @@ async function search() {
 async function exportCsv() {
   try {
     const res = await exportCustomDetail(
-      companyId, filters.value.start_date, filters.value.end_date,
+      companyId,
+      filters.value.start_date,
+      filters.value.end_date,
       filters.value.account_code || undefined,
     )
     const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' })

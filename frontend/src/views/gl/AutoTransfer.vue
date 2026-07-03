@@ -9,7 +9,10 @@
       <Column field="name" header="模板名称" />
       <Column field="template_type" header="类型">
         <template #body="{ data }">
-          <Tag :value="typeLabel(data.template_type)" :severity="data.template_type === 'fixed' ? 'info' : data.template_type === 'ratio' ? 'warn' : 'success'" />
+          <Tag
+            :value="typeLabel(data.template_type)"
+            :severity="data.template_type === 'fixed' ? 'info' : data.template_type === 'ratio' ? 'warn' : 'success'"
+          />
         </template>
       </Column>
       <Column field="frequency" header="频率">
@@ -26,7 +29,14 @@
       <Column header="操作" style="width: 16rem">
         <template #body="{ data }">
           <div class="flex gap-2">
-            <Button icon="pi pi-play" severity="success" size="small" label="执行" @click="execute(data)" :disabled="!data.is_active" />
+            <Button
+              icon="pi pi-play"
+              severity="success"
+              size="small"
+              label="执行"
+              @click="execute(data)"
+              :disabled="!data.is_active"
+            />
             <Button icon="pi pi-pencil" severity="info" size="small" @click="openEdit(data)" />
             <Button icon="pi pi-trash" severity="danger" size="small" @click="confirmDelete(data)" />
           </div>
@@ -34,7 +44,12 @@
       </Column>
     </DataTable>
 
-    <Dialog v-model:visible="dialogVisible" :header="isEditing ? '编辑模板' : '新建模板'" :modal="true" :style="{ width: '700px' }">
+    <Dialog
+      v-model:visible="dialogVisible"
+      :header="isEditing ? '编辑模板' : '新建模板'"
+      :modal="true"
+      :style="{ width: '700px' }"
+    >
       <div class="flex flex-col gap-3">
         <div class="flex gap-3">
           <div class="flex-1">
@@ -67,7 +82,7 @@
             </Column>
             <Column header="方向" style="width: 5rem">
               <template #body="{ data, index }">
-                <Dropdown v-model="data.direction" :options="['debit','credit']" size="small">
+                <Dropdown v-model="data.direction" :options="['debit', 'credit']" size="small">
                   <template #value="slotProps">{{ slotProps.value === 'debit' ? '借' : '贷' }}</template>
                   <template #option="slotProps">{{ slotProps.option === 'debit' ? '借方' : '贷方' }}</template>
                 </Dropdown>
@@ -75,7 +90,12 @@
             </Column>
             <Column header="公式" style="width: 7rem">
               <template #body="{ data, index }">
-                <InputText v-model="data.formula" size="small" class="w-full" :placeholder="form.template_type === 'fixed' ? '金额' : '百分比/余额'" />
+                <InputText
+                  v-model="data.formula"
+                  size="small"
+                  class="w-full"
+                  :placeholder="form.template_type === 'fixed' ? '金额' : '百分比/余额'"
+                />
               </template>
             </Column>
             <Column header="摘要">
@@ -103,7 +123,9 @@
 
     <Dialog v-model:visible="execDialogVisible" header="执行自动转账" :modal="true" :style="{ width: '400px' }">
       <div class="flex flex-col gap-3">
-        <p>执行模板: <strong>{{ execTarget?.name }}</strong></p>
+        <p>
+          执行模板: <strong>{{ execTarget?.name }}</strong>
+        </p>
         <div>
           <label class="block text-sm mb-1">执行期间</label>
           <InputText v-model="execPeriod" placeholder="yyyy-MM" />
@@ -193,8 +215,12 @@ function openCreate() {
   isEditing.value = false
   editingId.value = null
   form.value = {
-    company_id: companyId, name: '', description: '',
-    template_type: 'fixed', frequency: 'manual', is_active: true,
+    company_id: companyId,
+    name: '',
+    description: '',
+    template_type: 'fixed',
+    frequency: 'manual',
+    is_active: true,
     entries: [{ ...defaultEntry }],
   }
   dialogVisible.value = true
@@ -204,31 +230,44 @@ function openEdit(t: any) {
   isEditing.value = true
   editingId.value = t.id
   form.value = {
-    company_id: companyId, name: t.name, description: t.description || '',
-    template_type: t.template_type, frequency: t.frequency,
+    company_id: companyId,
+    name: t.name,
+    description: t.description || '',
+    template_type: t.template_type,
+    frequency: t.frequency,
     is_active: t.is_active,
     entries: (t.entries || []).map((e: any) => ({ ...e })),
   }
   dialogVisible.value = true
 }
 
-function addEntry() { form.value.entries.push({ ...defaultEntry }) }
-function removeEntry(index: number) { form.value.entries.splice(index, 1) }
+function addEntry() {
+  form.value.entries.push({ ...defaultEntry })
+}
+function removeEntry(index: number) {
+  form.value.entries.splice(index, 1)
+}
 
 async function save() {
   try {
     if (isEditing.value && editingId.value) {
       await updateAutoTransferTemplate(editingId.value, {
-        name: form.value.name, description: form.value.description,
-        template_type: form.value.template_type, frequency: form.value.frequency,
-        is_active: form.value.is_active, entries: form.value.entries,
+        name: form.value.name,
+        description: form.value.description,
+        template_type: form.value.template_type,
+        frequency: form.value.frequency,
+        is_active: form.value.is_active,
+        entries: form.value.entries,
       })
       toast.add({ severity: 'success', summary: '已更新', life: 3000 })
     } else {
       await createAutoTransferTemplate({
-        company_id: companyId, name: form.value.name,
-        description: form.value.description, template_type: form.value.template_type,
-        frequency: form.value.frequency, is_active: form.value.is_active,
+        company_id: companyId,
+        name: form.value.name,
+        description: form.value.description,
+        template_type: form.value.template_type,
+        frequency: form.value.frequency,
+        is_active: form.value.is_active,
         entries: form.value.entries,
       })
       toast.add({ severity: 'success', summary: '已创建', life: 3000 })

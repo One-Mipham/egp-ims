@@ -60,15 +60,22 @@ async function handleRegister() {
     result.value = res.data
     // 自动激活30天试用
     redirecting.value = true
-    try { await activateTrial(res.data.company_id) } catch (_) { /* ok */ }
+    try {
+      await activateTrial(res.data.company_id)
+    } catch (_) {
+      /* ok */
+    }
     // 存储 ¥0.99 验证支付信息，跳转结算页
-    localStorage.setItem('selectedPlan', JSON.stringify({
-      name: '实名验证',
-      slug: 'id-verification',
-      price: 0.99,
-      billing_cycle: 'once',
-      is_trial_verification: true,
-    }))
+    localStorage.setItem(
+      'selectedPlan',
+      JSON.stringify({
+        name: '实名验证',
+        slug: 'id-verification',
+        price: 0.99,
+        billing_cycle: 'once',
+        is_trial_verification: true,
+      }),
+    )
     setTimeout(() => {
       router.push('/subscription/checkout')
     }, 2500)
@@ -142,7 +149,9 @@ async function handleRegister() {
       <div v-else class="bg-white/10 backdrop-blur-md border border-white/20 rounded-sm p-6">
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-white/70 mb-1.5 tracking-wide">{{ t('register.phone') }}</label>
+            <label class="block text-sm font-medium text-white/70 mb-1.5 tracking-wide">{{
+              t('register.phone')
+            }}</label>
             <input
               v-model="phone"
               type="tel"
@@ -156,7 +165,9 @@ async function handleRegister() {
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-white/70 mb-1.5 tracking-wide">{{ t('register.companyName') }}</label>
+            <label class="block text-sm font-medium text-white/70 mb-1.5 tracking-wide">{{
+              t('register.companyName')
+            }}</label>
             <input
               v-model="companyName"
               type="text"
@@ -166,7 +177,9 @@ async function handleRegister() {
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-white/70 mb-1.5 tracking-wide">{{ t('register.password') }}</label>
+            <label class="block text-sm font-medium text-white/70 mb-1.5 tracking-wide">{{
+              t('register.password')
+            }}</label>
             <input
               v-model="password"
               type="password"
@@ -179,7 +192,9 @@ async function handleRegister() {
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-white/70 mb-1.5 tracking-wide">{{ t('register.confirmPassword') }}</label>
+            <label class="block text-sm font-medium text-white/70 mb-1.5 tracking-wide">{{
+              t('register.confirmPassword')
+            }}</label>
             <input
               v-model="confirmPassword"
               type="password"

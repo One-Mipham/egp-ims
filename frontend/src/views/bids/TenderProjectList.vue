@@ -16,9 +16,14 @@ import Tag from 'primevue/tag'
 import Toolbar from 'primevue/toolbar'
 
 import {
-  listTenderProjects, getTenderOptions,
-  createTenderProject, updateTenderProject, deleteTenderProject,
-  reviewTenderProject, approveTenderProject, bypassTenderProject,
+  listTenderProjects,
+  getTenderOptions,
+  createTenderProject,
+  updateTenderProject,
+  deleteTenderProject,
+  reviewTenderProject,
+  approveTenderProject,
+  bypassTenderProject,
 } from '../../api/bids'
 import api from '../../api'
 
@@ -54,8 +59,13 @@ const statusOptions = [
 
 const statusLabels: Record<string, string> = Object.fromEntries(statusOptions.map(o => [o.value, o.label]))
 const statusSeverity: Record<string, string> = {
-  draft: 'info', announced: 'warn', opening: 'warn',
-  evaluating: 'warn', awarded: 'success', closed: 'secondary', cancelled: 'danger',
+  draft: 'info',
+  announced: 'warn',
+  opening: 'warn',
+  evaluating: 'warn',
+  awarded: 'success',
+  closed: 'secondary',
+  cancelled: 'danger',
 }
 
 const tenderTypeOptions = [
@@ -128,23 +138,24 @@ function emptyForm(): Record<string, any> {
 
 // ── 权限 ──
 const userRole = computed(() => localStorage.getItem('role') || '')
-const isPrivileged = computed(() =>
-  ['finance_manager', 'finance_director', 'super_admin'].includes(userRole.value),
-)
-const canBypass = computed(() =>
-  ['super_admin', 'finance_director'].includes(userRole.value),
-)
+const isPrivileged = computed(() => ['finance_manager', 'finance_director', 'super_admin'].includes(userRole.value))
+const canBypass = computed(() => ['super_admin', 'finance_director'].includes(userRole.value))
 
 const bypassDialog = ref(false)
 const bypassReason = ref('')
 const currentProjectId = ref<number | null>(null)
 
-const openBypassProject = (id: number) => { currentProjectId.value = id; bypassReason.value = ''; bypassDialog.value = true }
+const openBypassProject = (id: number) => {
+  currentProjectId.value = id
+  bypassReason.value = ''
+  bypassDialog.value = true
+}
 
 const doBypassProject = async () => {
   try {
     await bypassTenderProject(currentProjectId.value!, bypassReason.value)
-    bypassDialog.value = false; load()
+    bypassDialog.value = false
+    load()
   } catch (e: any) {
     alert('操作失败: ' + (e.response?.data?.detail || e.message))
   }
@@ -174,7 +185,9 @@ async function loadRefs() {
       api.get('/departments', { params: { company_id: Number(localStorage.getItem('company_id') || '1') } }),
     ])
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 // ── CRUD ──
@@ -248,7 +261,12 @@ onMounted(() => {
       <template #start>
         <div class="flex flex-wrap gap-3">
           <MultiSelect v-model="fTenderType" :options="tenderTypeOptions" placeholder="招标类型" class="w-40" />
-          <MultiSelect v-model="fProcurementCategory" :options="procurementCategoryOptions" placeholder="采购类别" class="w-36" />
+          <MultiSelect
+            v-model="fProcurementCategory"
+            :options="procurementCategoryOptions"
+            placeholder="采购类别"
+            class="w-36"
+          />
           <MultiSelect v-model="fDepartment" :options="departments" placeholder="部门" class="w-36" />
           <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-32" showClear />
           <InputText v-model="fSearch" placeholder="搜索编号/名称" class="w-48" @keyup.enter="load" />
@@ -258,37 +276,86 @@ onMounted(() => {
     </Toolbar>
 
     <!-- 数据表格 -->
-    <DataTable :value="items" :loading="loading" stripedRows paginator :rows="15" :rowsPerPageOptions="[10, 15, 25, 50]" class="text-sm">
-      <Column field="project_no" header="招标编号" style="min-width:140px" />
-      <Column field="project_name" header="项目名称" style="min-width:200px" />
-      <Column field="tender_type" header="招标类型" style="min-width:100px" />
-      <Column field="procurement_category" header="采购类别" style="min-width:80px" />
-      <Column field="estimated_amount" header="预算金额" style="min-width:100px">
+    <DataTable
+      :value="items"
+      :loading="loading"
+      stripedRows
+      paginator
+      :rows="15"
+      :rowsPerPageOptions="[10, 15, 25, 50]"
+      class="text-sm"
+    >
+      <Column field="project_no" header="招标编号" style="min-width: 140px" />
+      <Column field="project_name" header="项目名称" style="min-width: 200px" />
+      <Column field="tender_type" header="招标类型" style="min-width: 100px" />
+      <Column field="procurement_category" header="采购类别" style="min-width: 80px" />
+      <Column field="estimated_amount" header="预算金额" style="min-width: 100px">
         <template #body="{ data }">{{ data.estimated_amount?.toLocaleString() }}</template>
       </Column>
-      <Column field="bid_deadline" header="投标截止" style="min-width:100px" />
-      <Column field="opening_date" header="开标日期" style="min-width:100px" />
-      <Column field="status" header="状态" style="min-width:90px">
+      <Column field="bid_deadline" header="投标截止" style="min-width: 100px" />
+      <Column field="opening_date" header="开标日期" style="min-width: 100px" />
+      <Column field="status" header="状态" style="min-width: 90px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status]" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width:220px">
+      <Column header="操作" style="min-width: 220px">
         <template #body="{ data }">
           <div class="flex gap-1 flex-wrap">
-            <Button v-if="mode === 'projects'" icon="pi pi-pencil" size="small" severity="info" @click="openEdit(data)" v-tooltip.top="'编辑'" />
-            <Button v-if="isPrivileged && !data.reviewer_id" icon="pi pi-check" size="small" severity="warn" @click="doReview(data.id)" v-tooltip.top="'审核'" />
-            <Button v-if="isPrivileged && data.reviewer_id && data.status === 'draft'" icon="pi pi-check-circle" size="small" severity="success" @click="doApprove(data.id)" v-tooltip.top="'批准公告'" />
-            <Button v-if="canBypass && data.status === 'draft'" icon="pi pi-forward" size="small" severity="warn" @click="openBypassProject(data.id)" v-tooltip.top="'强制跳过'" />
-            <Button v-if="mode === 'projects'" icon="pi pi-trash" size="small" severity="danger" @click="remove(data.id)" v-tooltip.top="'删除'" />
+            <Button
+              v-if="mode === 'projects'"
+              icon="pi pi-pencil"
+              size="small"
+              severity="info"
+              @click="openEdit(data)"
+              v-tooltip.top="'编辑'"
+            />
+            <Button
+              v-if="isPrivileged && !data.reviewer_id"
+              icon="pi pi-check"
+              size="small"
+              severity="warn"
+              @click="doReview(data.id)"
+              v-tooltip.top="'审核'"
+            />
+            <Button
+              v-if="isPrivileged && data.reviewer_id && data.status === 'draft'"
+              icon="pi pi-check-circle"
+              size="small"
+              severity="success"
+              @click="doApprove(data.id)"
+              v-tooltip.top="'批准公告'"
+            />
+            <Button
+              v-if="canBypass && data.status === 'draft'"
+              icon="pi pi-forward"
+              size="small"
+              severity="warn"
+              @click="openBypassProject(data.id)"
+              v-tooltip.top="'强制跳过'"
+            />
+            <Button
+              v-if="mode === 'projects'"
+              icon="pi pi-trash"
+              size="small"
+              severity="danger"
+              @click="remove(data.id)"
+              v-tooltip.top="'删除'"
+            />
           </div>
         </template>
       </Column>
     </DataTable>
 
     <!-- 编辑/创建对话框 -->
-    <Dialog v-model:visible="showDialog" :header="(isEdit ? '编辑' : '新建') + '招标项目'" :style="{ width: '800px' }" :modal="true" class="p-fluid">
-      <div class="grid grid-cols-2 gap-4" style="max-height:60vh; overflow-y:auto; padding-right:4px">
+    <Dialog
+      v-model:visible="showDialog"
+      :header="(isEdit ? '编辑' : '新建') + '招标项目'"
+      :style="{ width: '800px' }"
+      :modal="true"
+      class="p-fluid"
+    >
+      <div class="grid grid-cols-2 gap-4" style="max-height: 60vh; overflow-y: auto; padding-right: 4px">
         <!-- 基本信息 -->
         <div class="col-span-2 font-bold text-lg border-b pb-1 mb-1">基本信息</div>
         <div>

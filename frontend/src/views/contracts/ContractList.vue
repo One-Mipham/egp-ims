@@ -3,10 +3,17 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import {
-  listContracts, getContractCategories, getLegalBasisOptions,
-  createContract, updateContract, deleteContract,
-  reviewContract, approveContract, sealContract,
-  uploadContractScan, confirmContractClosure,
+  listContracts,
+  getContractCategories,
+  getLegalBasisOptions,
+  createContract,
+  updateContract,
+  deleteContract,
+  reviewContract,
+  approveContract,
+  sealContract,
+  uploadContractScan,
+  confirmContractClosure,
 } from '@/api/contracts'
 import { listDepartments } from '@/api'
 import Button from 'primevue/button'
@@ -30,10 +37,19 @@ const userId = Number(localStorage.getItem('user_id') || '0')
 
 const contractType = ref<string>('')
 const typeLabels: Record<string, string> = {
-  supplier: '供应商合同', customer: '客户合同', labor: '劳动合同', lease: '租赁合同',
+  supplier: '供应商合同',
+  customer: '客户合同',
+  labor: '劳动合同',
+  lease: '租赁合同',
 }
 
-watch(() => route.path, () => { detectType() }, { immediate: true })
+watch(
+  () => route.path,
+  () => {
+    detectType()
+  },
+  { immediate: true },
+)
 function detectType() {
   const p = route.path
   if (p.includes('/contracts/supplier')) contractType.value = 'supplier'
@@ -81,10 +97,16 @@ const contractTypeOptions = [
   { label: '租赁合同', value: 'lease' },
 ]
 const statusLabels: Record<string, string> = {
-  draft: '草稿', active: '履行中', completed: '已完成', terminated: '已终止',
+  draft: '草稿',
+  active: '履行中',
+  completed: '已完成',
+  terminated: '已终止',
 }
 const statusSeverity: Record<string, string> = {
-  draft: 'secondary', active: 'success', completed: 'info', terminated: 'danger',
+  draft: 'secondary',
+  active: 'success',
+  completed: 'info',
+  terminated: 'danger',
 }
 
 async function loadRefs() {
@@ -113,7 +135,9 @@ async function load() {
     items.value = data
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '加载失败', detail: e.message, life: 3000 })
-  } finally { loading.value = false }
+  } finally {
+    loading.value = false
+  }
 }
 
 function emptyForm() {
@@ -158,7 +182,8 @@ function openCreate() {
 }
 function openEdit(row: any) {
   form.value = {
-    ...row, company_id: row.company_id || companyId,
+    ...row,
+    company_id: row.company_id || companyId,
     legal_basis_arr: row.legal_basis ? row.legal_basis.split(',') : [],
   }
   isEdit.value = true
@@ -168,10 +193,16 @@ function openEdit(row: any) {
 async function save() {
   try {
     const payload = { ...form.value }
-    delete payload.id; delete payload.created_at; delete payload.updated_at
-    delete payload.legal_basis_arr; delete payload.scan_file_path
-    delete payload.archived_at; delete payload.reviewed_at; delete payload.approved_at
-    delete payload.sealed_at; delete payload.closure_confirmed_at
+    delete payload.id
+    delete payload.created_at
+    delete payload.updated_at
+    delete payload.legal_basis_arr
+    delete payload.scan_file_path
+    delete payload.archived_at
+    delete payload.reviewed_at
+    delete payload.approved_at
+    delete payload.sealed_at
+    delete payload.closure_confirmed_at
     if (isEdit.value && editId.value) {
       await updateContract(editId.value, payload)
       toast.add({ severity: 'success', summary: '已更新', life: 2000 })
@@ -197,45 +228,84 @@ async function remove(id: number) {
 
 // Workflow
 async function doReview(id: number) {
-  try { await reviewContract(id); toast.add({ severity: 'success', summary: '已审核', life: 2000 }); load() }
-  catch (e: any) { toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 }) }
+  try {
+    await reviewContract(id)
+    toast.add({ severity: 'success', summary: '已审核', life: 2000 })
+    load()
+  } catch (e: any) {
+    toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 })
+  }
 }
 async function doApprove(id: number) {
-  try { await approveContract(id); toast.add({ severity: 'success', summary: '已批准', life: 2000 }); load() }
-  catch (e: any) { toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 }) }
+  try {
+    await approveContract(id)
+    toast.add({ severity: 'success', summary: '已批准', life: 2000 })
+    load()
+  } catch (e: any) {
+    toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 })
+  }
 }
 async function doSeal(id: number) {
-  try { await sealContract(id); toast.add({ severity: 'success', summary: '已盖章', life: 2000 }); load() }
-  catch (e: any) { toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 }) }
+  try {
+    await sealContract(id)
+    toast.add({ severity: 'success', summary: '已盖章', life: 2000 })
+    load()
+  } catch (e: any) {
+    toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 })
+  }
 }
 
 // Scan
-function openScan(id: number) { scanContractId.value = id; scanFile.value = null; showScanDialog.value = true }
+function openScan(id: number) {
+  scanContractId.value = id
+  scanFile.value = null
+  showScanDialog.value = true
+}
 async function doUpload() {
   if (!scanFile.value || !scanContractId.value) return
   try {
     await uploadContractScan(scanContractId.value, scanFile.value)
     toast.add({ severity: 'success', summary: '扫描件已上传', life: 2000 })
-    showScanDialog.value = false; load()
-  } catch (e: any) { toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 }) }
+    showScanDialog.value = false
+    load()
+  } catch (e: any) {
+    toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 })
+  }
 }
-function onFileSelect(e: any) { scanFile.value = e.files[0] }
+function onFileSelect(e: any) {
+  scanFile.value = e.files[0]
+}
 
 // Closure
-function openClosure(id: number) { closureContractId.value = id; showClosureDialog.value = true }
+function openClosure(id: number) {
+  closureContractId.value = id
+  showClosureDialog.value = true
+}
 async function doClosure() {
   if (!closureContractId.value) return
   try {
     await confirmContractClosure(closureContractId.value)
     toast.add({ severity: 'success', summary: '闭环确认完成', life: 2000 })
-    showClosureDialog.value = false; load()
-  } catch (e: any) { toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 }) }
+    showClosureDialog.value = false
+    load()
+  } catch (e: any) {
+    toast.add({ severity: 'error', summary: '失败', detail: e.message, life: 3000 })
+  }
 }
 
-function goPrint(id: number) { router.push(`/finance/contracts/print/${id}`) }
-function fmtDate(v: string) { if (!v) return ''; return v.length === 10 ? v : v.slice(0, 10) }
+function goPrint(id: number) {
+  router.push(`/finance/contracts/print/${id}`)
+}
+function fmtDate(v: string) {
+  if (!v) return ''
+  return v.length === 10 ? v : v.slice(0, 10)
+}
 
-onMounted(async () => { detectType(); await loadRefs(); load() })
+onMounted(async () => {
+  detectType()
+  await loadRefs()
+  load()
+})
 </script>
 
 <template>
@@ -246,28 +316,50 @@ onMounted(async () => { detectType(); await loadRefs(); load() })
     </div>
 
     <div class="flex flex-wrap gap-3 mb-4 items-center">
-      <MultiSelect v-model="fDepartmentIds" :options="departments" placeholder="发起部门" class="w-48" display="chip" @change="load" />
-      <MultiSelect v-model="fCategories" :options="categories" placeholder="合同类别" class="w-56" display="chip" @change="load" />
+      <MultiSelect
+        v-model="fDepartmentIds"
+        :options="departments"
+        placeholder="发起部门"
+        class="w-48"
+        display="chip"
+        @change="load"
+      />
+      <MultiSelect
+        v-model="fCategories"
+        :options="categories"
+        placeholder="合同类别"
+        class="w-56"
+        display="chip"
+        @change="load"
+      />
       <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-36" showClear @change="load" />
       <InputText v-model="fSearch" placeholder="搜索..." class="w-48" @keyup.enter="load" />
       <Button icon="pi pi-search" severity="secondary" @click="load" />
     </div>
 
-    <DataTable :value="items" :loading="loading" paginator :rows="15"
-      :rowsPerPageOptions="[15, 30, 50]" stripedRows sortField="id" :sortOrder="-1">
-      <Column field="contract_no" header="合同号码" style="min-width:140px" sortable />
-      <Column field="contract_name" header="合同名称" style="min-width:160px" sortable />
-      <Column field="contract_category" header="类别" style="min-width:110px" sortable />
-      <Column header="乙方" style="min-width:120px" sortable sortField="party_b">
+    <DataTable
+      :value="items"
+      :loading="loading"
+      paginator
+      :rows="15"
+      :rowsPerPageOptions="[15, 30, 50]"
+      stripedRows
+      sortField="id"
+      :sortOrder="-1"
+    >
+      <Column field="contract_no" header="合同号码" style="min-width: 140px" sortable />
+      <Column field="contract_name" header="合同名称" style="min-width: 160px" sortable />
+      <Column field="contract_category" header="类别" style="min-width: 110px" sortable />
+      <Column header="乙方" style="min-width: 120px" sortable sortField="party_b">
         <template #body="{ data }">{{ data.party_b || '-' }}</template>
       </Column>
-      <Column field="amount" header="金额" style="min-width:100px" sortable>
+      <Column field="amount" header="金额" style="min-width: 100px" sortable>
         <template #body="{ data }">¥{{ data.amount?.toLocaleString() }}</template>
       </Column>
-      <Column field="sign_date" header="签署" style="min-width:90px" sortable>
+      <Column field="sign_date" header="签署" style="min-width: 90px" sortable>
         <template #body="{ data }">{{ fmtDate(data.sign_date) }}</template>
       </Column>
-      <Column header="流程" style="min-width:130px">
+      <Column header="流程" style="min-width: 130px">
         <template #body="{ data }">
           <div class="flex gap-0.5 flex-wrap">
             <Tag v-if="data.reviewed_at" value="已审" severity="info" class="text-xs" />
@@ -275,25 +367,68 @@ onMounted(async () => { detectType(); await loadRefs(); load() })
             <Tag v-if="data.sealed_at" value="已盖章" severity="warn" class="text-xs" />
             <Tag v-if="data.scan_file_path" value="已扫描" severity="info" class="text-xs" />
             <Tag v-if="data.closure_confirmed" value="已闭环" severity="success" class="text-xs" />
-            <span v-if="!data.reviewed_at && !data.approved_at && !data.sealed_at" class="text-gray-400 text-xs">未启动</span>
+            <span v-if="!data.reviewed_at && !data.approved_at && !data.sealed_at" class="text-gray-400 text-xs"
+              >未启动</span
+            >
           </div>
         </template>
       </Column>
-      <Column field="status" header="状态" style="min-width:80px">
+      <Column field="status" header="状态" style="min-width: 80px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status] || data.status" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width:280px">
+      <Column header="操作" style="min-width: 280px">
         <template #body="{ data }">
           <div class="flex gap-1 flex-wrap">
             <Button icon="pi pi-pencil" severity="info" size="small" @click="openEdit(data)" v-tooltip.top="'编辑'" />
-            <Button v-if="!data.reviewed_at" icon="pi pi-check-circle" severity="help" size="small" @click="doReview(data.id)" v-tooltip.top="'审核'" />
-            <Button v-if="data.reviewed_at && !data.approved_at" icon="pi pi-check" severity="success" size="small" @click="doApprove(data.id)" v-tooltip.top="'批准'" />
-            <Button v-if="data.approved_at && !data.sealed_at" icon="pi pi-lock" severity="warn" size="small" @click="doSeal(data.id)" v-tooltip.top="'盖章'" />
-            <Button v-if="!data.scan_file_path" icon="pi pi-upload" severity="secondary" size="small" @click="openScan(data.id)" v-tooltip.top="'上传扫描件'" />
-            <Button icon="pi pi-print" severity="secondary" size="small" @click="goPrint(data.id)" v-tooltip.top="'打印'" />
-            <Button v-if="!data.closure_confirmed" icon="pi pi-lock-open" severity="contrast" size="small" @click="openClosure(data.id)" v-tooltip.top="'闭环确认'" />
+            <Button
+              v-if="!data.reviewed_at"
+              icon="pi pi-check-circle"
+              severity="help"
+              size="small"
+              @click="doReview(data.id)"
+              v-tooltip.top="'审核'"
+            />
+            <Button
+              v-if="data.reviewed_at && !data.approved_at"
+              icon="pi pi-check"
+              severity="success"
+              size="small"
+              @click="doApprove(data.id)"
+              v-tooltip.top="'批准'"
+            />
+            <Button
+              v-if="data.approved_at && !data.sealed_at"
+              icon="pi pi-lock"
+              severity="warn"
+              size="small"
+              @click="doSeal(data.id)"
+              v-tooltip.top="'盖章'"
+            />
+            <Button
+              v-if="!data.scan_file_path"
+              icon="pi pi-upload"
+              severity="secondary"
+              size="small"
+              @click="openScan(data.id)"
+              v-tooltip.top="'上传扫描件'"
+            />
+            <Button
+              icon="pi pi-print"
+              severity="secondary"
+              size="small"
+              @click="goPrint(data.id)"
+              v-tooltip.top="'打印'"
+            />
+            <Button
+              v-if="!data.closure_confirmed"
+              icon="pi pi-lock-open"
+              severity="contrast"
+              size="small"
+              @click="openClosure(data.id)"
+              v-tooltip.top="'闭环确认'"
+            />
             <Button icon="pi pi-trash" severity="danger" size="small" @click="remove(data.id)" v-tooltip.top="'删除'" />
           </div>
         </template>
@@ -301,52 +436,150 @@ onMounted(async () => { detectType(); await loadRefs(); load() })
     </DataTable>
 
     <!-- Edit Dialog -->
-    <Dialog v-model:visible="showDialog" :header="isEdit ? '编辑合同' : '新建合同'" :style="{ width: '900px' }" :modal="true">
+    <Dialog
+      v-model:visible="showDialog"
+      :header="isEdit ? '编辑合同' : '新建合同'"
+      :style="{ width: '900px' }"
+      :modal="true"
+    >
       <div class="grid grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto px-1">
-        <div class="field"><label class="block text-xs font-semibold mb-1">合同名称</label><InputText v-model="form.contract_name" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">合同号码</label><InputText v-model="form.contract_no" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">合同大类</label><Dropdown v-model="form.contract_type" :options="contractTypeOptions" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">合同类别</label><Dropdown v-model="form.contract_category" :options="categories" class="w-full" editable /></div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">合同名称</label
+          ><InputText v-model="form.contract_name" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">合同号码</label
+          ><InputText v-model="form.contract_no" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">合同大类</label
+          ><Dropdown v-model="form.contract_type" :options="contractTypeOptions" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">合同类别</label
+          ><Dropdown v-model="form.contract_category" :options="categories" class="w-full" editable />
+        </div>
         <div class="field col-span-2">
           <label class="block text-xs font-semibold mb-1">法律依据（可多选）</label>
-          <MultiSelect v-model="form.legal_basis_arr" :options="legalBasisOptions" class="w-full" placeholder="勾选适用法律..." display="chip"
-            @change="form.legal_basis = form.legal_basis_arr?.join(',')" />
+          <MultiSelect
+            v-model="form.legal_basis_arr"
+            :options="legalBasisOptions"
+            class="w-full"
+            placeholder="勾选适用法律..."
+            display="chip"
+            @change="form.legal_basis = form.legal_basis_arr?.join(',')"
+          />
         </div>
-        <div class="field col-span-2"><label class="block text-xs font-semibold mb-1">合同事由</label><InputText v-model="form.subject" class="w-full" /></div>
+        <div class="field col-span-2">
+          <label class="block text-xs font-semibold mb-1">合同事由</label
+          ><InputText v-model="form.subject" class="w-full" />
+        </div>
 
         <div class="col-span-2 mt-2"><h3 class="text-sm font-bold border-b pb-1">甲方信息（我方）</h3></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">名称</label><InputText v-model="form.party_a" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">法定代表人</label><InputText v-model="form.party_a_representative" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">地址</label><InputText v-model="form.party_a_address" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">电话</label><InputText v-model="form.party_a_phone" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">授权签字人</label><InputText v-model="form.party_a_signatory" class="w-full" /></div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">名称</label
+          ><InputText v-model="form.party_a" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">法定代表人</label
+          ><InputText v-model="form.party_a_representative" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">地址</label
+          ><InputText v-model="form.party_a_address" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">电话</label
+          ><InputText v-model="form.party_a_phone" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">授权签字人</label
+          ><InputText v-model="form.party_a_signatory" class="w-full" />
+        </div>
 
         <div class="col-span-2 mt-2"><h3 class="text-sm font-bold border-b pb-1">乙方信息（对方）</h3></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">名称</label><InputText v-model="form.party_b" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">法定代表人</label><InputText v-model="form.party_b_representative" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">地址</label><InputText v-model="form.party_b_address" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">电话</label><InputText v-model="form.party_b_phone" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">授权签字人</label><InputText v-model="form.party_b_signatory" class="w-full" /></div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">名称</label
+          ><InputText v-model="form.party_b" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">法定代表人</label
+          ><InputText v-model="form.party_b_representative" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">地址</label
+          ><InputText v-model="form.party_b_address" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">电话</label
+          ><InputText v-model="form.party_b_phone" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">授权签字人</label
+          ><InputText v-model="form.party_b_signatory" class="w-full" />
+        </div>
 
         <div class="col-span-2 mt-2"><h3 class="text-sm font-bold border-b pb-1">金额与日期</h3></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">合同金额</label><InputNumber v-model="form.amount" class="w-full" mode="currency" currency="CNY" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">签署日期</label><DatePicker v-model="form.sign_date" class="w-full" dateFormat="yy-mm-dd" showIcon /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">生效日期</label><DatePicker v-model="form.start_date" class="w-full" dateFormat="yy-mm-dd" showIcon /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">到期日期</label><DatePicker v-model="form.end_date" class="w-full" dateFormat="yy-mm-dd" showIcon /></div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">合同金额</label
+          ><InputNumber v-model="form.amount" class="w-full" mode="currency" currency="CNY" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">签署日期</label
+          ><DatePicker v-model="form.sign_date" class="w-full" dateFormat="yy-mm-dd" showIcon />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">生效日期</label
+          ><DatePicker v-model="form.start_date" class="w-full" dateFormat="yy-mm-dd" showIcon />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">到期日期</label
+          ><DatePicker v-model="form.end_date" class="w-full" dateFormat="yy-mm-dd" showIcon />
+        </div>
 
         <div class="col-span-2 mt-2"><h3 class="text-sm font-bold border-b pb-1">关键条款</h3></div>
-        <div class="field col-span-2"><label class="block text-xs font-semibold mb-1">财务支付条款</label><Textarea v-model="form.payment_terms" class="w-full" rows="3" placeholder="付款方式、金额、时间节点..." /></div>
-        <div class="field col-span-2"><label class="block text-xs font-semibold mb-1">不可抗力条款</label><Textarea v-model="form.force_majeure" class="w-full" rows="2" placeholder="不可抗力事件定义及处理..." /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">仲裁/诉讼地</label><InputText v-model="form.arbitration_venue" class="w-full" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">状态</label><Dropdown v-model="form.status" :options="statusOptions" class="w-full" /></div>
+        <div class="field col-span-2">
+          <label class="block text-xs font-semibold mb-1">财务支付条款</label
+          ><Textarea v-model="form.payment_terms" class="w-full" rows="3" placeholder="付款方式、金额、时间节点..." />
+        </div>
+        <div class="field col-span-2">
+          <label class="block text-xs font-semibold mb-1">不可抗力条款</label
+          ><Textarea v-model="form.force_majeure" class="w-full" rows="2" placeholder="不可抗力事件定义及处理..." />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">仲裁/诉讼地</label
+          ><InputText v-model="form.arbitration_venue" class="w-full" />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">状态</label
+          ><Dropdown v-model="form.status" :options="statusOptions" class="w-full" />
+        </div>
 
         <div class="col-span-2 mt-2"><h3 class="text-sm font-bold border-b pb-1">执行与补录</h3></div>
-        <div class="field col-span-2"><label class="block text-xs font-semibold mb-1">执行进展</label><Textarea v-model="form.execution_progress" class="w-full" rows="2" placeholder="合同履行进展情况记录..." /></div>
-        <div class="field col-span-2"><label class="block text-xs font-semibold mb-1">补录说明</label><Textarea v-model="form.supplement_notes" class="w-full" rows="2" placeholder="补充录入说明..." /></div>
+        <div class="field col-span-2">
+          <label class="block text-xs font-semibold mb-1">执行进展</label
+          ><Textarea v-model="form.execution_progress" class="w-full" rows="2" placeholder="合同履行进展情况记录..." />
+        </div>
+        <div class="field col-span-2">
+          <label class="block text-xs font-semibold mb-1">补录说明</label
+          ><Textarea v-model="form.supplement_notes" class="w-full" rows="2" placeholder="补充录入说明..." />
+        </div>
 
         <div class="col-span-2 mt-2"><h3 class="text-sm font-bold border-b pb-1">管理信息</h3></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">发起部门</label><Dropdown v-model="form.department_id" :options="departments" class="w-full" showClear placeholder="选择部门" /></div>
-        <div class="field"><label class="block text-xs font-semibold mb-1">备注</label><Textarea v-model="form.notes" class="w-full" rows="2" /></div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">发起部门</label
+          ><Dropdown
+            v-model="form.department_id"
+            :options="departments"
+            class="w-full"
+            showClear
+            placeholder="选择部门"
+          />
+        </div>
+        <div class="field">
+          <label class="block text-xs font-semibold mb-1">备注</label
+          ><Textarea v-model="form.notes" class="w-full" rows="2" />
+        </div>
       </div>
       <template #footer>
         <Button label="取消" severity="secondary" @click="showDialog = false" />
@@ -356,8 +589,14 @@ onMounted(async () => { detectType(); await loadRefs(); load() })
 
     <!-- Scan Upload Dialog -->
     <Dialog v-model:visible="showScanDialog" header="上传盖章扫描件" :style="{ width: '400px' }" :modal="true">
-      <FileUpload mode="basic" name="file" :maxFileSize="10000000" accept="image/*,application/pdf"
-        @select="onFileSelect" chooseLabel="选择扫描件" />
+      <FileUpload
+        mode="basic"
+        name="file"
+        :maxFileSize="10000000"
+        accept="image/*,application/pdf"
+        @select="onFileSelect"
+        chooseLabel="选择扫描件"
+      />
       <div class="mt-2 text-sm text-gray-500">支持 PDF、JPG、PNG，最大 10MB</div>
       <template #footer>
         <Button label="取消" severity="secondary" @click="showScanDialog = false" />

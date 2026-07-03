@@ -1,10 +1,13 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  cat: any
-  selectedId: number | null
-  expandedIds: Set<number>
-  depth?: number
-}>(), { depth: 0 })
+const props = withDefaults(
+  defineProps<{
+    cat: any
+    selectedId: number | null
+    expandedIds: Set<number>
+    depth?: number
+  }>(),
+  { depth: 0 },
+)
 
 defineEmits<{
   select: [id: number]
@@ -28,16 +31,38 @@ defineEmits<{
           v-if="cat.children?.length"
           @click.stop="$emit('toggle', cat.id)"
           class="text-zinc-400 hover:text-zinc-600 w-4 text-center shrink-0"
-        >{{ expandedIds.has(cat.id) ? '▾' : '▸' }}</button>
+        >
+          {{ expandedIds.has(cat.id) ? '▾' : '▸' }}
+        </button>
         <span v-else class="w-4 shrink-0"></span>
         <span v-if="cat.is_system" title="系统预置" class="text-[10px] shrink-0">🔒</span>
         <span class="truncate">{{ cat.name }}</span>
         <span class="text-[10px] text-zinc-400 shrink-0">({{ cat.article_count }})</span>
       </div>
       <div class="hidden group-hover:flex items-center gap-0.5 shrink-0">
-        <button v-if="!cat.is_system" @click.stop="$emit('edit', cat)" title="编辑" class="text-[10px] px-1 text-zinc-400 hover:text-blue-600">✎</button>
-        <button @click.stop="$emit('add', cat.id)" title="添加子分类" class="text-[10px] px-1 text-zinc-400 hover:text-green-600">+</button>
-        <button v-if="!cat.is_system" @click.stop="$emit('remove', cat)" title="删除" class="text-[10px] px-1 text-zinc-400 hover:text-red-500">×</button>
+        <button
+          v-if="!cat.is_system"
+          @click.stop="$emit('edit', cat)"
+          title="编辑"
+          class="text-[10px] px-1 text-zinc-400 hover:text-blue-600"
+        >
+          ✎
+        </button>
+        <button
+          @click.stop="$emit('add', cat.id)"
+          title="添加子分类"
+          class="text-[10px] px-1 text-zinc-400 hover:text-green-600"
+        >
+          +
+        </button>
+        <button
+          v-if="!cat.is_system"
+          @click.stop="$emit('remove', cat)"
+          title="删除"
+          class="text-[10px] px-1 text-zinc-400 hover:text-red-500"
+        >
+          ×
+        </button>
       </div>
     </div>
     <template v-if="cat.children?.length && expandedIds.has(cat.id)">

@@ -39,14 +39,10 @@ export interface BudgetUpdateData {
 export const listBudgets = (companyId: number, year?: number) =>
   api.get('/budgets', { params: { company_id: companyId, ...(year ? { year } : {}) } })
 
-export const getBudget = (id: number) =>
-  api.get(`/budgets/${id}`)
+export const getBudget = (id: number) => api.get(`/budgets/${id}`)
 
-export const createBudget = (data: BudgetCreateData) =>
-  api.post('/budgets', data)
+export const createBudget = (data: BudgetCreateData) => api.post('/budgets', data)
 
-export const updateBudget = (id: number, data: BudgetUpdateData) =>
-  api.put(`/budgets/${id}`, data)
+export const updateBudget = (id: number, data: BudgetUpdateData) => api.put(`/budgets/${id}`, data)
 
-export const deleteBudget = (id: number) =>
-  api.delete(`/budgets/${id}`)
+export const deleteBudget = (id: number) => api.delete(`/budgets/${id}`)

@@ -21,16 +21,16 @@
         </div>
         <DataTable :value="balances" stripedRows @row-click="drillDown">
           <Column field="counterparty_name" header="往来单位" />
-          <Column field="beginning_balance" header="期初余额" style="width:8rem">
+          <Column field="beginning_balance" header="期初余额" style="width: 8rem">
             <template #body="{ data }">{{ data.beginning_balance.toLocaleString() }}</template>
           </Column>
-          <Column field="current_debit" header="本期借方" style="width:8rem">
+          <Column field="current_debit" header="本期借方" style="width: 8rem">
             <template #body="{ data }">{{ data.current_debit.toLocaleString() }}</template>
           </Column>
-          <Column field="current_credit" header="本期贷方" style="width:8rem">
+          <Column field="current_credit" header="本期贷方" style="width: 8rem">
             <template #body="{ data }">{{ data.current_credit.toLocaleString() }}</template>
           </Column>
-          <Column field="ending_balance" header="期末余额" style="width:8rem">
+          <Column field="ending_balance" header="期末余额" style="width: 8rem">
             <template #body="{ data }">
               <span :class="data.direction === 'debit' ? 'text-blue-600' : 'text-red-600'">
                 {{ data.direction === 'debit' ? '借' : '贷' }} {{ data.ending_balance.toLocaleString() }}
@@ -44,7 +44,15 @@
         <div class="flex gap-2 items-end mb-3">
           <div>
             <label class="text-xs block mb-1">往来单位</label>
-            <Dropdown v-model="detailFilters.counterparty_id" :options="balanceOptions" optionLabel="counterparty_name" optionValue="counterparty_id" filter placeholder="选择" class="w-48" />
+            <Dropdown
+              v-model="detailFilters.counterparty_id"
+              :options="balanceOptions"
+              optionLabel="counterparty_name"
+              optionValue="counterparty_id"
+              filter
+              placeholder="选择"
+              class="w-48"
+            />
           </div>
           <div>
             <label class="text-xs block mb-1">起始期间</label>
@@ -54,21 +62,27 @@
             <label class="text-xs block mb-1">截止期间</label>
             <InputText v-model="detailFilters.end_period" size="small" class="w-28" />
           </div>
-          <Button label="查询" icon="pi pi-search" size="small" @click="loadDetail" :disabled="!detailFilters.counterparty_id" />
+          <Button
+            label="查询"
+            icon="pi pi-search"
+            size="small"
+            @click="loadDetail"
+            :disabled="!detailFilters.counterparty_id"
+          />
         </div>
         <DataTable v-if="detail" :value="detail.entries" stripedRows size="small">
-          <Column field="date" header="日期" style="width:7rem" />
-          <Column field="voucher_no" header="凭证号" style="width:7rem" />
-          <Column field="account_code" header="科目" style="width:6rem" />
-          <Column field="account_name" header="科目名称" style="width:8rem" />
+          <Column field="date" header="日期" style="width: 7rem" />
+          <Column field="voucher_no" header="凭证号" style="width: 7rem" />
+          <Column field="account_code" header="科目" style="width: 6rem" />
+          <Column field="account_name" header="科目名称" style="width: 8rem" />
           <Column field="summary" header="摘要" />
-          <Column field="debit" header="借方" style="width:8rem">
+          <Column field="debit" header="借方" style="width: 8rem">
             <template #body="{ data }">{{ data.debit ? data.debit.toLocaleString() : '' }}</template>
           </Column>
-          <Column field="credit" header="贷方" style="width:8rem">
+          <Column field="credit" header="贷方" style="width: 8rem">
             <template #body="{ data }">{{ data.credit ? data.credit.toLocaleString() : '' }}</template>
           </Column>
-          <Column field="balance" header="余额" style="width:8rem">
+          <Column field="balance" header="余额" style="width: 8rem">
             <template #body="{ data }">{{ data.balance.toLocaleString() }}</template>
           </Column>
         </DataTable>
@@ -84,10 +98,10 @@
         </div>
         <DataTable :value="aging" stripedRows>
           <Column field="counterparty_name" header="往来单位" />
-          <Column field="total_balance" header="总余额" style="width:8rem">
+          <Column field="total_balance" header="总余额" style="width: 8rem">
             <template #body="{ data }">{{ data.total_balance.toLocaleString() }}</template>
           </Column>
-          <Column v-for="b in agingBuckets" :key="b" :header="b" style="width:7rem">
+          <Column v-for="b in agingBuckets" :key="b" :header="b" style="width: 7rem">
             <template #body="{ data }">
               {{ data.buckets?.find((x: any) => x.range === b)?.amount?.toLocaleString() || '' }}
             </template>
@@ -137,13 +151,15 @@ const detailFilters = ref({
 const agingFilters = ref({ end_period: defaultPeriod })
 
 const balanceOptions = computed(() =>
-  balances.value.map(b => ({ counterparty_id: b.counterparty_id, counterparty_name: b.counterparty_name }))
+  balances.value.map(b => ({ counterparty_id: b.counterparty_id, counterparty_name: b.counterparty_name })),
 )
 
 async function loadBalances() {
   try {
     const { data } = await getTransactionBalances(
-      companyId, filters.value.start_period, filters.value.end_period,
+      companyId,
+      filters.value.start_period,
+      filters.value.end_period,
       filters.value.account_code || undefined,
     )
     balances.value = data
@@ -162,8 +178,10 @@ async function loadDetail() {
   if (!detailFilters.value.counterparty_id) return
   try {
     const { data } = await getTransactionDetail(
-      companyId, detailFilters.value.counterparty_id,
-      detailFilters.value.start_period, detailFilters.value.end_period,
+      companyId,
+      detailFilters.value.counterparty_id,
+      detailFilters.value.start_period,
+      detailFilters.value.end_period,
     )
     detail.value = data
   } catch (err: any) {

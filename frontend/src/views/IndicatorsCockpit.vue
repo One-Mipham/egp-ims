@@ -32,8 +32,11 @@ onMounted(async () => {
     if (res.data?.items) {
       items.value = res.data.items
     }
-  } catch { /* empty */ }
-  finally { loading.value = false }
+  } catch {
+    /* empty */
+  } finally {
+    loading.value = false
+  }
 })
 
 // Group by dimension
@@ -93,8 +96,15 @@ const dimensions = [
                   class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                   :class="LIGHT_COLORS[item.light]"
                 >
-                  <span class="w-2 h-2 rounded-full"
-                    :class="item.light === 'green' ? 'bg-emerald-500' : item.light === 'yellow' ? 'bg-amber-500' : 'bg-red-500'"
+                  <span
+                    class="w-2 h-2 rounded-full"
+                    :class="
+                      item.light === 'green'
+                        ? 'bg-emerald-500'
+                        : item.light === 'yellow'
+                          ? 'bg-amber-500'
+                          : 'bg-red-500'
+                    "
                   ></span>
                   {{ LIGHT_LABELS[item.light] }}
                 </span>
@@ -110,8 +120,7 @@ const dimensions = [
 
     <div class="form-card bg-stone-50">
       <p class="text-xs text-stone-500">
-        阈值说明：绿灯 = 优于绿线阈值 | 黄灯 = 介于绿线与红线之间 | 红灯 = 低于红线阈值。
-        点击指标可查看详细计算过程。
+        阈值说明：绿灯 = 优于绿线阈值 | 黄灯 = 介于绿线与红线之间 | 红灯 = 低于红线阈值。 点击指标可查看详细计算过程。
       </p>
     </div>
   </div>

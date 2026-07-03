@@ -3,9 +3,16 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import {
-  listExpenseItems, createExpenseReport, getExpenseReport,
-  updateExpenseReport, submitReport, listExpenseLoans,
-  uploadAttachment, listAttachments, deleteAttachment, getReportItems,
+  listExpenseItems,
+  createExpenseReport,
+  getExpenseReport,
+  updateExpenseReport,
+  submitReport,
+  listExpenseLoans,
+  uploadAttachment,
+  listAttachments,
+  deleteAttachment,
+  getReportItems,
 } from '@/api/expenses'
 import { listDepartments } from '@/api'
 import Button from 'primevue/button'
@@ -19,7 +26,7 @@ const toast = useToast()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 const userId = Number(localStorage.getItem('user_id') || '0')
 
-const reportId = computed(() => route.params.id ? Number(route.params.id) : null)
+const reportId = computed(() => (route.params.id ? Number(route.params.id) : null))
 const isEdit = computed(() => !!reportId.value)
 
 const expenseItems = ref<any[]>([])
@@ -35,8 +42,12 @@ const form = ref({
   department_id: null as number | null,
   notes: '',
   items: [] as {
-    row_seq: number; expense_item_id: number | null; date: string
-    amount: number; description: string; receipt_count: number
+    row_seq: number
+    expense_item_id: number | null
+    date: string
+    amount: number
+    description: string
+    receipt_count: number
   }[],
 })
 
@@ -47,9 +58,12 @@ const uploadDocNumber = ref('-')
 const uploadFile = ref<File | null>(null)
 
 const categoryOptions = [
-  { label: '发票', value: '发票' }, { label: '机票', value: '机票' },
-  { label: '车票', value: '车票' }, { label: '合同', value: '合同' },
-  { label: '签收单', value: '签收单' }, { label: '其他', value: '其他' },
+  { label: '发票', value: '发票' },
+  { label: '机票', value: '机票' },
+  { label: '车票', value: '车票' },
+  { label: '合同', value: '合同' },
+  { label: '签收单', value: '签收单' },
+  { label: '其他', value: '其他' },
 ]
 
 const totalAmount = computed(() => form.value.items.reduce((s, i) => s + (i.amount || 0), 0))
@@ -57,8 +71,11 @@ const totalAmount = computed(() => form.value.items.reduce((s, i) => s + (i.amou
 const addItem = () => {
   form.value.items.push({
     row_seq: form.value.items.length + 1,
-    expense_item_id: null, date: form.value.expense_date,
-    amount: 0, description: '', receipt_count: 0,
+    expense_item_id: null,
+    date: form.value.expense_date,
+    amount: 0,
+    description: '',
+    receipt_count: 0,
   })
 }
 
@@ -70,12 +87,14 @@ const removeItem = (idx: number) => {
 const fetchAll = async () => {
   try {
     const [itemsRes, deptRes, loansRes] = await Promise.all([
-      listExpenseItems(companyId), listDepartments(companyId), listExpenseLoans(companyId),
+      listExpenseItems(companyId),
+      listDepartments(companyId),
+      listExpenseLoans(companyId),
     ])
     expenseItems.value = itemsRes.data
     departments.value = deptRes.data
-    loans.value = loansRes.data.filter((l: any) =>
-      l.applicant_id === userId && ['approved', 'partial_repaid'].includes(l.status),
+    loans.value = loansRes.data.filter(
+      (l: any) => l.applicant_id === userId && ['approved', 'partial_repaid'].includes(l.status),
     )
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '加载失败', detail: e.response?.data?.detail || e.message, life: 3000 })
@@ -85,17 +104,19 @@ const fetchAll = async () => {
 const loadReport = async () => {
   if (!reportId.value) return
   try {
-    const [reportRes, itemsRes] = await Promise.all([
-      getExpenseReport(reportId.value), getReportItems(reportId.value),
-    ])
+    const [reportRes, itemsRes] = await Promise.all([getExpenseReport(reportId.value), getReportItems(reportId.value)])
     const r = reportRes.data
     form.value = {
-      expense_date: r.expense_date, department_id: r.department_id,
+      expense_date: r.expense_date,
+      department_id: r.department_id,
       notes: r.notes || '',
       items: itemsRes.data.map((it: any) => ({
-        row_seq: it.row_seq, expense_item_id: it.expense_item_id,
-        date: it.date, amount: it.amount,
-        description: it.description || '', receipt_count: it.receipt_count,
+        row_seq: it.row_seq,
+        expense_item_id: it.expense_item_id,
+        date: it.date,
+        amount: it.amount,
+        description: it.description || '',
+        receipt_count: it.receipt_count,
       })),
     }
     if (r.policy_warnings) policyWarnings.value = r.policy_warnings
@@ -103,7 +124,12 @@ const loadReport = async () => {
     attachments.value = attRes.data
     showAttachments.value = true
   } catch (e: any) {
-    toast.add({ severity: 'error', summary: '加载报销单失败', detail: e.response?.data?.detail || e.message, life: 3000 })
+    toast.add({
+      severity: 'error',
+      summary: '加载报销单失败',
+      detail: e.response?.data?.detail || e.message,
+      life: 3000,
+    })
   }
 }
 
@@ -111,12 +137,17 @@ const saveDraft = async () => {
   saving.value = true
   try {
     const data = {
-      company_id: companyId, expense_date: form.value.expense_date,
-      department_id: form.value.department_id ?? undefined, notes: form.value.notes,
+      company_id: companyId,
+      expense_date: form.value.expense_date,
+      department_id: form.value.department_id ?? undefined,
+      notes: form.value.notes,
       items: form.value.items.map(it => ({
-        row_seq: it.row_seq, expense_item_id: it.expense_item_id ?? undefined,
-        date: it.date, amount: it.amount,
-        description: it.description, receipt_count: it.receipt_count,
+        row_seq: it.row_seq,
+        expense_item_id: it.expense_item_id ?? undefined,
+        date: it.date,
+        amount: it.amount,
+        description: it.description,
+        receipt_count: it.receipt_count,
       })),
     }
     if (isEdit.value) {
@@ -129,22 +160,30 @@ const saveDraft = async () => {
     }
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '保存失败', detail: e.response?.data?.detail || e.message, life: 3000 })
-  } finally { saving.value = false }
+  } finally {
+    saving.value = false
+  }
 }
 
 const doSubmit = async () => {
   if (!reportId.value) {
-    toast.add({ severity: 'warn', summary: '请先保存草稿', life: 3000 }); return
+    toast.add({ severity: 'warn', summary: '请先保存草稿', life: 3000 })
+    return
   }
   saving.value = true
   try {
     const data = {
-      company_id: companyId, expense_date: form.value.expense_date,
-      department_id: form.value.department_id ?? undefined, notes: form.value.notes,
+      company_id: companyId,
+      expense_date: form.value.expense_date,
+      department_id: form.value.department_id ?? undefined,
+      notes: form.value.notes,
       items: form.value.items.map(it => ({
-        row_seq: it.row_seq, expense_item_id: it.expense_item_id ?? undefined,
-        date: it.date, amount: it.amount,
-        description: it.description, receipt_count: it.receipt_count,
+        row_seq: it.row_seq,
+        expense_item_id: it.expense_item_id ?? undefined,
+        date: it.date,
+        amount: it.amount,
+        description: it.description,
+        receipt_count: it.receipt_count,
       })),
     }
     if (isEdit.value) await updateExpenseReport(reportId.value!, data)
@@ -153,7 +192,9 @@ const doSubmit = async () => {
     router.push('/expenses/report-list')
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '提交失败', detail: e.response?.data?.detail || e.message, life: 3000 })
-  } finally { saving.value = false }
+  } finally {
+    saving.value = false
+  }
 }
 
 const onUpload = async () => {
@@ -162,12 +203,15 @@ const onUpload = async () => {
   try {
     await uploadAttachment(reportId.value, uploadFile.value, uploadCategory.value, uploadDocNumber.value)
     toast.add({ severity: 'success', summary: '附件已上传', life: 2000 })
-    uploadFile.value = null; uploadDocNumber.value = '-'
+    uploadFile.value = null
+    uploadDocNumber.value = '-'
     const attRes = await listAttachments(reportId.value)
     attachments.value = attRes.data
   } catch (e: any) {
     toast.add({ severity: 'error', summary: '上传失败', detail: e.response?.data?.detail || e.message, life: 3000 })
-  } finally { uploading.value = false }
+  } finally {
+    uploading.value = false
+  }
 }
 
 const onDeleteAttachment = async (attId: number) => {
@@ -206,7 +250,15 @@ onMounted(async () => {
         </div>
         <div class="flex flex-col gap-1">
           <label class="text-sm font-medium">部门</label>
-          <Dropdown v-model="form.department_id" :options="departments" optionLabel="name" optionValue="id" class="w-full" showClear placeholder="选择部门" />
+          <Dropdown
+            v-model="form.department_id"
+            :options="departments"
+            optionLabel="name"
+            optionValue="id"
+            class="w-full"
+            showClear
+            placeholder="选择部门"
+          />
         </div>
       </div>
     </div>
@@ -230,10 +282,22 @@ onMounted(async () => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, idx) in form.items" :key="idx" class="border-t" :class="{ 'bg-yellow-50': policyWarnings.some((w: any) => w.row_seq === item.row_seq) }">
+          <tr
+            v-for="(item, idx) in form.items"
+            :key="idx"
+            class="border-t"
+            :class="{ 'bg-yellow-50': policyWarnings.some((w: any) => w.row_seq === item.row_seq) }"
+          >
             <td class="p-2 text-gray-400 text-xs">{{ item.row_seq }}</td>
             <td class="p-2">
-              <Dropdown v-model="item.expense_item_id" :options="expenseItems" optionLabel="name" optionValue="id" class="w-full" placeholder="选择" />
+              <Dropdown
+                v-model="item.expense_item_id"
+                :options="expenseItems"
+                optionLabel="name"
+                optionValue="id"
+                class="w-full"
+                placeholder="选择"
+              />
             </td>
             <td class="p-2">
               <InputText type="date" v-model="item.date" class="w-full" />
@@ -269,13 +333,25 @@ onMounted(async () => {
     <div v-if="isEdit" class="bg-white rounded-sm border border-stone-200 p-4 mb-4">
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-semibold">附件 ({{ attachments.length }})</h2>
-        <Button label="展开上传" icon="pi pi-paperclip" size="small" severity="secondary" @click="showAttachments = !showAttachments" />
+        <Button
+          label="展开上传"
+          icon="pi pi-paperclip"
+          size="small"
+          severity="secondary"
+          @click="showAttachments = !showAttachments"
+        />
       </div>
       <div v-if="showAttachments">
         <div class="flex gap-2 items-end mb-3 flex-wrap">
           <div class="flex flex-col gap-1">
             <label class="text-xs">类别</label>
-            <Dropdown v-model="uploadCategory" :options="categoryOptions" optionLabel="label" optionValue="value" class="w-28" />
+            <Dropdown
+              v-model="uploadCategory"
+              :options="categoryOptions"
+              optionLabel="label"
+              optionValue="value"
+              class="w-28"
+            />
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-xs">票据号码</label>
@@ -283,14 +359,32 @@ onMounted(async () => {
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-xs">文件</label>
-            <input type="file" @change="(e: any) => uploadFile = e.target.files?.[0] || null" class="text-sm" />
+            <input type="file" @change="(e: any) => (uploadFile = e.target.files?.[0] || null)" class="text-sm" />
           </div>
-          <Button label="上传" icon="pi pi-upload" size="small" :loading="uploading" @click="onUpload" :disabled="!uploadFile" />
+          <Button
+            label="上传"
+            icon="pi pi-upload"
+            size="small"
+            :loading="uploading"
+            @click="onUpload"
+            :disabled="!uploadFile"
+          />
         </div>
         <div v-if="attachments.length > 0" class="flex flex-col gap-1">
-          <div v-for="att in attachments" :key="att.id" class="flex items-center justify-between text-sm bg-gray-50 px-3 py-1 rounded">
+          <div
+            v-for="att in attachments"
+            :key="att.id"
+            class="flex items-center justify-between text-sm bg-gray-50 px-3 py-1 rounded"
+          >
             <span class="font-mono text-xs">{{ att.file_name }}</span>
-            <Button icon="pi pi-trash" size="small" text rounded severity="danger" @click="onDeleteAttachment(att.id)" />
+            <Button
+              icon="pi pi-trash"
+              size="small"
+              text
+              rounded
+              severity="danger"
+              @click="onDeleteAttachment(att.id)"
+            />
           </div>
         </div>
       </div>
