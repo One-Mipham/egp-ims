@@ -10,7 +10,7 @@ from app.database import get_db
 from app.models import User, Company, Department, Account, Voucher, VoucherEntry, AccountingPeriod, Counterparty, Person, Project
 from app.auth import get_current_user
 from app.routers.reports import (
-    _period_end_date, _year_start, _prev_year_period,
+    _period_end_date, _year_start, _prev_year_period, _prev_year_end,
     _calc_ending, _occurrence,
     BS_ROWS, IS_ROWS,
     _compute_cash_flows, _is_cash_account,
@@ -248,23 +248,25 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             parent_codes.add(a.parent_code)
 
     if report == "balance":
-        def _calc(code_str):
+        def _calc(code_str, ref_date=None):
             if not code_str or code_str in ("CURRENT_TOTAL", "NCURRENT_TOTAL", "ASSET_TOTAL", "LIABILITY_TOTAL", "EQUITY_TOTAL", "TOTAL"):
                 return 0.0
             codes = [c.strip() for c in code_str.split(",") if c.strip()]
             total = 0.0
+            target_date = ref_date if ref_date is not None else end_date
             for code in codes:
                 children = [a for a in accts.values() if a.code.startswith(code) and a.code not in parent_codes]
                 if not children and code in accts and code not in parent_codes:
                     children = [accts[code]]
                 for a in children:
-                    total += _calc_ending(a, db, company_id, end_date)
+                    total += _calc_ending(a, db, company_id, target_date)
             return round(total, 2)
 
+        pye = _prev_year_end(period)
         left_items, right_items = [], []
         for name, side, codes in BS_ROWS:
             val = _calc(codes)
-            item = {"name": name, "ending": val, "beginning": 0.0}
+            item = {"name": name, "ending": val, "beginning": _calc(codes, pye)}
             if side == "left":
                 left_items.append(item)
             else:
@@ -273,22 +275,30 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
         for item in left_items:
             if item["name"] == "流动资产合计":
                 item["ending"] = round(sum(i["ending"] for i in left_items[:10]), 2)
+                item["beginning"] = round(sum(i["beginning"] for i in left_items[:10]), 2)
             elif item["name"] == "非流动资产合计":
                 item["ending"] = round(sum(i["ending"] for i in left_items[11:29]), 2)
+                item["beginning"] = round(sum(i["beginning"] for i in left_items[11:29]), 2)
             elif item["name"] == "资产总计":
                 item["ending"] = round(left_items[10]["ending"] + left_items[29]["ending"], 2)
+                item["beginning"] = round(left_items[10]["beginning"] + left_items[29]["beginning"], 2)
 
         for item in right_items:
             if item["name"] == "流动负债合计":
                 item["ending"] = round(sum(i["ending"] for i in right_items[:12]), 2)
+                item["beginning"] = round(sum(i["beginning"] for i in right_items[:12]), 2)
             elif item["name"] == "非流动负债合计":
                 item["ending"] = round(sum(i["ending"] for i in right_items[13:21]), 2)
+                item["beginning"] = round(sum(i["beginning"] for i in right_items[13:21]), 2)
             elif item["name"] == "负债合计":
                 item["ending"] = round(right_items[12]["ending"] + right_items[21]["ending"], 2)
+                item["beginning"] = round(right_items[12]["beginning"] + right_items[21]["beginning"], 2)
             elif item["name"] == "所有者权益合计":
                 item["ending"] = round(sum(i["ending"] for i in right_items[24:29]), 2)
+                item["beginning"] = round(sum(i["beginning"] for i in right_items[24:29]), 2)
             elif item["name"] == "负债和所有者权益总计":
                 item["ending"] = round(right_items[22]["ending"] + right_items[29]["ending"], 2)
+                item["beginning"] = round(right_items[22]["beginning"] + right_items[29]["beginning"], 2)
 
         y, m = int(period[:4]), int(period[5:7])
         if rtype == "yearly":
