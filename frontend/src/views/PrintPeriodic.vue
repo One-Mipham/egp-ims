@@ -3,27 +3,20 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
-import { printPeriodic } from '@/api'
+import { listPeriods, printPeriodic } from '@/api'
 
 const route = useRoute()
 const data = ref<any>(null)
 const loading = ref(false)
-const currentPeriod = ref(new Date().toISOString().slice(0, 7))
 const selectedReport = ref('balance')
-const selectedYear = ref(new Date().getFullYear())
-const selectedQuarter = ref(Math.ceil((new Date().getMonth() + 1) / 3))
+const allClosedPeriods = ref<string[]>([])
+const selectedPeriod = ref<string>('')
+const noDataMessage = ref('')
 
 const REPORT_OPTIONS = [
   { label: '资产负债表', value: 'balance' },
   { label: '利润表', value: 'income' },
   { label: '现金流量表', value: 'cashflow' },
-]
-
-const QUARTER_OPTIONS = [
-  { label: '第一季度 (1-3月)', value: 1 },
-  { label: '第二季度 (4-6月)', value: 2 },
-  { label: '第三季度 (7-9月)', value: 3 },
-  { label: '第四季度 (10-12月)', value: 4 },
 ]
 
 const reportType = computed(() => {
@@ -40,29 +33,90 @@ const pageTitle = computed(() => {
   return t === 'quarterly' ? `季度报表${suffix}` : t === 'yearly' ? `年度报表${suffix}` : `月度报表${suffix}`
 })
 
-// Build the effective period string based on type
-const effectivePeriod = computed(() => {
-  if (reportType.value === 'yearly') return `${selectedYear.value}-12`
-  if (reportType.value === 'quarterly') {
-    const lastMonth = selectedQuarter.value * 3
-    return `${selectedYear.value}-${String(lastMonth).padStart(2, '0')}`
+// ── 按类型筛选可用期间 ──
+interface PeriodOption { label: string; value: string }
+
+const periodOptions = computed<PeriodOption[]>(() => {
+  if (reportType.value === 'monthly') {
+    return allClosedPeriods.value.map(p => {
+      const [y, m] = p.split('-')
+      return { label: `${y} 年 ${m} 月`, value: p }
+    })
   }
-  return currentPeriod.value
+  if (reportType.value === 'quarterly') {
+    const quarters: PeriodOption[] = []
+    for (const [qi, months] of [[1, ['01','02','03']], [2, ['04','05','06']], [3, ['07','08','09']], [4, ['10','11','12']]] as [number, string[]][]) {
+      const yearSet = new Set<string>()
+      for (const p of allClosedPeriods.value) {
+        const [y, m] = p.split('-')
+        if (months.includes(m)) yearSet.add(y)
+      }
+      for (const y of [...yearSet].sort()) {
+        const allClosed = months.every(m => allClosedPeriods.value.includes(`${y}-${m}`))
+        if (allClosed) {
+          const lastMonth = String(qi * 3).padStart(2, '0')
+          quarters.push({ label: `${y} 年第${qi}季度`, value: `${y}-${lastMonth}` })
+        }
+      }
+    }
+    return quarters
+  }
+  // yearly
+  const years = new Set(allClosedPeriods.value.map(p => p.split('-')[0]))
+  return [...years].sort().filter(y => {
+    return Array.from({ length: 12 }, (_, i) => `${y}-${String(i + 1).padStart(2, '0')}`).every(m => allClosedPeriods.value.includes(m))
+  }).map(y => ({ label: `${y} 年度`, value: `${y}-12` }))
 })
 
-watch(selectedReport, load)
-watch(effectivePeriod, load)
+// 默认选最新；切换类型时重置
+watch(reportType, () => {
+  if (periodOptions.value.length > 0) {
+    selectedPeriod.value = periodOptions.value[periodOptions.value.length - 1].value
+    noDataMessage.value = ''
+  } else {
+    selectedPeriod.value = ''
+    noDataMessage.value = '暂无已关帐期间，请先完成期末关帐后再查看报表。'
+  }
+})
+
+watch(selectedReport, loadReport)
+watch(selectedPeriod, loadReport)
 
 function formatNumber(val: number | null) {
   if (val === null || val === undefined) return ''
   return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-async function load() {
+async function fetchClosedPeriods() {
+  try {
+    const cid = parseInt(localStorage.getItem('companyId') || '1')
+    const res = await listPeriods(cid)
+    allClosedPeriods.value = (res.data || [])
+      .filter((p: any) => p.is_closed)
+      .map((p: any) => p.period)
+      .sort()
+    // 触发 watch
+    if (periodOptions.value.length > 0) {
+      selectedPeriod.value = periodOptions.value[periodOptions.value.length - 1].value
+      noDataMessage.value = ''
+    } else {
+      selectedPeriod.value = ''
+      noDataMessage.value = '暂无已关帐期间，请先完成期末关帐后再查看报表。'
+    }
+  } catch {
+    noDataMessage.value = '加载期间数据失败'
+  }
+}
+
+async function loadReport() {
+  if (!selectedPeriod.value) {
+    data.value = null
+    return
+  }
   loading.value = true
   try {
     const cid = parseInt(localStorage.getItem('companyId') || '1')
-    const res = await printPeriodic(cid, effectivePeriod.value, selectedReport.value, reportType.value)
+    const res = await printPeriodic(cid, selectedPeriod.value, selectedReport.value, reportType.value)
     data.value = res.data
   } catch (e: any) {
     alert(e.response?.data?.detail || '加载失败')
@@ -73,24 +127,25 @@ async function load() {
 
 function doPrint() { window.print() }
 
-onMounted(load)
+onMounted(fetchClosedPeriods)
 </script>
 
 <template>
   <div>
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2 items-center flex-wrap">
-        <!-- Year selector (for quarterly & yearly) -->
-        <template v-if="reportType !== 'monthly'">
-          <input v-model="selectedYear" type="number" :min="2020" :max="2099" class="px-3 py-2 border border-zinc-300 rounded-sm text-sm w-24" />
-        </template>
-        <!-- Quarter selector (for quarterly) -->
-        <Dropdown v-if="reportType === 'quarterly'" v-model="selectedQuarter" :options="QUARTER_OPTIONS" optionLabel="label" optionValue="value" class="w-48" />
-        <!-- Month selector (for monthly) -->
-        <input v-if="reportType === 'monthly'" v-model="currentPeriod" type="month" class="px-3 py-2 border border-zinc-300 rounded-sm text-sm" />
+        <Dropdown
+          v-model="selectedPeriod"
+          :options="periodOptions"
+          optionLabel="label" optionValue="value"
+          :placeholder="noDataMessage || '请选择期间'"
+          class="w-52"
+          :disabled="periodOptions.length === 0"
+        />
         <Dropdown v-model="selectedReport" :options="REPORT_OPTIONS" optionLabel="label" optionValue="value" class="w-40" />
         <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!data" />
       </div>
+      <p v-if="noDataMessage && periodOptions.length === 0" class="text-zinc-400 text-sm mt-2">{{ noDataMessage }}</p>
     </div>
 
     <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
