@@ -186,15 +186,11 @@ export const exportPeriodicExcel = async (companyId: number, period: string, rep
     responseType: 'blob',
   })
   // Check if server returned an error as JSON instead of Excel
-  if (res.data.type === 'application/json' || (res.data instanceof Blob && res.data.size < 500)) {
+  if (res.data instanceof Blob && res.data.type === 'application/json') {
     const text = await res.data.text()
-    try {
-      const err = JSON.parse(text)
-      throw new Error(err.detail || '导出失败')
-    } catch (e: any) {
-      if (e.message !== '导出失败') throw e // re-parse error
-      throw new Error('导出失败：服务器返回异常')
-    }
+    let detail = '导出失败'
+    try { detail = JSON.parse(text).detail || detail } catch { /* ignore parse error */ }
+    throw new Error(detail)
   }
   const url = URL.createObjectURL(res.data)
   const link = document.createElement('a')
