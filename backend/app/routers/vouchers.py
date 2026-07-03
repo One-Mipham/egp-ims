@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, Voucher, VoucherEntry, BankSettlement, AccountingPeriod, AuditLog, Company
+from app.models import User, Voucher, VoucherEntry, BankSettlement, AccountingPeriod, AuditLog, Company, VoucherSequence
 from app.schemas import VoucherCreate, VoucherUpdate, VoucherResponse, VoucherEntryResponse, ReverseVoucherRequest
 from app.auth import get_current_user
 from app.permissions import (
@@ -39,17 +39,57 @@ def _get_company(db: Session, company_id: int) -> Company:
     return company
 
 
-def _generate_voucher_no(db: Session, company_id: int, voucher_type: str) -> str:
-    """生成凭证字号：收字/付字/转字 + 年月 + 流水号。"""
+def _generate_voucher_no(db: Session, company_id: int, voucher_type: str, date_str: str) -> str:
+    """生成凭证字号：收字/付字/转字 + 年月 + 流水号。
+
+    使用专用序列表 VoucherSequence 确保：
+    - 每月每类型独立递增，只增不减
+    - 删除的凭证号留空，永不递补
+    - 用户不可手动修改凭证号
+    """
     prefix_map = {"receipt": "收字", "payment": "付字", "transfer": "转字"}
     prefix = prefix_map.get(voucher_type, "转字")
-    now = datetime.now(timezone.utc)
-    month_str = now.strftime("%Y%m")
-    count = db.query(Voucher).filter(
-        Voucher.company_id == company_id,
-        Voucher.date.startswith(now.strftime("%Y-%m")),
-    ).count()
-    return f"{prefix}{month_str}-{count + 1:04d}"
+    period = date_str[:7]  # 2026-07-03 → 2026-07
+    month_str = period.replace("-", "")  # 202607
+
+    seq_row = (
+        db.query(VoucherSequence)
+        .filter(
+            VoucherSequence.company_id == company_id,
+            VoucherSequence.voucher_type == voucher_type,
+            VoucherSequence.period == period,
+        )
+        .first()
+    )
+    if seq_row:
+        seq_row.last_seq += 1
+    else:
+        # 新月份/新类型的第一张凭证：先检查当月是否已有凭证（兼容历史数据）
+        existing_max = (
+            db.query(Voucher)
+            .filter(
+                Voucher.company_id == company_id,
+                Voucher.voucher_type == voucher_type,
+                Voucher.date.startswith(period),
+            )
+            .order_by(Voucher.id.desc())
+            .first()
+        )
+        start_seq = 0
+        if existing_max and existing_max.voucher_no:
+            try:
+                start_seq = int(existing_max.voucher_no.rsplit("-", 1)[-1])
+            except (ValueError, IndexError):
+                pass
+        seq_row = VoucherSequence(
+            company_id=company_id,
+            voucher_type=voucher_type,
+            period=period,
+            last_seq=start_seq + 1,
+        )
+        db.add(seq_row)
+    db.flush()
+    return f"{prefix}{month_str}-{seq_row.last_seq:04d}"
 
 
 @router.get("/", response_model=list[VoucherResponse])
@@ -92,7 +132,7 @@ def create_voucher(data: VoucherCreate, db: Session = Depends(get_db), user: Use
         raise HTTPException(status_code=400, detail="借贷不平衡")
 
     voucher = Voucher(
-        company_id=data.company_id, date=data.date, voucher_no=_generate_voucher_no(db, data.company_id, data.voucher_type),
+        company_id=data.company_id, date=data.date, voucher_no=_generate_voucher_no(db, data.company_id, data.voucher_type, data.date),
         voucher_type=data.voucher_type, summary=data.summary, creator_id=user.id,
     )
     db.add(voucher)
@@ -258,7 +298,7 @@ def batch_import_vouchers(
         voucher = Voucher(
             company_id=item.company_id,
             date=item.date,
-            voucher_no=item.voucher_no or _generate_voucher_no(db, item.company_id, item.voucher_type),
+            voucher_no=item.voucher_no or _generate_voucher_no(db, item.company_id, item.voucher_type, item.date),
             voucher_type=item.voucher_type,
             summary=item.summary,
             creator_id=user.id,

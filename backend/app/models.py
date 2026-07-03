@@ -184,6 +184,21 @@ class Voucher(Base):
     )
 
 
+class VoucherSequence(Base):
+    """凭证序号计数器 — 按公司+类型+月份独立递增，只增不减，删除不递补。"""
+    __tablename__ = "voucher_sequences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    voucher_type = Column(String(10), nullable=False)
+    period = Column(String(7), nullable=False)  # yyyy-MM
+    last_seq = Column(Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        UniqueConstraint("company_id", "voucher_type", "period", name="uq_voucher_seq"),
+    )
+
+
 class VoucherEntry(Base):
     __tablename__ = "voucher_entries"
 
