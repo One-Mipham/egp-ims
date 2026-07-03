@@ -5,7 +5,7 @@
       <Button label="新建模板" icon="pi pi-plus" @click="openCreate" />
     </div>
 
-    <DataTable :value="templates" stripedRows class="mb-4">
+    <DataTable :value="templates" :loading="loading" stripedRows class="mb-4">
       <Column field="name" header="模板名称" />
       <Column field="template_type" header="类型">
         <template #body="{ data }">
@@ -161,9 +161,10 @@ import {
 } from '../../api'
 
 const toast = useToast()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 
 const templates = ref<any[]>([])
+const loading = ref(false)
 const dialogVisible = ref(false)
 const isEditing = ref(false)
 const editingId = ref<number | null>(null)
@@ -207,8 +208,15 @@ function freqLabel(f: string) {
 }
 
 async function load() {
-  const { data } = await listAutoTransferTemplates(companyId)
-  templates.value = data
+  loading.value = true
+  try {
+    const { data } = await listAutoTransferTemplates(companyId)
+    templates.value = data
+  } catch (e: any) {
+    toast.add({ severity: 'error', summary: '加载失败', detail: e.response?.data?.detail || '', life: 5000 })
+  } finally {
+    loading.value = false
+  }
 }
 
 function openCreate() {
