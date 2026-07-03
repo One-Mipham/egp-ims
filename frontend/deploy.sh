@@ -6,8 +6,8 @@
 set -e
 
 SERVER="onemipham"
-SAAS_PATH="/opt/egp-ims/saas/frontend/dist/"
-INTRANET_PATH="/opt/egp-ims/intranet/frontend/dist/"
+SAAS_PATH="/opt/egp-ims/saas/frontend/"
+INTRANET_PATH="/opt/egp-ims/intranet/frontend/"
 
 TARGET="${1:-all}"
 
