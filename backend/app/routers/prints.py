@@ -160,14 +160,20 @@ def print_general_ledger(
 @router.get("/vouchers")
 def print_vouchers(
     company_id: int,
-    range: str = Query("month", pattern="^(today|week|month)$"),
+    range: str = Query("month", pattern="^(today|week|month|custom)$"),
+    start_date: str = Query(None),
+    end_date: str = Query(None),
+    voucher_no_from: str = Query(None),
+    voucher_no_to: str = Query(None),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     _get_company(db, company_id)
     now = datetime.now(timezone(timedelta(hours=8)))
     today = now.strftime("%Y-%m-%d")
-    if range == "today":
+    if range == "custom" and start_date and end_date:
+        start, end = start_date, end_date
+    elif range == "today":
         start, end = today, today
     elif range == "week":
         monday = now - timedelta(days=now.weekday())
@@ -177,11 +183,16 @@ def print_vouchers(
         start = now.strftime("%Y-%m") + "-01"
         end = today
 
-    vouchers = db.query(Voucher).filter(
+    q = db.query(Voucher).filter(
         Voucher.company_id == company_id,
         Voucher.date >= start,
         Voucher.date <= end,
-    ).order_by(Voucher.date).all()
+    )
+    if voucher_no_from:
+        q = q.filter(Voucher.voucher_no >= voucher_no_from)
+    if voucher_no_to:
+        q = q.filter(Voucher.voucher_no <= voucher_no_to)
+    vouchers = q.order_by(Voucher.date).all()
 
     result = []
     for v in vouchers:

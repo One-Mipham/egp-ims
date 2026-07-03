@@ -175,8 +175,8 @@ export const printSubjectBalance = (companyId: number, period: string) =>
   api.get('/prints/subject-balance', { params: { company_id: companyId, period } })
 export const printGeneralLedger = (companyId: number, period: string) =>
   api.get('/prints/general-ledger', { params: { company_id: companyId, period } })
-export const printVouchers = (companyId: number, range: string = 'month') =>
-  api.get('/prints/vouchers', { params: { company_id: companyId, range } })
+export const printVouchers = (companyId: number, range: string = 'month', extraParams: Record<string, string> = {}) =>
+  api.get('/prints/vouchers', { params: { company_id: companyId, range, ...extraParams } })
 export const printPeriodic = (companyId: number, period: string, report: string, type: string = 'monthly') =>
   api.get('/prints/periodic', { params: { company_id: companyId, period, report, type } })
 

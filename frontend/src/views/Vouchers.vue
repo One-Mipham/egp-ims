@@ -461,6 +461,13 @@ onMounted(() => {
             />
           </template>
         </Column>
+        <Column header="金额" style="width: 120px">
+          <template #body="{ data }">
+            <span class="font-number">
+              {{ (data.entries || []).reduce((s: number, e: any) => s + (Number(e.debit) || 0), 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}
+            </span>
+          </template>
+        </Column>
         <Column header="操作" style="width: 220px">
           <template #body="{ data }">
             <Button

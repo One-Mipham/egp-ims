@@ -8,11 +8,18 @@ const data = ref<any>(null)
 const accounts = ref<any[]>([])
 const loading = ref(false)
 const selectedRange = ref('month')
+const customStart = ref('')
+const customEnd = ref('')
+const noFrom = ref('')
+const noTo = ref('')
 const RANGE_OPTIONS = [
   { label: '当日凭证', value: 'today' },
   { label: '本周凭证', value: 'week' },
   { label: '本月凭证', value: 'month' },
+  { label: '自定义日期', value: 'custom' },
 ]
+
+const showCustomDate = computed(() => selectedRange.value === 'custom')
 
 const TYPE_LABELS: Record<string, string> = { receipt: '收款凭证', payment: '付款凭证', transfer: '转账凭证' }
 
@@ -48,7 +55,17 @@ async function load() {
   loading.value = true
   try {
     const cid = parseInt(localStorage.getItem('companyId') || '1')
-    const [vRes, aRes] = await Promise.all([printVouchers(cid, selectedRange.value), listAccounts(cid)])
+    const params: any = {}
+    if (showCustomDate.value) {
+      params.start_date = customStart.value
+      params.end_date = customEnd.value
+    }
+    if (noFrom.value) params.voucher_no_from = noFrom.value
+    if (noTo.value) params.voucher_no_to = noTo.value
+    const [vRes, aRes] = await Promise.all([
+      printVouchers(cid, selectedRange.value, params),
+      listAccounts(cid),
+    ])
     data.value = vRes.data
     accounts.value = aRes.data
   } catch (e: any) {
@@ -68,21 +85,31 @@ onMounted(load)
 <template>
   <div>
     <div class="flex justify-between items-center mb-4 no-print">
-      <div class="flex gap-2 items-center">
+      <div class="flex gap-2 items-center flex-wrap">
         <Dropdown
           v-model="selectedRange"
           :options="RANGE_OPTIONS"
           optionLabel="label"
           optionValue="value"
-          class="w-40"
+          class="w-36"
           @change="load"
         />
+        <template v-if="showCustomDate">
+          <input type="date" v-model="customStart" class="border rounded px-2 py-1.5 text-sm" @change="load" />
+          <span class="text-zinc-400 text-sm">至</span>
+          <input type="date" v-model="customEnd" class="border rounded px-2 py-1.5 text-sm" @change="load" />
+        </template>
+        <span class="text-zinc-400 text-sm mx-1">|</span>
+        <input v-model="noFrom" placeholder="凭证号 从" class="border rounded px-2 py-1.5 text-sm w-32" @change="load" />
+        <span class="text-zinc-400 text-sm">至</span>
+        <input v-model="noTo" placeholder="凭证号 到" class="border rounded px-2 py-1.5 text-sm w-32" @change="load" />
         <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!data?.vouchers?.length" />
       </div>
+      <p v-if="data?.vouchers?.length" class="text-xs text-zinc-400">共 {{ data.vouchers.length }} 张凭证</p>
     </div>
 
     <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
-    <p v-if="data && !data.vouchers.length" class="text-zinc-400 text-sm">该期间内无凭证</p>
+    <p v-if="data && !data.vouchers.length" class="text-zinc-400 text-sm">该范围内无凭证</p>
 
     <div v-if="data?.vouchers?.length" class="print-area">
       <div v-for="v in data.vouchers" :key="v.id" class="voucher-page">
