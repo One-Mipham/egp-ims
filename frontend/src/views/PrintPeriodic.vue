@@ -62,39 +62,29 @@ const periodOptions = computed<PeriodOption[]>(() => {
       [3, ['07', '08', '09']],
       [4, ['10', '11', '12']],
     ] as [number, string[]][]) {
-      const yearSet = new Set<string>()
-      for (const p of allClosedPeriods.value) {
-        const [y, m] = p.split('-')
-        if (months.includes(m)) yearSet.add(y)
-      }
-      for (const y of [...yearSet].sort()) {
-        const allClosed = months.every(m => allClosedPeriods.value.includes(`${y}-${m}`))
-        if (allClosed) {
-          const lastMonth = String(qi * 3).padStart(2, '0')
-          quarters.push({ label: `${y} 年第${qi}季度`, value: `${y}-${lastMonth}` })
-        }
-      }
+      const allClosed = months.every(m => allClosedPeriods.value.includes(`${currentYear}-${m}`))
+      const lastMonth = String(qi * 3).padStart(2, '0')
+      quarters.push({ label: `${currentYear} 年第${qi}季度`, value: `${currentYear}-${lastMonth}`, isClosed: allClosed })
     }
     return quarters
   }
-  // yearly
-  const years = new Set(allClosedPeriods.value.map(p => p.split('-')[0]))
-  return [...years]
-    .sort()
-    .filter(y => {
-      return Array.from({ length: 12 }, (_, i) => `${y}-${String(i + 1).padStart(2, '0')}`).every(m =>
-        allClosedPeriods.value.includes(m),
-      )
-    })
-    .map(y => ({ label: `${y} 年度`, value: `${y}-12` }))
+  // yearly：显示本年度，标记是否 12 个月全部关帐
+  const yearClosed = Array.from({ length: 12 }, (_, i) => `${currentYear}-${String(i + 1).padStart(2, '0')}`)
+    .every(m => allClosedPeriods.value.includes(m))
+  return [{ label: `${currentYear} 年度`, value: `${currentYear}-12`, isClosed: yearClosed }]
 })
 
-// 默认选当前月份；切换类型时重置
+const currentQuarter = Math.ceil((new Date().getMonth() + 1) / 3)
+const currentQuarterPeriod = `${currentYear}-${String(currentQuarter * 3).padStart(2, '0')}`
+
+// 默认选当前月份/季度/年度；切换类型时重置
 watch(reportType, () => {
   if (reportType.value === 'monthly') {
     selectedPeriod.value = currentMonth
-  } else if (periodOptions.value.length > 0) {
-    selectedPeriod.value = periodOptions.value[periodOptions.value.length - 1].value
+  } else if (reportType.value === 'quarterly') {
+    selectedPeriod.value = currentQuarterPeriod
+  } else if (reportType.value === 'yearly') {
+    selectedPeriod.value = `${currentYear}-12`
   } else {
     selectedPeriod.value = ''
   }
@@ -117,8 +107,14 @@ async function fetchClosedPeriods() {
       .filter((p: any) => p.is_closed)
       .map((p: any) => p.period)
       .sort()
-    // 默认选中当前月份
-    selectedPeriod.value = currentMonth
+    // 默认选中当前月份/季度/年度
+    if (reportType.value === 'quarterly') {
+      selectedPeriod.value = currentQuarterPeriod
+    } else if (reportType.value === 'yearly') {
+      selectedPeriod.value = `${currentYear}-12`
+    } else {
+      selectedPeriod.value = currentMonth
+    }
     noDataMessage.value = ''
   } catch {
     noDataMessage.value = '加载期间数据失败'
