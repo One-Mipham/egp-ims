@@ -714,9 +714,13 @@ def export_periodic(
     wb.save(buf)
     buf.seek(0)
 
-    filename = f"{type_label}报表_{report}_{period}.xlsx"
+    from urllib.parse import quote
+    report_cn = {"balance": "资产负债表", "income": "利润表", "cashflow": "现金流量表"}[report]
+    filename_cn = f"{type_label}{report_cn}_{period}.xlsx"
+    filename_ascii = f"report_{report}_{period}.xlsx"
+    encoded = quote(filename_cn)
     return StreamingResponse(
         buf,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"},
+        headers={"Content-Disposition": f"attachment; filename=\"{filename_ascii}\"; filename*=UTF-8''{encoded}"},
     )
