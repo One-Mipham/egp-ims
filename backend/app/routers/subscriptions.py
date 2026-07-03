@@ -73,7 +73,7 @@ def activate_trial(company_id: int, db: Session = Depends(get_db)):
     if company.subscription_status == "active":
         raise HTTPException(status_code=400, detail="公司已有有效订阅")
 
-    all_modules = ["accounting", "receivables", "payables", "expenses",
+    all_modules = ["accounting", "reports", "receivables", "payables", "expenses",
                     "finance", "assets", "inventory", "contracts",
                     "investments", "hr", "board", "admin", "bids", "knowledge"]
 

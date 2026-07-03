@@ -26,14 +26,226 @@ def list_periods(company_id: int, db: Session = Depends(get_db), user: User = De
     return db.query(AccountingPeriod).filter(AccountingPeriod.company_id == company_id).order_by(AccountingPeriod.period).all()
 
 
+def _prev_period(period: str) -> str:
+    """返回上一会计期间，如 2026-03 → 2026-02，2026-01 → 2025-12。"""
+    y, m = int(period[:4]), int(period[5:7])
+    if m == 1:
+        return f"{y - 1}-12"
+    return f"{y}-{m - 1:02d}"
+
+
+def _period_month_range(period: str) -> tuple[str, str]:
+    """返回期间的起止日期，如 2026-03 → ('2026-03-01', '2026-03-31')。"""
+    import calendar
+    y, m = int(period[:4]), int(period[5:7])
+    last_day = calendar.monthrange(y, m)[1]
+    return f"{period}-01", f"{period}-{last_day:02d}"
+
+
+def _auto_carry_forward(db: Session, company_id: int, period: str, user_id: int) -> dict:
+    """自动执行损益结转：收入/费用科目余额 → 本年利润(4103)。
+    返回 {'voucher_id': ..., 'entries': N, 'income_total': ..., 'expense_total': ...}。"""
+    profit_account = db.query(Account).filter(
+        Account.company_id == company_id,
+        Account.code == "4103",
+    ).first()
+    if not profit_account:
+        return {"skipped": True, "reason": "未找到本年利润科目（4103）"}
+
+    pl_accounts = db.query(Account).filter(
+        Account.company_id == company_id,
+        Account.is_active == True,
+        Account.category.in_(["profit_loss", "cost"]),
+        Account.code != "4103",
+    ).all()
+
+    if not pl_accounts:
+        return {"skipped": True, "reason": "无损益类科目"}
+
+    start_date, end_date = _period_month_range(period)
+
+    income_entries = []
+    expense_entries = []
+
+    for account in pl_accounts:
+        agg = db.query(
+            func.coalesce(func.sum(VoucherEntry.debit), 0),
+            func.coalesce(func.sum(VoucherEntry.credit), 0),
+        ).join(Voucher, VoucherEntry.voucher_id == Voucher.id).filter(
+            VoucherEntry.account_code == account.code,
+            Voucher.company_id == company_id,
+            Voucher.date >= start_date,
+            Voucher.date <= end_date,
+            Voucher.status == "posted",
+        ).first()
+
+        total_debit = float(agg[0])
+        total_credit = float(agg[1])
+
+        # 考虑期初余额方向
+        if account.initial_balance:
+            if account.balance_direction == "debit":
+                total_debit += float(account.initial_balance)
+            else:
+                total_credit += float(account.initial_balance)
+
+        net = total_debit - total_credit
+        if abs(net) < 0.01:
+            continue
+
+        if account.balance_direction == "credit":
+            # 收入类：贷方余额 → 借方结转
+            income_entries.append({"code": account.code, "name": account.name, "amount": abs(net)})
+        else:
+            # 费用/成本类：借方余额 → 贷方结转
+            expense_entries.append({"code": account.code, "name": account.name, "amount": abs(net)})
+
+    if not income_entries and not expense_entries:
+        return {"skipped": True, "reason": "本月损益类科目无发生额，无需结转"}
+
+    income_total = sum(e["amount"] for e in income_entries)
+    expense_total = sum(e["amount"] for e in expense_entries)
+
+    now = datetime.now(timezone.utc)
+    month_str = period.replace("-", "")
+    count = db.query(Voucher).filter(
+        Voucher.company_id == company_id,
+        Voucher.date >= start_date,
+        Voucher.date <= end_date,
+    ).count()
+
+    voucher = Voucher(
+        company_id=company_id,
+        date=end_date,
+        voucher_no=f"转字{month_str}-{count + 1:04d}",
+        voucher_type="transfer",
+        summary=f"{period} 月末损益结转（系统自动生成）",
+        creator_id=user_id,
+        status="posted",
+        approved_by=user_id,
+        approved_at=now,
+    )
+    db.add(voucher)
+    db.flush()
+
+    # 结转收入：借 收入科目，贷 本年利润
+    for e in income_entries:
+        db.add(VoucherEntry(
+            voucher_id=voucher.id,
+            account_code=e["code"],
+            debit=e["amount"],
+            credit=0,
+            description=f"结转{e['name']}至本年利润",
+        ))
+
+    # 结转费用：借 本年利润，贷 费用科目
+    for e in expense_entries:
+        db.add(VoucherEntry(
+            voucher_id=voucher.id,
+            account_code=e["code"],
+            debit=0,
+            credit=e["amount"],
+            description=f"结转{e['name']}至本年利润",
+        ))
+
+    # 本年利润汇总分录
+    net_profit = income_total - expense_total
+    if net_profit >= 0:
+        # 净利润：贷方增加
+        db.add(VoucherEntry(
+            voucher_id=voucher.id,
+            account_code="4103",
+            debit=0,
+            credit=abs(net_profit),
+            description="本月净利润转入",
+        ))
+    else:
+        # 净亏损：借方增加
+        db.add(VoucherEntry(
+            voucher_id=voucher.id,
+            account_code="4103",
+            debit=abs(net_profit),
+            credit=0,
+            description="本月净亏损转入",
+        ))
+
+    db.flush()
+    return {
+        "voucher_id": voucher.id,
+        "voucher_no": voucher.voucher_no,
+        "income_entries": len(income_entries),
+        "expense_entries": len(expense_entries),
+        "income_total": income_total,
+        "expense_total": expense_total,
+        "net_profit": net_profit,
+    }
+
+
 @router.post("/close")
 def close_period(req: ClosePeriodRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """结账：按内控模式检查权限。"""
+    """结账：顺序检查 → 试算验证 → 损益结转 → 锁定期间。"""
     company = _get_company(db, req.company_id)
     err = check_period_close(user, company)
     if err:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=err)
 
+    # ── 1. 顺序检查：前一月必须已关帐（1月除外）──
+    if not req.period.endswith("-01"):
+        prev = _prev_period(req.period)
+        prev_closed = db.query(AccountingPeriod).filter(
+            AccountingPeriod.company_id == req.company_id,
+            AccountingPeriod.period == prev,
+            AccountingPeriod.is_closed == True,
+        ).first()
+        if not prev_closed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"请先关闭上一会计期间（{prev}），再关闭当前期间。",
+            )
+
+    # ── 2. 结账前检查 ──
+    start_date, end_date = _period_month_range(req.period)
+    unposted = db.query(Voucher).filter(
+        Voucher.company_id == req.company_id,
+        Voucher.date >= start_date,
+        Voucher.date <= end_date,
+        Voucher.status == "draft",
+    ).count()
+
+    unbalanced = 0
+    drafts = db.query(Voucher).filter(
+        Voucher.company_id == req.company_id,
+        Voucher.date >= start_date,
+        Voucher.date <= end_date,
+        Voucher.status == "draft",
+    ).all()
+    for v in drafts:
+        total_debit = sum(e.debit for e in v.entries)
+        total_credit = sum(e.credit for e in v.entries)
+        if abs(total_debit - total_credit) > 0.01:
+            unbalanced += 1
+
+    if unposted > 0 or unbalanced > 0:
+        raise HTTPException(
+            status_code=400,
+            detail=f"未过账凭证 {unposted} 张，试算不平衡 {unbalanced} 张。请处理后再关帐。",
+        )
+
+    # ── 3. 自动损益结转 ──
+    carry_result = _auto_carry_forward(db, req.company_id, req.period, user.id)
+    carry_detail = {}
+    if carry_result.get("skipped"):
+        carry_detail = {"carry_forward": "skipped", "reason": carry_result.get("reason")}
+    else:
+        carry_detail = {
+            "carry_forward": "executed",
+            "voucher_no": carry_result["voucher_no"],
+            "income_entries": carry_result["income_entries"],
+            "expense_entries": carry_result["expense_entries"],
+            "net_profit": round(carry_result["net_profit"], 2),
+        }
+
+    # ── 4. 锁定期间 ──
     period = db.query(AccountingPeriod).filter(
         AccountingPeriod.company_id == req.company_id,
         AccountingPeriod.period == req.period,
@@ -43,19 +255,26 @@ def close_period(req: ClosePeriodRequest, db: Session = Depends(get_db), user: U
         db.add(period)
         db.flush()
 
+    if period.is_closed:
+        raise HTTPException(status_code=400, detail=f"期间 {req.period} 已关帐")
+
     period.is_closed = True
     period.closed_by = user.id
     period.closed_at = datetime.now(timezone.utc)
     period.closed_status = "closed"
 
-    db.add(AuditLog(company_id=req.company_id, user_id=user.id, action="close_period", target_type="period", details={"period": req.period}))
+    db.add(AuditLog(
+        company_id=req.company_id, user_id=user.id,
+        action="close_period", target_type="period",
+        details={"period": req.period, **carry_detail},
+    ))
     db.commit()
-    return {"ok": True, "period": req.period}
+    return {"ok": True, "period": req.period, **carry_detail}
 
 
 @router.post("/un-close")
 def unclose_period(company_id: int, period: str, reason: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """反结账：按内控模式检查权限。"""
+    """反结账：逆序检查（必须先反结账最近月份）+ 权限验证。"""
     company = _get_company(db, company_id)
     err = check_period_unclose(user, company)
     if err:
@@ -66,6 +285,19 @@ def unclose_period(company_id: int, period: str, reason: str, db: Session = Depe
     ).first()
     if not p or not p.is_closed:
         raise HTTPException(status_code=400, detail="该期间未结账")
+
+    # 逆序检查：不能反结账旧月份，如果后面月份已关帐
+    later_periods = db.query(AccountingPeriod).filter(
+        AccountingPeriod.company_id == company_id,
+        AccountingPeriod.period > period,
+        AccountingPeriod.is_closed == True,
+    ).all()
+    if later_periods:
+        later_list = ", ".join(p.period for p in later_periods)
+        raise HTTPException(
+            status_code=400,
+            detail=f"请先反结账后续期间（{later_list}），再反结账当前期间。",
+        )
 
     p.is_closed = False
     p.closed_by = None

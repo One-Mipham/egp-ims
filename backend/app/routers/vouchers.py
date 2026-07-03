@@ -17,6 +17,21 @@ from app.permissions import (
 router = APIRouter()
 
 
+def _check_period_open(db: Session, company_id: int, date_str: str):
+    """检查凭证日期所在期间是否已关帐。关帐期间禁止新增/修改/审核/记账。"""
+    period_str = date_str[:7]  # yyyy-MM-dd → yyyy-MM
+    closed = db.query(AccountingPeriod).filter(
+        AccountingPeriod.company_id == company_id,
+        AccountingPeriod.period == period_str,
+        AccountingPeriod.is_closed == True,
+    ).first()
+    if closed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"会计期间 {period_str} 已关帐，禁止修改该期间的凭证。如需操作请先反结账。",
+        )
+
+
 def _get_company(db: Session, company_id: int) -> Company:
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
@@ -69,6 +84,8 @@ def create_voucher(data: VoucherCreate, db: Session = Depends(get_db), user: Use
     if err:
         raise HTTPException(status_code=403, detail=err)
 
+    _check_period_open(db, data.company_id, data.date)
+
     total_debit = sum(e.debit for e in data.entries)
     total_credit = sum(e.credit for e in data.entries)
     if abs(total_debit - total_credit) > 0.005:
@@ -101,6 +118,8 @@ def update_voucher(voucher_id: int, data: VoucherUpdate, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status != "draft":
         raise HTTPException(status_code=400, detail="只能修改草稿状态凭证")
+
+    _check_period_open(db, voucher.company_id, voucher.date)
 
     company = _get_company(db, voucher.company_id)
     err = check_voucher_update(user, company, voucher.creator_id)
@@ -146,6 +165,8 @@ def approve_voucher(voucher_id: int, db: Session = Depends(get_db), user: User =
     if voucher.status != "draft":
         raise HTTPException(status_code=400, detail="凭证状态不可审核")
 
+    _check_period_open(db, voucher.company_id, voucher.date)
+
     company = _get_company(db, voucher.company_id)
     err = check_voucher_approve(user, company, voucher.creator_id)
     if err:
@@ -167,6 +188,8 @@ def post_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = De
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status not in ("draft", "approved"):
         raise HTTPException(status_code=400, detail="凭证状态不可记账")
+
+    _check_period_open(db, voucher.company_id, voucher.date)
 
     company = _get_company(db, voucher.company_id)
     err = check_voucher_post(user, company)
