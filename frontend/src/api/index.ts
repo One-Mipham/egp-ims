@@ -816,6 +816,44 @@ export const exportData = (companyId: number, tables: string, format: string = '
     URL.revokeObjectURL(url)
   })
 
+// ── 年度审计报告 ──
+export const getAuditReport = (companyId: number, year: number) =>
+  api.get('/audit-reports/', { params: { company_id: companyId, year } })
+
+export const saveAuditReport = (companyId: number, year: number, data: Record<string, any>) => {
+  const formData = new FormData()
+  Object.entries(data).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) formData.append(k, String(v))
+  })
+  return api.put('/audit-reports/', formData, { params: { company_id: companyId, year } })
+}
+
+export const uploadAuditReportFile = (companyId: number, year: number, file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return api.post('/audit-reports/upload', formData, {
+    params: { company_id: companyId, year },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+export const downloadAuditReportFile = (companyId: number, year: number) =>
+  api.get('/audit-reports/download', {
+    params: { company_id: companyId, year },
+    responseType: 'blob',
+  }).then(res => {
+    const disposition = res.headers['content-disposition'] || ''
+    const match = disposition.match(/filename="?(.+?)"?$/)
+    const filename = match ? match[1] : 'audit_report.pdf'
+    const blob = new Blob([res.data], { type: 'application/octet-stream' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  })
+
 export const exportFullDb = () =>
   api.get('/system/export/full', { responseType: 'blob' }).then(res => {
     const blob = new Blob([res.data], { type: 'application/octet-stream' })

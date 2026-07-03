@@ -2099,3 +2099,23 @@ class PaymentTransaction(Base):
 
     company = relationship("Company")
     subscription = relationship("CompanySubscription")
+
+
+class AuditReport(Base):
+    """年度审计报告"""
+    __tablename__ = "audit_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    year = Column(Integer, nullable=False)
+    firm_name = Column(String(200), nullable=True)
+    contact_person = Column(String(100), nullable=True)
+    contact_email = Column(String(200), nullable=True)
+    contact_phone = Column(String(50), nullable=True)
+    report_file = Column(String(500), nullable=True)   # uploaded file path
+    report_file_name = Column(String(200), nullable=True)
+    balance_sheet_ok = Column(Boolean, default=False)
+    income_statement_ok = Column(Boolean, default=False)
+    cashflow_statement_ok = Column(Boolean, default=False)
+    notes = Column(String(1000), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

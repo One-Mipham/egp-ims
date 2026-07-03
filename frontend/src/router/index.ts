@@ -104,8 +104,8 @@ const routes = [
   },
   {
     path: '/init/annual-audit',
-    component: () => import('../views/PlaceholderPage.vue'),
-    meta: { requiresAuth: true, pageTitle: '年度审计报表' },
+    component: () => import('../views/AnnualAudit.vue'),
+    meta: { requiresAuth: true, pageTitle: '年度审计报告' },
   },
   // 报表中心 — 三期报表
   {

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi import Depends
 
 from app.database import engine, Base
-from app.routers import auth, users, companies, departments, accounts, vouchers, templates, periods, reports, audit, prints, permissions, cockpit, counterparties, persons, projects, investments, init_data, hr, fixed_assets, receivables, payables, inventory_trade, admin, servers, kb, expenses, contracts, bids, budget, board, taxes, gl, subscriptions, cashflow_items, system
+from app.routers import auth, users, companies, departments, accounts, vouchers, templates, periods, reports, audit, prints, permissions, cockpit, counterparties, persons, projects, investments, init_data, hr, fixed_assets, receivables, payables, inventory_trade, admin, servers, kb, expenses, contracts, bids, budget, board, taxes, gl, subscriptions, cashflow_items, system, audit_reports
 from app.auth import verify_company_isolation
 from app.permissions import require_module
 from app.middleware import rate_limit_middleware, security_headers_middleware
@@ -131,6 +131,7 @@ app.include_router(permissions.router, prefix="/api/permissions", tags=["权限�
 app.include_router(kb.router, prefix="/api/kb", tags=["知识库"])
 app.include_router(subscriptions.router, prefix="/api/subscriptions", tags=["订阅与支付"])
 app.include_router(system.router, prefix="/api/system", tags=["系统管理"])
+app.include_router(audit_reports.router, prefix="/api/audit-reports", tags=["年度审计报告"])
 
 # 会计模块（会计/财务经理/总监/管理员）
 _accounting = [Depends(require_module("accounting"))]
