@@ -141,6 +141,7 @@ BS_ROWS = [
     ("其他非流动负债",        "right", "2902"),  # 其他非流动负债
     ("非流动负债合计",        "right", "NCURRENT_TOTAL"),
     ("负债合计",            "right", "LIABILITY_TOTAL"),
+    ("",                   "right", ""),  # 对齐占位行
     # 所有者权益（右侧下半）
     ("实收资本（或股本）",    "right", "4001"),
     ("资本公积",            "right", "4002"),
@@ -214,11 +215,11 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
             item["ending"] = round(right_items[12]["ending"] + right_items[21]["ending"], 2)
             item["beginning"] = round(right_items[12]["beginning"] + right_items[21]["beginning"], 2)
         elif item["name"] == "所有者权益合计":
-            item["ending"] = round(sum(i["ending"] for i in right_items[23:28]), 2)
-            item["beginning"] = round(sum(i["beginning"] for i in right_items[23:28]), 2)
+            item["ending"] = round(sum(i["ending"] for i in right_items[24:29]), 2)
+            item["beginning"] = round(sum(i["beginning"] for i in right_items[24:29]), 2)
         elif item["name"] == "负债和所有者权益总计":
-            item["ending"] = round(right_items[22]["ending"] + right_items[28]["ending"], 2)
-            item["beginning"] = round(right_items[22]["beginning"] + right_items[28]["beginning"], 2)
+            item["ending"] = round(right_items[22]["ending"] + right_items[29]["ending"], 2)
+            item["beginning"] = round(right_items[22]["beginning"] + right_items[29]["beginning"], 2)
 
     y, m = int(period[:4]), int(period[5:7])
     if m == 12:
@@ -231,7 +232,7 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
         last_day = 28
     date_display = f"{y} 年 {m:02d} 月 {last_day} 日"
 
-    balanced = abs(left_items[29]["ending"] - right_items[29]["ending"]) < 1.0
+    balanced = abs(left_items[30]["ending"] - right_items[30]["ending"]) < 1.0
 
     return {
         "period_display": f"{y} 年 {m:02d} 月",

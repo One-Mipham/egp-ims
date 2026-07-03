@@ -285,9 +285,9 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             elif item["name"] == "负债合计":
                 item["ending"] = round(right_items[12]["ending"] + right_items[21]["ending"], 2)
             elif item["name"] == "所有者权益合计":
-                item["ending"] = round(sum(i["ending"] for i in right_items[23:28]), 2)
+                item["ending"] = round(sum(i["ending"] for i in right_items[24:29]), 2)
             elif item["name"] == "负债和所有者权益总计":
-                item["ending"] = round(right_items[22]["ending"] + right_items[28]["ending"], 2)
+                item["ending"] = round(right_items[22]["ending"] + right_items[29]["ending"], 2)
 
         y, m = int(period[:4]), int(period[5:7])
         if rtype == "yearly":
