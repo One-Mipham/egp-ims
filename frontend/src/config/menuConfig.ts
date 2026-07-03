@@ -327,7 +327,6 @@ export const menuSections: MenuSection[] = [
         label: '11.4 报表中心',
         icon: 'pi pi-chart-bar',
         children: [
-          { label: '财务报表', to: '/reports' },
           { label: '月度报表', to: '/reports/monthly' },
           { label: '季度报表', to: '/reports/quarterly' },
           { label: '年度报表', to: '/reports/yearly' },
