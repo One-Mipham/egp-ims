@@ -10,11 +10,20 @@ const data = ref<any>(null)
 const loading = ref(false)
 const currentPeriod = ref(new Date().toISOString().slice(0, 7))
 const selectedReport = ref('balance')
+const selectedYear = ref(new Date().getFullYear())
+const selectedQuarter = ref(Math.ceil((new Date().getMonth() + 1) / 3))
 
 const REPORT_OPTIONS = [
   { label: '资产负债表', value: 'balance' },
   { label: '利润表', value: 'income' },
   { label: '现金流量表', value: 'cashflow' },
+]
+
+const QUARTER_OPTIONS = [
+  { label: '第一季度 (1-3月)', value: 1 },
+  { label: '第二季度 (4-6月)', value: 2 },
+  { label: '第三季度 (7-9月)', value: 3 },
+  { label: '第四季度 (10-12月)', value: 4 },
 ]
 
 const reportType = computed(() => {
@@ -24,12 +33,25 @@ const reportType = computed(() => {
   return 'monthly'
 })
 
+const isPrintView = computed(() => route.path.startsWith('/print'))
 const pageTitle = computed(() => {
   const t = reportType.value
-  return t === 'quarterly' ? '季报打印' : t === 'yearly' ? '年报打印' : '月报表打印'
+  const suffix = isPrintView.value ? '打印' : ''
+  return t === 'quarterly' ? `季度报表${suffix}` : t === 'yearly' ? `年度报表${suffix}` : `月度报表${suffix}`
+})
+
+// Build the effective period string based on type
+const effectivePeriod = computed(() => {
+  if (reportType.value === 'yearly') return `${selectedYear.value}-12`
+  if (reportType.value === 'quarterly') {
+    const lastMonth = selectedQuarter.value * 3
+    return `${selectedYear.value}-${String(lastMonth).padStart(2, '0')}`
+  }
+  return currentPeriod.value
 })
 
 watch(selectedReport, load)
+watch(effectivePeriod, load)
 
 function formatNumber(val: number | null) {
   if (val === null || val === undefined) return ''
@@ -40,7 +62,7 @@ async function load() {
   loading.value = true
   try {
     const cid = parseInt(localStorage.getItem('companyId') || '1')
-    const res = await printPeriodic(cid, currentPeriod.value, selectedReport.value, reportType.value)
+    const res = await printPeriodic(cid, effectivePeriod.value, selectedReport.value, reportType.value)
     data.value = res.data
   } catch (e: any) {
     alert(e.response?.data?.detail || '加载失败')
@@ -57,8 +79,15 @@ onMounted(load)
 <template>
   <div>
     <div class="flex justify-between items-center mb-4">
-      <div class="flex gap-2 items-center">
-        <input v-model="currentPeriod" type="month" class="px-3 py-2 border border-zinc-300 rounded-sm text-sm" @change="load" />
+      <div class="flex gap-2 items-center flex-wrap">
+        <!-- Year selector (for quarterly & yearly) -->
+        <template v-if="reportType !== 'monthly'">
+          <input v-model="selectedYear" type="number" :min="2020" :max="2099" class="px-3 py-2 border border-zinc-300 rounded-sm text-sm w-24" />
+        </template>
+        <!-- Quarter selector (for quarterly) -->
+        <Dropdown v-if="reportType === 'quarterly'" v-model="selectedQuarter" :options="QUARTER_OPTIONS" optionLabel="label" optionValue="value" class="w-48" />
+        <!-- Month selector (for monthly) -->
+        <input v-if="reportType === 'monthly'" v-model="currentPeriod" type="month" class="px-3 py-2 border border-zinc-300 rounded-sm text-sm" />
         <Dropdown v-model="selectedReport" :options="REPORT_OPTIONS" optionLabel="label" optionValue="value" class="w-40" />
         <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!data" />
       </div>

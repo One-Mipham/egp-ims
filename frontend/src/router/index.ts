@@ -44,10 +44,10 @@ const routes = [
   { path: '/init/voucher-archive', component: () => import('../views/PlaceholderPage.vue'), meta: { requiresAuth: true, pageTitle: '历史年度记账凭证' } },
   { path: '/init/monthly-reports', component: () => import('../views/PlaceholderPage.vue'), meta: { requiresAuth: true, pageTitle: '会计月报表' } },
   { path: '/init/annual-audit', component: () => import('../views/PlaceholderPage.vue'), meta: { requiresAuth: true, pageTitle: '年度审计报表' } },
-  // 报表中心 — 新增
-  { path: '/reports/monthly', component: () => import('../views/PlaceholderPage.vue'), meta: { requiresAuth: true, pageTitle: '月度报表' } },
-  { path: '/reports/quarterly', component: () => import('../views/PlaceholderPage.vue'), meta: { requiresAuth: true, pageTitle: '季度报表' } },
-  { path: '/reports/yearly', component: () => import('../views/PlaceholderPage.vue'), meta: { requiresAuth: true, pageTitle: '年度报表' } },
+  // 报表中心 — 三期报表
+  { path: '/reports/monthly', component: () => import('../views/PrintPeriodic.vue'), meta: { requiresAuth: true, pageTitle: '月度报表' } },
+  { path: '/reports/quarterly', component: () => import('../views/PrintPeriodic.vue'), meta: { requiresAuth: true, pageTitle: '季度报表' } },
+  { path: '/reports/yearly', component: () => import('../views/PrintPeriodic.vue'), meta: { requiresAuth: true, pageTitle: '年度报表' } },
   // 期末处理
   { path: '/period/monthly-close', component: () => import('../views/MonthlyClose.vue'), meta: { requiresAuth: true, pageTitle: '月度结账' } },
   { path: '/period/quarterly-close', component: () => import('../views/QuarterlyClose.vue'), meta: { requiresAuth: true, pageTitle: '季度结账' } },

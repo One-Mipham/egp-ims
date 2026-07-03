@@ -215,11 +215,30 @@ def print_vouchers(
 
 # ──────────────── 月报/季报/年报 ────────────────
 
-def _get_report_data(db: Session, company_id: int, period: str, report: str):
+def _period_range(period: str, rtype: str) -> tuple[str, str]:
+    """Return (curr_start, prev_start) based on period type.
+    - monthly: curr=当月, prev=去年同月
+    - quarterly: curr=当季首月, prev=去年同季
+    - yearly: curr=当年1月, prev=去年1月
+    """
+    y, m = int(period[:4]), int(period[5:7])
+    if rtype == "quarterly":
+        qm = ((m - 1) // 3) * 3 + 1  # first month of quarter
+        return f"{y}-{qm:02d}-01", f"{y - 1}-{qm:02d}-01"
+    elif rtype == "yearly":
+        return f"{y}-01-01", f"{y - 1}-01-01"
+    else:  # monthly
+        return f"{period}-01", f"{_prev_year_period(period)}-01"
+
+
+def _get_report_data(db: Session, company_id: int, period: str, report: str, rtype: str = "monthly"):
     end_date = _period_end_date(period)
     ys = _year_start(period)
     py_end = _period_end_date(_prev_year_period(period))
     py_ys = _year_start(_prev_year_period(period))
+
+    # For quarterly/yearly, the "current period" spans multiple months
+    curr_start, prev_curr_start = _period_range(period, rtype)
 
     accts = {a.code: a for a in db.query(Account).filter(Account.company_id == company_id).all()}
     parent_codes = set()
@@ -271,8 +290,16 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str):
                 item["ending"] = round(right_items[22]["ending"] + right_items[28]["ending"], 2)
 
         y, m = int(period[:4]), int(period[5:7])
-        last_day = 31 if m in (1, 3, 5, 7, 8, 10, 12) else (30 if m in (4, 6, 9, 11) else 28)
-        return {"type": "balance", "date_display": f"{y} 年 {m:02d} 月 {last_day} 日", "left_items": left_items, "right_items": right_items}
+        if rtype == "yearly":
+            date_display = f"{y} 年 12 月 31 日"
+        elif rtype == "quarterly":
+            q = (m - 1) // 3 + 1
+            qm_last = {1: 31, 2: 30, 3: 30, 4: 31}
+            date_display = f"{y} 年第{q}季度（{y} 年 {m:02d} 月 {qm_last.get(q, 31)} 日）"
+        else:
+            last_day = 31 if m in (1, 3, 5, 7, 8, 10, 12) else (30 if m in (4, 6, 9, 11) else 28)
+            date_display = f"{y} 年 {m:02d} 月 {last_day} 日"
+        return {"type": "balance", "date_display": date_display, "left_items": left_items, "right_items": right_items}
 
     elif report == "income":
         def _calc(code_str, start, end):
@@ -294,7 +321,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str):
                             total += c
             return round(total, 2)
 
-        month_start = period + "-01"
+        # curr_start 根据 rtype 覆盖单月/季度/年度起始
         items = []
         for name, codes in IS_ROWS:
             if codes in ("OP_PROFIT", "TOTAL_PROFIT", "NET_PROFIT"):
@@ -302,9 +329,9 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str):
             else:
                 items.append({
                     "name": name,
-                    "curr": round(_calc(codes, month_start, end_date), 2),
+                    "curr": round(_calc(codes, curr_start, end_date), 2),
                     "ytd": round(_calc(codes, ys, end_date), 2),
-                    "prev": round(_calc(codes, py_ys, py_end), 2),
+                    "prev": round(_calc(codes, prev_curr_start, py_end), 2),
                     "formula": "",
                 })
 
@@ -322,7 +349,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str):
                 item["curr"] = round(tp - items[13]["curr"], 2)
 
         for col in ("ytd", "prev"):
-            s = ys if col == "ytd" else py_ys
+            s = ys if col == "ytd" else prev_curr_start
             e = end_date if col == "ytd" else py_end
             def _calc_col(code_str):
                 if not code_str:
@@ -345,7 +372,14 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str):
                     item[col] = round(tp - vals["    减：所得税费用"], 2)
 
         y, m = int(period[:4]), int(period[5:7])
-        return {"type": "income", "period_display": f"{y} 年 {m:02d} 月", "items": items}
+        if rtype == "yearly":
+            period_display = f"{y} 年度"
+        elif rtype == "quarterly":
+            q = (m - 1) // 3 + 1
+            period_display = f"{y} 年第{q}季度"
+        else:
+            period_display = f"{y} 年 {m:02d} 月"
+        return {"type": "income", "period_display": period_display, "items": items}
 
     elif report == "cashflow":
         from app.models import CashFlowItem
@@ -354,56 +388,85 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str):
             CashFlowItem.company_id == company_id, CashFlowItem.is_active == True
         ).all()}
 
-        curr_items = _compute_cash_flows(db, company_id, ys, end_date)
+        curr_items = _compute_cash_flows(db, company_id, curr_start, end_date)  # 本期(月度/季度/年度)
+        ytd_items = _compute_cash_flows(db, company_id, ys, end_date)  # 本年累计
+        prev_items = _compute_cash_flows(db, company_id, prev_curr_start, py_end)  # 上年同期
 
-        # Compute 6-category totals from per-item data
-        op_in = sum(v for k, v in curr_items.items() if cf_items.get(k) and cf_items[k].category_code and cf_items[k].category_code.startswith("op_") and cf_items[k].direction == "inflow")
-        op_out = sum(v for k, v in curr_items.items() if cf_items.get(k) and cf_items[k].category_code and cf_items[k].category_code.startswith("op_") and cf_items[k].direction == "outflow")
-        inv_in = sum(v for k, v in curr_items.items() if cf_items.get(k) and cf_items[k].category_code and cf_items[k].category_code.startswith("inv_") and cf_items[k].direction == "inflow")
-        inv_out = sum(v for k, v in curr_items.items() if cf_items.get(k) and cf_items[k].category_code and cf_items[k].category_code.startswith("inv_") and cf_items[k].direction == "outflow")
-        fin_in = sum(v for k, v in curr_items.items() if cf_items.get(k) and cf_items[k].category_code and cf_items[k].category_code.startswith("fin_") and cf_items[k].direction == "inflow")
-        fin_out = sum(v for k, v in curr_items.items() if cf_items.get(k) and cf_items[k].category_code and cf_items[k].category_code.startswith("fin_") and cf_items[k].direction == "outflow")
+        def _cat_sum(data: dict, prefix: str, direction: str) -> float:
+            return sum(v for k, v in data.items() if cf_items.get(k) and cf_items[k].category_code
+                       and cf_items[k].category_code.startswith(prefix) and cf_items[k].direction == direction)
+
+        # Curr period
+        op_in_c = round(_cat_sum(curr_items, "op_", "inflow"), 2)
+        op_out_c = round(_cat_sum(curr_items, "op_", "outflow"), 2)
+        inv_in_c = round(_cat_sum(curr_items, "inv_", "inflow"), 2)
+        inv_out_c = round(_cat_sum(curr_items, "inv_", "outflow"), 2)
+        fin_in_c = round(_cat_sum(curr_items, "fin_", "inflow"), 2)
+        fin_out_c = round(_cat_sum(curr_items, "fin_", "outflow"), 2)
+        # YTD
+        op_in_y = round(_cat_sum(ytd_items, "op_", "inflow"), 2)
+        op_out_y = round(_cat_sum(ytd_items, "op_", "outflow"), 2)
+        inv_in_y = round(_cat_sum(ytd_items, "inv_", "inflow"), 2)
+        inv_out_y = round(_cat_sum(ytd_items, "inv_", "outflow"), 2)
+        fin_in_y = round(_cat_sum(ytd_items, "fin_", "inflow"), 2)
+        fin_out_y = round(_cat_sum(ytd_items, "fin_", "outflow"), 2)
+        # Prev
+        op_in_p = round(_cat_sum(prev_items, "op_", "inflow"), 2)
+        op_out_p = round(_cat_sum(prev_items, "op_", "outflow"), 2)
+        inv_in_p = round(_cat_sum(prev_items, "inv_", "inflow"), 2)
+        inv_out_p = round(_cat_sum(prev_items, "inv_", "outflow"), 2)
+        fin_in_p = round(_cat_sum(prev_items, "fin_", "inflow"), 2)
+        fin_out_p = round(_cat_sum(prev_items, "fin_", "outflow"), 2)
 
         all_accts = db.query(Account).filter(Account.company_id == company_id).all()
         accts_cf = {a.code: a for a in all_accts if _is_cash_account(a.code, CASH_CODES)}
         beginning_balance = sum(_calc_ending(a, db, company_id, ys) for a in accts_cf.values())
 
-        op_in = round(op_in, 2); op_out = round(op_out, 2)
-        inv_in = round(inv_in, 2); inv_out = round(inv_out, 2)
-        fin_in = round(fin_in, 2); fin_out = round(fin_out, 2)
-
-        net_operating = round(op_in - op_out, 2)
-        net_investing = round(inv_in - inv_out, 2)
-        net_financing = round(fin_in - fin_out, 2)
-        net_change = round(net_operating + net_investing + net_financing, 2)
-        ending_balance = round(beginning_balance + net_change, 2)
+        def _net(inc, outc): return round(inc - outc, 2)
+        net_op_c = _net(op_in_c, op_out_c); net_op_y = _net(op_in_y, op_out_y); net_op_p = _net(op_in_p, op_out_p)
+        net_inv_c = _net(inv_in_c, inv_out_c); net_inv_y = _net(inv_in_y, inv_out_y); net_inv_p = _net(inv_in_p, inv_out_p)
+        net_fin_c = _net(fin_in_c, fin_out_c); net_fin_y = _net(fin_in_y, fin_out_y); net_fin_p = _net(fin_in_p, fin_out_p)
+        net_chg_c = round(net_op_c + net_inv_c + net_fin_c, 2)
+        net_chg_y = round(net_op_y + net_inv_y + net_fin_y, 2)
+        net_chg_p = round(net_op_p + net_inv_p + net_fin_p, 2)
+        end_c = round(beginning_balance + net_chg_c, 2)
+        end_y = round(beginning_balance + net_chg_y, 2)
+        end_p = round(beginning_balance + net_chg_p, 2)
 
         y, m = int(period[:4]), int(period[5:7])
-        last_day = 31 if m in (1, 3, 5, 7, 8, 10, 12) else (30 if m in (4, 6, 9, 11) else 28)
+        if rtype == "yearly":
+            date_display = f"{y} 年度"
+        elif rtype == "quarterly":
+            q = (m - 1) // 3 + 1
+            date_display = f"{y} 年第{q}季度"
+        else:
+            last_day = 31 if m in (1, 3, 5, 7, 8, 10, 12) else (30 if m in (4, 6, 9, 11) else 28)
+            date_display = f"{y} 年 {m:02d} 月 {last_day} 日"
+
         rows = [
             ("一、经营活动产生的现金流量：", "", "", ""),
-            ("     销售商品、提供劳务收到的现金", op_in, op_in, 0.0),
-            ("     经营活动现金流入小计", op_in, op_in, 0.0),
-            ("     支付其它与经营活动有关的现金", op_out, op_out, 0.0),
-            ("     经营活动现金流出小计", op_out, op_out, 0.0),
-            ("     经营活动产生的现金流量净额", net_operating, net_operating, 0.0),
+            ("     销售商品、提供劳务收到的现金", op_in_c, op_in_y, op_in_p),
+            ("     经营活动现金流入小计", op_in_c, op_in_y, op_in_p),
+            ("     支付其它与经营活动有关的现金", op_out_c, op_out_y, op_out_p),
+            ("     经营活动现金流出小计", op_out_c, op_out_y, op_out_p),
+            ("     经营活动产生的现金流量净额", net_op_c, net_op_y, net_op_p),
             ("二、投资活动产生的现金流量：", "", "", ""),
-            ("     收回投资收到的现金", inv_in, inv_in, 0.0),
-            ("     投资活动现金流入小计", inv_in, inv_in, 0.0),
-            ("     投资支付的现金", inv_out, inv_out, 0.0),
-            ("     投资活动现金流出小计", inv_out, inv_out, 0.0),
-            ("     投资活动产生的现金流量净额", net_investing, net_investing, 0.0),
+            ("     收回投资收到的现金", inv_in_c, inv_in_y, inv_in_p),
+            ("     投资活动现金流入小计", inv_in_c, inv_in_y, inv_in_p),
+            ("     投资支付的现金", inv_out_c, inv_out_y, inv_out_p),
+            ("     投资活动现金流出小计", inv_out_c, inv_out_y, inv_out_p),
+            ("     投资活动产生的现金流量净额", net_inv_c, net_inv_y, net_inv_p),
             ("三、筹资活动产生的现金流量：", "", "", ""),
-            ("     吸收投资收到的现金", fin_in, fin_in, 0.0),
-            ("     筹资活动现金流入小计", fin_in, fin_in, 0.0),
-            ("     支付其他与筹资活动有关的现金", fin_out, fin_out, 0.0),
-            ("     筹资活动现金流出小计", fin_out, fin_out, 0.0),
-            ("     筹资活动产生的现金流量净额", net_financing, net_financing, 0.0),
-            ("五、现金及现金等价物净增加额", net_change, net_change, 0.0),
-            ("        加：期初现金及现金等价物余额", round(beginning_balance, 2), round(beginning_balance, 2), 0.0),
-            ("六、期末现金及现金等价物余额", ending_balance, ending_balance, 0.0),
+            ("     吸收投资收到的现金", fin_in_c, fin_in_y, fin_in_p),
+            ("     筹资活动现金流入小计", fin_in_c, fin_in_y, fin_in_p),
+            ("     支付其他与筹资活动有关的现金", fin_out_c, fin_out_y, fin_out_p),
+            ("     筹资活动现金流出小计", fin_out_c, fin_out_y, fin_out_p),
+            ("     筹资活动产生的现金流量净额", net_fin_c, net_fin_y, net_fin_p),
+            ("五、现金及现金等价物净增加额", net_chg_c, net_chg_y, net_chg_p),
+            ("        加：期初现金及现金等价物余额", round(beginning_balance, 2), round(beginning_balance, 2), round(beginning_balance, 2)),
+            ("六、期末现金及现金等价物余额", end_c, end_y, end_p),
         ]
-        return {"type": "cashflow", "date_display": f"{y} 年 {m:02d} 月 {last_day} 日", "rows": rows}
+        return {"type": "cashflow", "date_display": date_display, "rows": rows}
 
     raise HTTPException(status_code=400, detail="报表类型不支持")
 
@@ -418,4 +481,4 @@ def print_periodic(
     user: User = Depends(get_current_user),
 ):
     _get_company(db, company_id)
-    return _get_report_data(db, company_id, period, report)
+    return _get_report_data(db, company_id, period, report, type)
