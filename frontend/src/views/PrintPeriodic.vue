@@ -37,14 +37,22 @@ const pageTitle = computed(() => {
 interface PeriodOption {
   label: string
   value: string
+  isClosed?: boolean
 }
+
+const currentYear = new Date().getFullYear()
+const currentMonth = `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`
 
 const periodOptions = computed<PeriodOption[]>(() => {
   if (reportType.value === 'monthly') {
-    return allClosedPeriods.value.map(p => {
-      const [y, m] = p.split('-')
-      return { label: `${y} 年 ${m} 月`, value: p }
-    })
+    // 月度：显示全部 12 个月，标记是否已关帐
+    const months: PeriodOption[] = []
+    for (let m = 1; m <= 12; m++) {
+      const period = `${currentYear}-${String(m).padStart(2, '0')}`
+      const isClosed = allClosedPeriods.value.includes(period)
+      months.push({ label: `${currentYear} 年 ${String(m).padStart(2, '0')} 月`, value: period, isClosed })
+    }
+    return months
   }
   if (reportType.value === 'quarterly') {
     const quarters: PeriodOption[] = []
@@ -81,15 +89,16 @@ const periodOptions = computed<PeriodOption[]>(() => {
     .map(y => ({ label: `${y} 年度`, value: `${y}-12` }))
 })
 
-// 默认选最新；切换类型时重置
+// 默认选当前月份；切换类型时重置
 watch(reportType, () => {
-  if (periodOptions.value.length > 0) {
+  if (reportType.value === 'monthly') {
+    selectedPeriod.value = currentMonth
+  } else if (periodOptions.value.length > 0) {
     selectedPeriod.value = periodOptions.value[periodOptions.value.length - 1].value
-    noDataMessage.value = ''
   } else {
     selectedPeriod.value = ''
-    noDataMessage.value = '暂无已关帐期间，请先完成期末关帐后再查看报表。'
   }
+  noDataMessage.value = ''
 })
 
 watch(selectedReport, loadReport)
@@ -108,14 +117,9 @@ async function fetchClosedPeriods() {
       .filter((p: any) => p.is_closed)
       .map((p: any) => p.period)
       .sort()
-    // 触发 watch
-    if (periodOptions.value.length > 0) {
-      selectedPeriod.value = periodOptions.value[periodOptions.value.length - 1].value
-      noDataMessage.value = ''
-    } else {
-      selectedPeriod.value = ''
-      noDataMessage.value = '暂无已关帐期间，请先完成期末关帐后再查看报表。'
-    }
+    // 默认选中当前月份
+    selectedPeriod.value = currentMonth
+    noDataMessage.value = ''
   } catch {
     noDataMessage.value = '加载期间数据失败'
   }
@@ -126,6 +130,14 @@ async function loadReport() {
     data.value = null
     return
   }
+  // 未关帐月份：显示提示，不加载数据
+  const option = periodOptions.value.find(o => o.value === selectedPeriod.value)
+  if (option && !option.isClosed) {
+    data.value = null
+    noDataMessage.value = `期间 ${selectedPeriod.value} 尚未关帐，请先完成月度结账后再查看报表。`
+    return
+  }
+  noDataMessage.value = ''
   loading.value = true
   try {
     const cid = parseInt(localStorage.getItem('companyId') || '1')
@@ -171,6 +183,14 @@ onMounted(fetchClosedPeriods)
     </div>
 
     <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
+
+    <!-- 未关帐提示 -->
+    <div
+      v-if="noDataMessage && !data"
+      class="bg-amber-50 border border-amber-300 rounded-sm p-4 mb-4 text-amber-800 text-sm"
+    >
+      ⚠️ {{ noDataMessage }}
+    </div>
 
     <!-- 资产负债表 -->
     <div
