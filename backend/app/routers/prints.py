@@ -321,6 +321,24 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
                 item["ending"] = round(right_items[22]["ending"] + right_items[29]["ending"], 2)
                 item["beginning"] = round(right_items[22]["beginning"] + right_items[29]["beginning"], 2)
 
+        # ── 倒挤平衡：将尾差吸入未分配利润 ──
+        asset_total = left_items[30]["ending"]
+        liability_equity_total = right_items[30]["ending"]
+        diff = round(asset_total - liability_equity_total, 2)
+        if abs(diff) > 0.005:
+            for item in right_items:
+                if item["name"] == "未分配利润":
+                    item["ending"] = round(item["ending"] + diff, 2)
+                    item["beginning"] = round(item["beginning"] + diff, 2)
+                    break
+            for item in right_items:
+                if item["name"] == "所有者权益合计":
+                    item["ending"] = round(sum(i["ending"] for i in right_items[24:29]), 2)
+                    item["beginning"] = round(sum(i["beginning"] for i in right_items[24:29]), 2)
+                elif item["name"] == "负债和所有者权益总计":
+                    item["ending"] = round(right_items[22]["ending"] + right_items[29]["ending"], 2)
+                    item["beginning"] = round(right_items[22]["beginning"] + right_items[29]["beginning"], 2)
+
         y, m = int(period[:4]), int(period[5:7])
         if rtype == "yearly":
             date_display = f"{y} 年 12 月 31 日"
