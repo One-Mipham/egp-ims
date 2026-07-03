@@ -119,8 +119,6 @@ def update_voucher(voucher_id: int, data: VoucherUpdate, db: Session = Depends(g
     if voucher.status != "draft":
         raise HTTPException(status_code=400, detail="只能修改草稿状态凭证")
 
-    _check_period_open(db, voucher.company_id, voucher.date)
-
     company = _get_company(db, voucher.company_id)
     err = check_voucher_update(user, company, voucher.creator_id)
     if err:
@@ -132,6 +130,9 @@ def update_voucher(voucher_id: int, data: VoucherUpdate, db: Session = Depends(g
         voucher.date = data.date
     if data.voucher_type:
         voucher.voucher_type = data.voucher_type
+
+    # 在日期更新后检查关帐锁定（防止将凭证改到已关帐月份）
+    _check_period_open(db, voucher.company_id, voucher.date)
 
     if data.entries is not None:
         total_debit = sum(e.debit for e in data.entries)

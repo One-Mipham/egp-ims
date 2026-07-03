@@ -227,7 +227,7 @@ def check_module_enabled(company, module: str) -> str | None:
 
 def require_module(module: str):
     """FastAPI 依赖工厂：限制路由仅允许有模块权限且公司已购买的用户访问。"""
-    def _check(user=Depends(get_current_user), db: Session = Depends(get_db), request: Request = None):
+    async def _check(user=Depends(get_current_user), db: Session = Depends(get_db), request: Request = None):
         err = check_module_access(user, module)
         if err:
             raise HTTPException(status_code=403, detail=err)
@@ -236,6 +236,18 @@ def require_module(module: str):
         company_id_param = None
         if request:
             company_id_param = request.query_params.get("company_id")
+            # 从 POST/PUT/PATCH body 中读取 company_id
+            if not company_id_param and request.method in ("POST", "PUT", "PATCH"):
+                import json as _json
+                body = await request.body()
+                if body:
+                    try:
+                        data = _json.loads(body)
+                        cid = data.get("company_id")
+                        if cid is not None:
+                            company_id_param = str(cid)
+                    except (_json.JSONDecodeError, ValueError):
+                        pass
         if not company_id_param and module == "knowledge":
             return user
         if not company_id_param:

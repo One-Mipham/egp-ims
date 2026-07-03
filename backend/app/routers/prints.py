@@ -1,4 +1,5 @@
 """打印模块路由：公司信息、部门、科目表、科目余额表、总账、凭证、月/季/年报。"""
+import calendar
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
@@ -297,7 +298,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             qm_last = {1: 31, 2: 30, 3: 30, 4: 31}
             date_display = f"{y} 年第{q}季度（{y} 年 {m:02d} 月 {qm_last.get(q, 31)} 日）"
         else:
-            last_day = 31 if m in (1, 3, 5, 7, 8, 10, 12) else (30 if m in (4, 6, 9, 11) else 28)
+            last_day = calendar.monthrange(y, m)[1]
             date_display = f"{y} 年 {m:02d} 月 {last_day} 日"
         return {"type": "balance", "date_display": date_display, "left_items": left_items, "right_items": right_items}
 
@@ -440,7 +441,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             q = (m - 1) // 3 + 1
             date_display = f"{y} 年第{q}季度"
         else:
-            last_day = 31 if m in (1, 3, 5, 7, 8, 10, 12) else (30 if m in (4, 6, 9, 11) else 28)
+            last_day = calendar.monthrange(y, m)[1]
             date_display = f"{y} 年 {m:02d} 月 {last_day} 日"
 
         rows = [

@@ -95,7 +95,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
         company_id=company.id,
         company_name=company.name,
         phone=data.phone,
-        password=data.password,
+        password="********",  # 不在响应中返回明文密码
         message="注册成功！请妥善保管您的公司序号和密码，登录后请立即修改密码。",
     )
 
@@ -211,11 +211,16 @@ def company_lookup(company_id: int, db: Session = Depends(get_db)):
     return {"id": company.id, "name": company.name, "short_name": company.short_name}
 
 
+class ChangePasswordBody(BaseModel):
+    current_password: str
+    new_password: str
+
+
 @router.post("/change-password")
-def change_password(current_password: str, new_password: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """用户修改自身密码。"""
-    if not verify_password(current_password, user.password_hash):
+def change_password(body: ChangePasswordBody, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """用户修改自身密码（密码通过 JSON body 传递，不经过 URL）。"""
+    if not verify_password(body.current_password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="当前密码错误")
-    user.password_hash = hash_password(new_password)
+    user.password_hash = hash_password(body.new_password)
     db.commit()
     return {"ok": True}

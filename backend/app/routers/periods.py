@@ -81,14 +81,8 @@ def _auto_carry_forward(db: Session, company_id: int, period: str, user_id: int)
 
         total_debit = float(agg[0])
         total_credit = float(agg[1])
-
-        # 考虑期初余额方向
-        if account.initial_balance:
-            if account.balance_direction == "debit":
-                total_debit += float(account.initial_balance)
-            else:
-                total_credit += float(account.initial_balance)
-
+        # 损益结转仅计算本期发生额净值（initial_balance 已体现在
+        # 科目累计余额中，不应每月重复加入）
         net = total_debit - total_credit
         if abs(net) < 0.01:
             continue
@@ -304,9 +298,27 @@ def unclose_period(company_id: int, period: str, reason: str, db: Session = Depe
     p.closed_at = None
     p.closed_status = "open"
 
-    db.add(AuditLog(company_id=company_id, user_id=user.id, action="reverse_close", target_type="period", reason=reason, details={"period": period}))
+    # 删除关帐时自动生成的损益结转凭证（摘要含"损益结转（系统自动生成）"）
+    start_date, end_date = _period_month_range(period)
+    carry_vouchers = db.query(Voucher).filter(
+        Voucher.company_id == company_id,
+        Voucher.date >= start_date,
+        Voucher.date <= end_date,
+        Voucher.summary.contains("损益结转（系统自动生成）"),
+    ).all()
+    carry_detail = []
+    for v in carry_vouchers:
+        carry_detail.append(v.voucher_no)
+        db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).delete()
+        db.delete(v)
+
+    db.add(AuditLog(
+        company_id=company_id, user_id=user.id,
+        action="reverse_close", target_type="period", reason=reason,
+        details={"period": period, "reversed_carry_vouchers": carry_detail},
+    ))
     db.commit()
-    return {"ok": True}
+    return {"ok": True, "reversed_carry_vouchers": carry_detail}
 
 
 @router.get("/close-checks", response_model=CloseCheckResult)
@@ -504,7 +516,7 @@ def execute_carry_forward(
             VoucherEntry.account_code == account.code,
             Voucher.company_id == company_id,
             Voucher.date >= f"{period}-01",
-            Voucher.date <= f"{period}-31",
+            Voucher.date <= f"{period}-{_last_day_of_month(period)}",
             Voucher.status.in_(["posted"]),  # 仅已记账凭证
         ).first()
 

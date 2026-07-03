@@ -1,7 +1,7 @@
 """SQLAlchemy 数据模型."""
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -178,6 +178,10 @@ class Voucher(Base):
 
     company = relationship("Company", back_populates="vouchers")
     entries = relationship("VoucherEntry", back_populates="voucher", cascade="all, delete-orphan")
+
+    __table_args__ = (
+        UniqueConstraint("company_id", "voucher_no", name="uq_voucher_no"),
+    )
 
 
 class VoucherEntry(Base):

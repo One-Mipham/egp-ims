@@ -1,5 +1,6 @@
 """JWT 认证与密码加密."""
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
@@ -11,7 +12,18 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
+_SECRET = os.environ.get("SECRET_KEY", "")
+if _SECRET:
+    SECRET_KEY = _SECRET
+elif os.environ.get("ENV", "dev") == "production":
+    raise RuntimeError("SECRET_KEY must be set in production environment")
+else:
+    SECRET_KEY = secrets.token_urlsafe(48)
+    import logging
+    logging.getLogger("uvicorn").warning(
+        "SECRET_KEY not set — using random key for dev (tokens invalid after restart)"
+    )
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
 

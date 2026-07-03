@@ -1,4 +1,5 @@
 """报表中心路由：资产负债表、利润表、现金流量表。"""
+import calendar
 from datetime import datetime, date
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -15,9 +16,8 @@ router = APIRouter()
 
 def _period_end_date(period: str) -> str:
     y, m = int(period[:4]), int(period[5:7])
-    if m == 12:
-        return f"{y}-12-31"
-    return date(y, m + 1, 1).isoformat() + "T00:00:00"
+    last_day = calendar.monthrange(y, m)[1]
+    return f"{y}-{m:02d}-{last_day:02d}"
 
 
 def _year_start(period: str) -> str:
@@ -229,7 +229,7 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
     elif m in (4, 6, 9, 11):
         last_day = 30
     else:
-        last_day = 28
+        last_day = calendar.monthrange(y, m)[1]
     date_display = f"{y} 年 {m:02d} 月 {last_day} 日"
 
     balanced = abs(left_items[30]["ending"] - right_items[30]["ending"]) < 1.0
@@ -504,7 +504,7 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
     elif m in (4, 6, 9, 11):
         last_day = 30
     else:
-        last_day = 28
+        last_day = calendar.monthrange(y, m)[1]
     date_display = f"{y} 年 {m:02d} 月 {last_day} 日"
 
     # Compute granular per-item cash flows

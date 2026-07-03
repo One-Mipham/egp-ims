@@ -1,4 +1,5 @@
 """用户管理路由：super_admin 专用。"""
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -6,6 +7,10 @@ from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserResponse
 from app.auth import hash_password, get_current_user
+
+
+class ResetPasswordBody(BaseModel):
+    new_password: str
 
 router = APIRouter()
 
@@ -63,8 +68,8 @@ def delete_user(user_id: int, current: User = Depends(get_current_user), db: Ses
 
 
 @router.post("/{user_id}/reset-password")
-def reset_password(user_id: int, new_password: str, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """管理员重置用户密码。"""
+def reset_password(user_id: int, body: ResetPasswordBody, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """管理员重置用户密码（密码通过 JSON body 传递，不经过 URL）。"""
     if current.role != "super_admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅系统管理员可重置密码")
     if user_id == current.id:
@@ -72,6 +77,6 @@ def reset_password(user_id: int, new_password: str, current: User = Depends(get_
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
-    user.password_hash = hash_password(new_password)
+    user.password_hash = hash_password(body.new_password)
     db.commit()
     return {"ok": True}

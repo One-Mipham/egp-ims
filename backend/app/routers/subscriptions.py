@@ -65,11 +65,14 @@ def current_subscription(company_id: int, db: Session = Depends(get_db), user: U
 
 
 @router.post("/activate-trial")
-def activate_trial(company_id: int, db: Session = Depends(get_db)):
-    """激活 30 天（一个月）全模块试用。无需认证（注册后调用）。"""
+def activate_trial(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """激活 30 天全模块试用。仅允许认证用户为自己所属公司激活。"""
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="公司不存在")
+    # 仅允许激活自己所属公司（超级管理员可激活任意公司）
+    if user.role != "super_admin" and user.company_id != company_id:
+        raise HTTPException(status_code=403, detail="仅可为自己的公司激活试用")
     if company.subscription_status == "active":
         raise HTTPException(status_code=400, detail="公司已有有效订阅")
 
