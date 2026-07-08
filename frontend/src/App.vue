@@ -8,7 +8,7 @@ import LangToggle from '@/components/LangToggle.vue'
 import { menuSections, flattenItems } from '@/config/menuConfig'
 import { useI18n } from '@/i18n'
 
-const { t, locale } = useI18n()
+const { t } = useI18n()
 
 const route = useRoute()
 const router = useRouter()
@@ -118,7 +118,7 @@ function handleLogout() {
       <div class="h-10 flex items-center px-3 sidebar-header shrink-0 gap-2">
         <img src="/company-logo.jpg" alt="MiphamAI" class="h-5 w-auto rounded-sm" />
         <span class="ml-2 text-xs font-medium tracking-wider sidebar-header-text">{{ t('app.brand') }}</span>
-        <div v-if="locale !== 'en-US'" class="ml-auto"><LangToggle /></div>
+        <div class="ml-auto"><LangToggle /></div>
       </div>
 
       <!-- Scrolling banner -->

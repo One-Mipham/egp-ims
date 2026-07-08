@@ -34,7 +34,7 @@ deploy_saas() {
   echo ""
   echo "--- 构建 SaaS (onemipham.com/saas/) ---"
   rm -rf dist-saas
-  VITE_BASE=/saas/ npx vite build --outDir dist-saas
+  VITE_BASE=/saas/ VITE_DEFAULT_LOCALE=en-US npx vite build --outDir dist-saas
   echo "--- 部署 → $SERVER:$SAAS_PATH ---"
   rsync -avz --delete dist-saas/ "$SERVER:$SAAS_PATH"
   rm -rf dist-saas
