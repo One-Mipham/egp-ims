@@ -18,17 +18,20 @@ interface IndicatorItem {
 const items = ref<IndicatorItem[]>([])
 const loading = ref(false)
 
-const LIGHT_LABELS: Record<string, string> = { green: '绿灯', yellow: '黄灯', red: '红灯' }
+const LIGHT_LABELS: Record<string, string> = { green: '绿灯', yellow: '黄灯', red: '红灯', gray: '无数据' }
 const LIGHT_COLORS: Record<string, string> = {
   green: 'bg-emerald-100 text-emerald-700',
   yellow: 'bg-amber-100 text-amber-700',
   red: 'bg-red-100 text-red-700',
+  gray: 'bg-gray-100 text-gray-500',
 }
+
+const companyId = localStorage.getItem('companyId') || '1'
 
 onMounted(async () => {
   loading.value = true
   try {
-    const res = await api.get('/cockpit/indicators')
+    const res = await api.get('/cockpit/indicators', { params: { company_id: companyId } })
     if (res.data?.items) {
       items.value = res.data.items
     }

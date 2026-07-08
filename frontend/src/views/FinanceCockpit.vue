@@ -5,13 +5,15 @@ import api from '@/api'
 
 const router = useRouter()
 
+type LightStatus = 'green' | 'yellow' | 'red' | 'gray'
+
 const indicators = ref([
-  { label: '预算完成表现', status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '现金流安全', status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '偿债能力', status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '营运能力', status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '盈利能力', status: 'green' as 'green' | 'yellow' | 'red' },
-  { label: '成长能力', status: 'green' as 'green' | 'yellow' | 'red' },
+  { label: '预算完成表现', status: 'gray' as LightStatus },
+  { label: '现金流安全', status: 'gray' as LightStatus },
+  { label: '偿债能力', status: 'gray' as LightStatus },
+  { label: '营运能力', status: 'gray' as LightStatus },
+  { label: '盈利能力', status: 'gray' as LightStatus },
+  { label: '成长能力', status: 'gray' as LightStatus },
 ])
 
 const cockpitPaths: Record<string, string> = {
@@ -33,34 +35,40 @@ const STATUS_CIRCLE_CLASS: Record<string, string> = {
   green: 'circle-green',
   yellow: 'circle-yellow',
   red: 'circle-red',
+  gray: 'circle-gray',
 }
 const STATUS_ICON: Record<string, string> = {
   green: 'pi-check-circle',
   yellow: 'pi-exclamation-circle',
   red: 'pi-times-circle',
+  gray: 'pi-minus-circle',
 }
 const STATUS_ICON_COLOR: Record<string, string> = {
   green: '#059669',
   yellow: '#d97706',
   red: '#dc2626',
+  gray: '#9ca3af',
 }
 const STATUS_LABEL: Record<string, string> = {
   green: '绿灯',
   yellow: '黄灯',
   red: '红灯',
+  gray: '无数据',
 }
+
+const companyId = localStorage.getItem('companyId') || '1'
 
 onMounted(async () => {
   loading.value = true
   try {
-    const res = await api.get('/cockpit/cockpit-lights')
+    const res = await api.get('/cockpit/cockpit-lights', { params: { company_id: companyId } })
     if (res.data) {
       for (const ind of indicators.value) {
         if (res.data[ind.label]) ind.status = res.data[ind.label]
       }
     }
   } catch {
-    /* use defaults */
+    /* use defaults (gray) */
   } finally {
     loading.value = false
   }

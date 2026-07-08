@@ -1,12 +1,100 @@
 """财务管理驾驶舱 — 公司预算、现金流计划、经营指标"""
+import calendar
 import os
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+from app.database import get_db
 from app.auth import get_current_user
-from app.models import User
+from app.models import User, Voucher, VoucherEntry, Account
 
 router = APIRouter()
 
 DOWNLOADS = os.path.expanduser("~/Downloads")
+
+
+# ═══════════════════════════════════════════
+# 辅助函数 — 从报表模块提取，避免循环导入
+# ═══════════════════════════════════════════
+
+def _period_end_date(period: str) -> str:
+    y, m = int(period[:4]), int(period[5:7])
+    last_day = calendar.monthrange(y, m)[1]
+    return f"{y}-{m:02d}-{last_day:02d}"
+
+
+def _calc_account_ending(code: str, db: Session, company_id: int, end_date: str) -> float:
+    """计算单个科目的期末余额。"""
+    acct = db.query(Account).filter(
+        Account.company_id == company_id, Account.code == code
+    ).first()
+    if not acct:
+        return 0.0
+    q = db.query(VoucherEntry).join(Voucher).filter(
+        Voucher.company_id == company_id,
+        VoucherEntry.account_code == acct.code,
+        Voucher.status == "posted",
+        Voucher.date <= end_date,
+    )
+    entries = q.all()
+    debit = sum(e.debit for e in entries)
+    credit = sum(e.credit for e in entries)
+    if acct.balance_direction == "debit":
+        return acct.initial_balance + debit - credit
+    return acct.initial_balance + credit - debit
+
+
+def _sum_by_prefix(prefix: str, db: Session, company_id: int, end_date: str) -> float:
+    """汇总所有以 prefix 开头的叶子科目余额。"""
+    total = 0.0
+    accounts = db.query(Account).filter(
+        Account.company_id == company_id,
+        Account.code.like(f"{prefix}%"),
+    ).all()
+    if not accounts:
+        return 0.0
+    # 排除有子科目的父科目（叶子科目 = 它的code不是任何科目的parent_code）
+    parent_codes = {a.parent_code for a in accounts if a.parent_code}
+    for a in accounts:
+        if a.code in parent_codes:
+            continue
+        total += _calc_account_ending(a.code, db, company_id, end_date)
+    return round(total, 2)
+
+
+def _sum_occurrence_by_prefix(prefix: str, db: Session, company_id: int, start: str, end: str) -> float:
+    """汇总以 prefix 开头的叶子科目在期间内的净发生额。"""
+    total = 0.0
+    accounts = db.query(Account).filter(
+        Account.company_id == company_id,
+        Account.code.like(f"{prefix}%"),
+    ).all()
+    parent_codes = {a.parent_code for a in accounts if a.parent_code}
+    for a in accounts:
+        if a.code in parent_codes:
+            continue
+        q = db.query(VoucherEntry).join(Voucher).filter(
+            Voucher.company_id == company_id,
+            VoucherEntry.account_code == a.code,
+            Voucher.status == "posted",
+            Voucher.date >= start,
+            Voucher.date <= end,
+        )
+        entries = q.all()
+        debit = sum(e.debit for e in entries)
+        credit = sum(e.credit for e in entries)
+        if a.balance_direction == "debit":
+            total += debit - credit
+        else:
+            total += credit - debit
+    return round(total, 2)
+
+
+def _has_data(db: Session, company_id: int) -> bool:
+    """检查公司是否有已记账凭证。"""
+    return db.query(Voucher).filter(
+        Voucher.company_id == company_id, Voucher.status == "posted"
+    ).count() > 0
+
 
 # ═══════════════════════════════════════════
 # 1. 公司预算与绩效评价
@@ -70,9 +158,11 @@ INDICATOR_DEFS = [
 def _traffic_light(value: float | None, green_min: float | None = None,
                    yellow_min: float | None = None, green_max: float | None = None,
                    yellow_max: float | None = None) -> str:
-    """根据阈值返回 red / yellow / green"""
+    """根据阈值返回 red / yellow / green / gray。
+    gray = 无数据（公司尚无财务数据）。
+    """
     if value is None:
-        return "green"  # 无数据默认绿灯
+        return "gray"
     if green_min is not None and yellow_min is not None:
         if value >= green_min:
             return "green"
@@ -87,23 +177,142 @@ def _traffic_light(value: float | None, green_min: float | None = None,
             return "yellow"
         else:
             return "red"
-    return "green"
+    return "gray"
+
+
+def _compute_indicators(db: Session, company_id: int, period: str) -> dict[str, float | None]:
+    """从实际财务数据计算经营指标。"""
+    end_date = _period_end_date(period)
+    result: dict[str, float | None] = {}
+
+    # ── 从资产负债表提取关键数据 ──
+    # 流动资产科目：以 1 开头的科目（1001 库存现金 ~ 19xx）
+    current_assets = _sum_by_prefix("1", db, company_id, end_date)
+    # 排除非流动资产：以 15/16/17/18 开头的通常是非流动的
+    noncurrent_in_current = _sum_by_prefix("15", db, company_id, end_date) + \
+                           _sum_by_prefix("16", db, company_id, end_date) + \
+                           _sum_by_prefix("18", db, company_id, end_date)
+    current_assets = current_assets - noncurrent_in_current
+
+    # 总资产 = 所有资产科目
+    total_assets = 0.0
+    asset_categories = ["1"]  # 资产类
+    for cat in asset_categories:
+        total_assets += _sum_by_prefix(cat, db, company_id, end_date)
+
+    # 流动负债：2001, 22xx, 2231, 2232, 2241
+    current_liabilities = _sum_by_prefix("2001", db, company_id, end_date) + \
+                         _sum_by_prefix("22", db, company_id, end_date) + \
+                         _sum_by_prefix("2231", db, company_id, end_date) + \
+                         _sum_by_prefix("2232", db, company_id, end_date) + \
+                         _sum_by_prefix("2241", db, company_id, end_date)
+
+    # 总负债 = 2 开头的科目
+    total_liabilities = _sum_by_prefix("2", db, company_id, end_date)
+
+    # 所有者权益 = 3/4 开头
+    total_equity = _sum_by_prefix("3", db, company_id, end_date) + \
+                   _sum_by_prefix("4", db, company_id, end_date)
+
+    # 存货 = 1405 + 1406 等
+    inventory = _sum_by_prefix("1405", db, company_id, end_date) + \
+                _sum_by_prefix("1406", db, company_id, end_date) + \
+                _sum_by_prefix("1407", db, company_id, end_date) + \
+                _sum_by_prefix("1408", db, company_id, end_date)
+
+    # ── 从利润表提取数据 ──
+    year_start = f"{period[:4]}-01-01"
+    # 营业收入 = 60xx 科目
+    revenue = _sum_occurrence_by_prefix("60", db, company_id, year_start, end_date)
+    # 营业成本 = 64xx 科目
+    cost = _sum_occurrence_by_prefix("64", db, company_id, year_start, end_date)
+    # 净利润 ≈ 收入 - 成本 - 费用（简化）
+    # 销售/管理/财务费用
+    selling_exp = _sum_occurrence_by_prefix("6601", db, company_id, year_start, end_date)
+    admin_exp = _sum_occurrence_by_prefix("6602", db, company_id, year_start, end_date)
+    finance_exp = _sum_occurrence_by_prefix("6603", db, company_id, year_start, end_date)
+
+    net_income = revenue - cost - selling_exp - admin_exp - finance_exp
+
+    # ── 计算指标 ──
+    # 偿债能力
+    if current_liabilities != 0:
+        result["current_ratio"] = round(current_assets / abs(current_liabilities) * 100, 1)
+        quick_assets = current_assets - inventory
+        result["quick_ratio"] = round(quick_assets / abs(current_liabilities) * 100, 1)
+    else:
+        result["current_ratio"] = None
+        result["quick_ratio"] = None
+
+    # 现金流动负债比 — 需要经营现金流，暂无简单计算
+    result["cash_current_liab_ratio"] = None
+
+    if total_assets != 0:
+        result["debt_ratio"] = round(abs(total_liabilities) / total_assets * 100, 1)
+    else:
+        result["debt_ratio"] = None
+
+    # 利息保障倍数 — 需要利息费用数据
+    result["interest_coverage"] = None
+
+    # 营运能力 — 需要期初期末平均值
+    result["ar_turnover"] = None
+    result["inventory_turnover"] = None
+
+    if total_assets != 0 and revenue != 0:
+        result["current_asset_turnover"] = round(abs(revenue) / current_assets, 1) if current_assets != 0 else None
+        result["total_asset_turnover"] = round(abs(revenue) / total_assets, 1)
+    else:
+        result["current_asset_turnover"] = None
+        result["total_asset_turnover"] = None
+
+    # 盈利能力
+    if revenue != 0:
+        result["gross_margin"] = round((revenue - cost) / abs(revenue) * 100, 1) if revenue - cost != 0 else None
+        result["operating_margin"] = round(net_income / abs(revenue) * 100, 1) if net_income != 0 else None
+    else:
+        result["gross_margin"] = None
+        result["operating_margin"] = None
+
+    if total_assets != 0:
+        result["roa"] = round(net_income / total_assets * 100, 1) if net_income != 0 else None
+    else:
+        result["roa"] = None
+
+    if total_equity != 0:
+        result["roe"] = round(net_income / abs(total_equity) * 100, 1) if net_income != 0 else None
+    else:
+        result["roe"] = None
+
+    if revenue != 0:
+        result["cost_expense_ratio"] = round((cost + selling_exp + admin_exp + finance_exp) / abs(revenue) * 100, 1)
+    else:
+        result["cost_expense_ratio"] = None
+
+    # 成长能力 — 需要去年同期数据进行比较，暂不计算
+    result["revenue_growth"] = None
+    result["profit_growth"] = None
+    result["asset_growth"] = None
+    result["capital_accum_rate"] = None
+    result["rd_intensity"] = None
+
+    return result
 
 
 @router.get("/indicators")
-def get_indicators(user: User = Depends(get_current_user)):
-    """返回经营指标定义及当前值/红黄绿灯判定"""
-    # 从实际数据计算指标值（当前为模板默认值）
-    values = {
-        "current_ratio": None, "quick_ratio": None, "cash_current_liab_ratio": None,
-        "debt_ratio": None, "interest_coverage": None,
-        "ar_turnover": None, "inventory_turnover": None,
-        "current_asset_turnover": None, "total_asset_turnover": None,
-        "gross_margin": None, "operating_margin": None,
-        "roa": None, "roe": None, "cost_expense_ratio": None,
-        "revenue_growth": None, "profit_growth": None,
-        "asset_growth": None, "capital_accum_rate": None, "rd_intensity": None,
-    }
+def get_indicators(
+    company_id: int = Query(...),
+    period: str = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """返回经营指标定义及当前值/红黄绿灯判定。基于实际财务数据计算。"""
+    if not period:
+        from datetime import date
+        today = date.today()
+        period = f"{today.year}-{today.month:02d}"
+
+    values = _compute_indicators(db, company_id, period)
 
     items = []
     for d in INDICATOR_DEFS:
@@ -116,7 +325,7 @@ def get_indicators(user: User = Depends(get_current_user)):
         items.append({**d, "value": v, "light": light})
 
     # 按维度汇总红黄绿灯
-    dimensions = {}
+    dimensions: dict[str, dict] = {}
     for item in items:
         dim = item["dimension"]
         if dim not in dimensions:
@@ -124,13 +333,15 @@ def get_indicators(user: User = Depends(get_current_user)):
         dimensions[dim]["items"].append(item)
         dimensions[dim]["lights"].append(item["light"])
 
-    # 每个维度的总体灯：任一红灯=红，任一黄灯=黄，全绿=绿
-    summary = {}
+    # 每个维度的总体灯：灰>0=灰，红>0=红，黄>0=黄，全绿=绿
+    summary: dict[str, str] = {}
     for dim, data in dimensions.items():
         if "red" in data["lights"]:
             summary[dim] = "red"
         elif "yellow" in data["lights"]:
             summary[dim] = "yellow"
+        elif "gray" in data["lights"]:
+            summary[dim] = "gray"
         else:
             summary[dim] = "green"
 
@@ -139,14 +350,65 @@ def get_indicators(user: User = Depends(get_current_user)):
 
 # 驾驶舱综合R/Y/G — 六项
 @router.get("/cockpit-lights")
-def get_cockpit_lights(user: User = Depends(get_current_user)):
-    """返回财务管理驾驶舱六项指示灯状态"""
-    # 从预算完成情况 + 现金流 + 经营指标综合判定
+def get_cockpit_lights(
+    company_id: int = Query(...),
+    period: str = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """返回财务管理驾驶舱六项指示灯状态。基于实际数据判定。"""
+    if not period:
+        from datetime import date
+        today = date.today()
+        period = f"{today.year}-{today.month:02d}"
+
+    if not _has_data(db, company_id):
+        # 无数据 → 全部灰色
+        return {
+            "预算完成表现": "gray",
+            "现金流安全": "gray",
+            "偿债能力": "gray",
+            "营运能力": "gray",
+            "盈利能力": "gray",
+            "成长能力": "gray",
+        }
+
+    # 从 indicators 获取各维度汇总状态
+    indicators_result = get_indicators(company_id=company_id, period=period, db=db, user=user)
+    dim_summary = indicators_result["summary"]
+
     return {
-        "预算完成表现": "green",
-        "现金流安全": "green",
-        "偿债能力": "green",
-        "营运能力": "green",
-        "盈利能力": "green",
-        "成长能力": "green",
+        "预算完成表现": _get_budget_light(db, company_id, period),
+        "现金流安全": _get_cashflow_light(db, company_id, period),
+        "偿债能力": dim_summary.get("偿债能力", "gray"),
+        "营运能力": dim_summary.get("营运能力", "gray"),
+        "盈利能力": dim_summary.get("盈利能力", "gray"),
+        "成长能力": dim_summary.get("成长能力", "gray"),
     }
+
+
+def _get_budget_light(db: Session, company_id: int, period: str) -> str:
+    """预算完成表现：检查是否有预算数据。"""
+    from app.models import Budget
+    year = int(period[:4])
+    budgets = db.query(Budget).filter(
+        Budget.company_id == company_id, Budget.year == year
+    ).count()
+    if budgets == 0:
+        return "gray"
+    # 有预算数据 → 简单判定（后续可增强为实际vs预算比较）
+    return "green"
+
+
+def _get_cashflow_light(db: Session, company_id: int, period: str) -> str:
+    """现金流安全：检查期末现金余额是否为正。"""
+    end_date = _period_end_date(period)
+    # 货币资金 = 1001(库存现金) + 1002(银行存款) + 1003(其他货币资金)
+    cash = _sum_by_prefix("1001", db, company_id, end_date) + \
+           _sum_by_prefix("1002", db, company_id, end_date) + \
+           _sum_by_prefix("1003", db, company_id, end_date)
+    if cash <= 0:
+        return "red"
+    if cash < 100000:  # 现金低于10万 → 黄灯
+        return "yellow"
+    return "green"

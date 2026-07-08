@@ -851,6 +851,27 @@ body {
   border-color: rgba(113, 113, 122, 0.12);
 }
 
+/* 灰灯 — 无数据 */
+.cockpit-circle.circle-gray {
+  background:
+    radial-gradient(circle at 50% 40%, rgba(156, 163, 175, 0.06) 0%, transparent 70%),
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 2px,
+      rgba(156, 163, 175, 0.01) 2px,
+      rgba(156, 163, 175, 0.01) 4px
+    ),
+    rgba(249, 250, 251, 0.5);
+  border-color: rgba(156, 163, 175, 0.12);
+}
+.cockpit-circle.circle-gray .circle-ring {
+  background: rgba(156, 163, 175, 0.06);
+}
+.cockpit-circle.circle-gray .circle-icon {
+  color: #9ca3af;
+}
+
 /* ── 统计卡片（保留旧版兼容） ── */
 .stat-card {
   background: var(--color-card-bg);
