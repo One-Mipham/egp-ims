@@ -1,11 +1,13 @@
 """财务管理驾驶舱 — 公司预算、现金流计划、经营指标"""
 import calendar
 import os
-from fastapi import APIRouter, Depends, Query
+from typing import Optional, List
+from pydantic import BaseModel as PydanticBase
+from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth import get_current_user
-from app.models import User, Voucher, VoucherEntry, Account
+from app.models import User, Voucher, VoucherEntry, Account, CashflowPlan, CashflowPlanItem
 
 router = APIRouter()
 
@@ -116,7 +118,7 @@ def get_budget(user: User = Depends(get_current_user)):
 # ═══════════════════════════════════════════
 
 @router.get("/cashflow-plan")
-def get_cashflow_plan(user: User = Depends(get_current_user)):
+def get_cashflow_plan_summary(user: User = Depends(get_current_user)):
     return {"message": "现金流计划数据端点就绪", "rows": [], "summary": {
         "beginning_balance": 0, "actual_inflow": 0, "actual_outflow": 0,
         "ending_balance": 0, "equity_financing": 0, "debt_financing": 0,
@@ -412,3 +414,108 @@ def _get_cashflow_light(db: Session, company_id: int, period: str) -> str:
     if cash < 100000:  # 现金低于10万 → 黄灯
         return "yellow"
     return "green"
+
+
+# ═══════════════════════════════════════════
+# 4. 现金流计划 CRUD
+# ═══════════════════════════════════════════
+
+
+class CFPlanItemCreate(PydanticBase):
+    account_code: str
+    month: str
+    amount: float = 0.0
+
+
+class CFPlanCreate(PydanticBase):
+    company_id: int
+    name: str
+    year: int
+    items: List[CFPlanItemCreate] = []
+
+
+class CFPlanUpdate(PydanticBase):
+    name: Optional[str] = None
+    items: Optional[List[CFPlanItemCreate]] = None
+
+
+@router.get("/cashflow-plan/list")
+def list_cashflow_plans(
+    company_id: int = Query(...),
+    year: int = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    q = db.query(CashflowPlan).filter(CashflowPlan.company_id == company_id)
+    if year:
+        q = q.filter(CashflowPlan.year == year)
+    plans = q.order_by(CashflowPlan.year.desc()).all()
+    return [{"id": p.id, "company_id": p.company_id, "name": p.name, "year": p.year,
+             "status": p.status, "items": [{"id": i.id, "account_code": i.account_code,
+             "month": i.month, "amount": i.amount} for i in p.items]} for p in plans]
+
+
+@router.get("/cashflow-plan/{plan_id}")
+def get_cashflow_plan(
+    plan_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    p = db.query(CashflowPlan).filter(CashflowPlan.id == plan_id).first()
+    if not p:
+        raise HTTPException(status_code=404, detail="现金流计划不存在")
+    return {"id": p.id, "company_id": p.company_id, "name": p.name, "year": p.year,
+            "status": p.status, "items": [{"id": i.id, "account_code": i.account_code,
+            "month": i.month, "amount": i.amount} for i in p.items]}
+
+
+@router.post("/cashflow-plan")
+def create_cashflow_plan(
+    data: CFPlanCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    plan = CashflowPlan(company_id=data.company_id, name=data.name, year=data.year, created_by=user.id)
+    db.add(plan)
+    db.flush()
+    for item_data in data.items:
+        db.add(CashflowPlanItem(plan_id=plan.id, account_code=item_data.account_code,
+                                month=item_data.month, amount=item_data.amount))
+    db.commit()
+    db.refresh(plan)
+    return {"id": plan.id, "name": plan.name, "year": plan.year, "status": plan.status}
+
+
+@router.put("/cashflow-plan/{plan_id}")
+def update_cashflow_plan(
+    plan_id: int,
+    data: CFPlanUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    plan = db.query(CashflowPlan).filter(CashflowPlan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="现金流计划不存在")
+    if data.name is not None:
+        plan.name = data.name
+    if data.items is not None:
+        db.query(CashflowPlanItem).filter(CashflowPlanItem.plan_id == plan.id).delete()
+        for item_data in data.items:
+            db.add(CashflowPlanItem(plan_id=plan.id, account_code=item_data.account_code,
+                                    month=item_data.month, amount=item_data.amount))
+    db.commit()
+    return {"ok": True}
+
+
+@router.delete("/cashflow-plan/{plan_id}")
+def delete_cashflow_plan(
+    plan_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    plan = db.query(CashflowPlan).filter(CashflowPlan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="现金流计划不存在")
+    db.delete(plan)
+    db.commit()
+    return {"ok": True}

@@ -288,6 +288,12 @@ class Budget(Base):
     name = Column(String(100), nullable=False)  # 如"2026年度预算"
     year = Column(Integer, nullable=False)
     status = Column(String(10), default="draft")  # draft/approved
+    revenue_growth_rate = Column(Float, nullable=True)  # 收入增长率 %
+    manual_adjustment = Column(Float, nullable=True)  # 手动调整额
+    cost_rate = Column(Float, nullable=True)  # 成本占收入比 %
+    operating_exp_rate = Column(Float, nullable=True)  # 经营费用占收入比 %
+    admin_exp_rate = Column(Float, nullable=True)  # 管理费用占收入比 %
+    finance_exp_rate = Column(Float, nullable=True)  # 财务费用占收入比 %
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -306,6 +312,33 @@ class BudgetItem(Base):
     amount = Column(Float, default=0.0)
 
     budget = relationship("Budget", back_populates="items")
+
+
+class CashflowPlan(Base):
+    __tablename__ = "cashflow_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    name = Column(String(100), nullable=False)
+    year = Column(Integer, nullable=False)
+    status = Column(String(10), default="draft")
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    company = relationship("Company")
+    items = relationship("CashflowPlanItem", back_populates="plan", cascade="all, delete-orphan")
+
+
+class CashflowPlanItem(Base):
+    __tablename__ = "cashflow_plan_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    plan_id = Column(Integer, ForeignKey("cashflow_plans.id"), nullable=False)
+    account_code = Column(String(10), nullable=False)
+    month = Column(String(7), nullable=False)  # yyyy-MM
+    amount = Column(Float, default=0.0)
+
+    plan = relationship("CashflowPlan", back_populates="items")
 
 
 class AuditLog(Base):

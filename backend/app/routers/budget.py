@@ -39,6 +39,12 @@ def create_budget(
         name=data.name,
         year=data.year,
         status="draft",
+        revenue_growth_rate=data.revenue_growth_rate,
+        manual_adjustment=data.manual_adjustment,
+        cost_rate=data.cost_rate,
+        operating_exp_rate=data.operating_exp_rate,
+        admin_exp_rate=data.admin_exp_rate,
+        finance_exp_rate=data.finance_exp_rate,
         created_by=user.id,
     )
     db.add(budget)
@@ -86,6 +92,11 @@ def update_budget(
         budget.name = data.name
     if data.status is not None:
         budget.status = data.status
+    for field in ("revenue_growth_rate", "manual_adjustment", "cost_rate",
+                  "operating_exp_rate", "admin_exp_rate", "finance_exp_rate"):
+        val = getattr(data, field, None)
+        if val is not None:
+            setattr(budget, field, val)
 
     if data.items is not None:
         # Replace all items

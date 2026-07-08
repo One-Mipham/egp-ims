@@ -2359,11 +2359,23 @@ class BudgetCreate(BaseModel):
     company_id: int
     name: str
     year: int
+    revenue_growth_rate: Optional[float] = None
+    manual_adjustment: Optional[float] = None
+    cost_rate: Optional[float] = None
+    operating_exp_rate: Optional[float] = None
+    admin_exp_rate: Optional[float] = None
+    finance_exp_rate: Optional[float] = None
     items: Optional[list[BudgetItemCreate]] = []
 
 class BudgetUpdate(BaseModel):
     name: Optional[str] = None
     status: Optional[str] = None
+    revenue_growth_rate: Optional[float] = None
+    manual_adjustment: Optional[float] = None
+    cost_rate: Optional[float] = None
+    operating_exp_rate: Optional[float] = None
+    admin_exp_rate: Optional[float] = None
+    finance_exp_rate: Optional[float] = None
     items: Optional[list[BudgetItemCreate]] = None
 
 class BudgetResponse(BaseModel):
@@ -2372,6 +2384,12 @@ class BudgetResponse(BaseModel):
     name: str
     year: int
     status: str = "draft"
+    revenue_growth_rate: Optional[float] = None
+    manual_adjustment: Optional[float] = None
+    cost_rate: Optional[float] = None
+    operating_exp_rate: Optional[float] = None
+    admin_exp_rate: Optional[float] = None
+    finance_exp_rate: Optional[float] = None
     created_by: Optional[int] = None
     created_at: Optional[datetime] = None
     items: list[BudgetItemResponse] = []

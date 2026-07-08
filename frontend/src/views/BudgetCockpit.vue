@@ -26,7 +26,7 @@ const budgetStatus = ref('draft')
 const revenueGrowthRate = ref<number | null>(null) // 百分比 (e.g. 15 = 15%)
 const manualAdjustment = ref<number | null>(null) // 手动调整额（可为负数）
 
-// Auto-computed future year revenue (compound growth)
+// Auto-computed future year revenue (compound growth + yearly adjustment accumulation)
 const autoRevenueY1 = computed(() => {
   const base = annualSum(data.revenue)
   if (base == null) return null
@@ -39,15 +39,43 @@ const autoRevenueY2 = computed(() => {
   if (base == null) return null
   const r = (revenueGrowthRate.value ?? 0) / 100
   const adj = manualAdjustment.value ?? 0
-  return parseFloat((base * Math.pow(1 + r, 2) + adj).toFixed(2))
+  return parseFloat((base * Math.pow(1 + r, 2) + adj * 2).toFixed(2))
 })
 const autoRevenueY3 = computed(() => {
   const base = annualSum(data.revenue)
   if (base == null) return null
   const r = (revenueGrowthRate.value ?? 0) / 100
   const adj = manualAdjustment.value ?? 0
-  return parseFloat((base * Math.pow(1 + r, 3) + adj).toFixed(2))
+  return parseFloat((base * Math.pow(1 + r, 3) + adj * 3).toFixed(2))
 })
+
+// ── Auto-computed cost/expense for future years based on ratio settings ──
+const costRate = ref<number | null>(null)
+const operatingExpRate = ref<number | null>(null)
+const adminExpRate = ref<number | null>(null)
+const financeExpRate = ref<number | null>(null)
+
+// Auto-fill defaults for future year values (can be manually overridden)
+const autoYearDefaults = computed(() => {
+  const rev = [autoRevenueY1.value, autoRevenueY2.value, autoRevenueY3.value]
+  return {
+    cost: rev.map(v => v != null && costRate.value != null ? parseFloat((v * costRate.value / 100).toFixed(2)) : null),
+    operatingExp: rev.map(v => v != null && operatingExpRate.value != null ? parseFloat((v * operatingExpRate.value / 100).toFixed(2)) : null),
+    adminExp: rev.map(v => v != null && adminExpRate.value != null ? parseFloat((v * adminExpRate.value / 100).toFixed(2)) : null),
+    financeExp: rev.map(v => v != null && financeExpRate.value != null ? parseFloat((v * financeExpRate.value / 100).toFixed(2)) : null),
+  }
+})
+
+// Get default value for a future year cell (auto-computed but can be overridden manually)
+function getYearDefault(key: string, yi: number): number | null {
+  switch (key) {
+    case 'cost': return autoYearDefaults.value.cost[yi]
+    case 'operatingExp': return autoYearDefaults.value.operatingExp[yi]
+    case 'adminExp': return autoYearDefaults.value.adminExp[yi]
+    case 'financeExp': return autoYearDefaults.value.financeExp[yi]
+    default: return null
+  }
+}
 
 const manualKeys = ['revenue', 'cost', 'operatingExp', 'adminExp', 'financeExp', 'otherIncExp', 'incomeTax'] as const
 
@@ -115,18 +143,27 @@ function getYearValue(label: string, yi: number): number | null {
   switch (label) {
     case '收入':
       return getAutoRevenue(yi) // Always auto-computed from growth rate
-    case '成本':
-      return yearData.cost[yi]
+    case '成本': {
+      const manual = yearData.cost[yi]
+      if (manual != null) return manual  // manual override
+      return getYearDefault('cost', yi)  // auto-computed default
+    }
     case '毛利润':
       return yearGrossProfit.value[yi]
     case '毛利率':
       return yearGrossMargin.value[yi]
-    case '经营费用':
-      return yearData.operatingExp[yi]
-    case '管理费用':
-      return yearData.adminExp[yi]
-    case '财务费用':
-      return yearData.financeExp[yi]
+    case '经营费用': {
+      const manual = yearData.operatingExp[yi]
+      return manual != null ? manual : getYearDefault('operatingExp', yi)
+    }
+    case '管理费用': {
+      const manual = yearData.adminExp[yi]
+      return manual != null ? manual : getYearDefault('adminExp', yi)
+    }
+    case '财务费用': {
+      const manual = yearData.financeExp[yi]
+      return manual != null ? manual : getYearDefault('financeExp', yi)
+    }
     case '期间费用合计':
       return yearPeriodExp.value[yi]
     case '营业外收支':
@@ -314,15 +351,22 @@ async function saveBudget() {
   saveMessage.value = ''
   try {
     const items = buildBudgetItems()
+    const payload: Record<string, any> = {
+      company_id: companyId.value,
+      name: budgetName.value,
+      year: currentYear,
+      items,
+      revenue_growth_rate: revenueGrowthRate.value,
+      manual_adjustment: manualAdjustment.value,
+      cost_rate: costRate.value,
+      operating_exp_rate: operatingExpRate.value,
+      admin_exp_rate: adminExpRate.value,
+      finance_exp_rate: financeExpRate.value,
+    }
     if (budgetId.value) {
-      await updateBudget(budgetId.value, { name: budgetName.value, items })
+      await updateBudget(budgetId.value, payload)
     } else {
-      const res = await createBudget({
-        company_id: companyId.value,
-        name: budgetName.value,
-        year: currentYear,
-        items,
-      })
+      const res = await createBudget(payload as any)
       budgetId.value = (res.data as BudgetData).id
     }
     saveMessage.value = '保存成功'
@@ -337,14 +381,20 @@ async function loadBudget() {
   loading.value = true
   try {
     const res = await listBudgets(companyId.value, currentYear)
-    const list = res.data as BudgetData[]
+    const list = res.data as any[]
     if (list.length > 0) {
       const detail = await getBudget(list[0].id)
-      const budget = detail.data as BudgetData
+      const budget = detail.data as any
       budgetId.value = budget.id
       budgetName.value = budget.name
       budgetStatus.value = budget.status
-      loadFromItems(budget.items)
+      revenueGrowthRate.value = budget.revenue_growth_rate ?? null
+      manualAdjustment.value = budget.manual_adjustment ?? null
+      costRate.value = budget.cost_rate ?? null
+      operatingExpRate.value = budget.operating_exp_rate ?? null
+      adminExpRate.value = budget.admin_exp_rate ?? null
+      financeExpRate.value = budget.finance_exp_rate ?? null
+      loadFromItems(budget.items || [])
     }
   } catch (_e) {
     // No saved budget exists yet — that's fine
@@ -429,7 +479,44 @@ onMounted(() => {
           </div>
           <p class="text-[10px] text-stone-400 mt-1">对未来每年收入统一增减额（负数表示调减）</p>
         </div>
+        <div>
+          <label class="block text-xs text-stone-500 mb-1">成本占收入比 (%)</label>
+          <div class="flex items-center gap-1">
+            <input type="number" step="0.1" class="w-24 px-2 py-1 border border-stone-300 rounded text-sm font-number focus:border-amber-400 focus:outline-none"
+              :value="costRate != null ? costRate : ''" placeholder="如 60"
+              @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); costRate = isNaN(v) ? null : v }" />
+            <span class="text-xs text-stone-400">%</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-stone-500 mb-1">经营费用占收入比 (%)</label>
+          <div class="flex items-center gap-1">
+            <input type="number" step="0.1" class="w-24 px-2 py-1 border border-stone-300 rounded text-sm font-number focus:border-amber-400 focus:outline-none"
+              :value="operatingExpRate != null ? operatingExpRate : ''" placeholder="如 10"
+              @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); operatingExpRate = isNaN(v) ? null : v }" />
+            <span class="text-xs text-stone-400">%</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-stone-500 mb-1">管理费用占收入比 (%)</label>
+          <div class="flex items-center gap-1">
+            <input type="number" step="0.1" class="w-24 px-2 py-1 border border-stone-300 rounded text-sm font-number focus:border-amber-400 focus:outline-none"
+              :value="adminExpRate != null ? adminExpRate : ''" placeholder="如 15"
+              @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); adminExpRate = isNaN(v) ? null : v }" />
+            <span class="text-xs text-stone-400">%</span>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-stone-500 mb-1">财务费用占收入比 (%)</label>
+          <div class="flex items-center gap-1">
+            <input type="number" step="0.1" class="w-24 px-2 py-1 border border-stone-300 rounded text-sm font-number focus:border-amber-400 focus:outline-none"
+              :value="financeExpRate != null ? financeExpRate : ''" placeholder="如 3"
+              @input="(e: Event) => { const v = parseFloat((e.target as HTMLInputElement).value); financeExpRate = isNaN(v) ? null : v }" />
+            <span class="text-xs text-stone-400">%</span>
+          </div>
+        </div>
       </div>
+      <p class="text-[10px] text-stone-400 mt-3">成本及费用占收入比设定后，未来三年对应项目自动预填。可在未来年表格中手工覆盖自动值。</p>
     </div>
 
     <!-- ═══════════ 年度预算表 ═══════════ -->

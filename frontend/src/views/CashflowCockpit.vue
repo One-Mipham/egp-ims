@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { reactive, computed } from 'vue'
+import { reactive, computed, ref, onMounted } from 'vue'
+import api from '@/api'
 
 const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 
@@ -351,12 +352,92 @@ const financingRows = computed<TableRow[]>(() => [
     getValue: i => financingTotal.value[i],
   },
 ])
+
+// ── Persistence ──
+const planId = ref<number | null>(null)
+const planName = ref('现金流计划')
+const saving = ref(false)
+const loading = ref(false)
+const saveMessage = ref('')
+const companyId = localStorage.getItem('companyId') || '1'
+
+function buildCFItems(): { account_code: string; month: string; amount: number }[] {
+  const items: { account_code: string; month: string; amount: number }[] = []
+  const rowMap: Record<string, (number | null)[]> = {
+    openingBalance: data.openingBalance, salesCollection: data.salesCollection,
+    investmentDiv: data.investmentDiv, otherInflow: data.otherInflow,
+    purchaseCost: data.purchaseCost, marketingExp: data.marketingExp,
+    rdExp: data.rdExp, adminExp: data.adminExp, financeExp: data.financeExp,
+    equityInv: data.equityInv, officeInv: data.officeInv,
+    landInv: data.landInv, constructionInv: data.constructionInv,
+    otherOutflow: data.otherOutflow, equityFin: data.equityFin, debtFin: data.debtFin,
+  }
+  for (const [key, values] of Object.entries(rowMap)) {
+    for (let mi = 0; mi < 12; mi++) {
+      if (values[mi] != null) {
+        items.push({ account_code: key, month: `${currentYear}-${String(mi + 1).padStart(2, '0')}`, amount: values[mi]! })
+      }
+    }
+  }
+  return items
+}
+
+function loadFromCFItems(items: { account_code: string; month: string; amount: number }[]) {
+  const keys = Object.keys(data) as ManualKey[]
+  for (const k of keys) (data[k] as (number | null)[]).fill(null)
+  for (const item of items) {
+    const mi = parseInt(item.month.slice(5, 7)) - 1
+    if (mi >= 0 && mi < 12 && (keys as string[]).includes(item.account_code)) {
+      (data[item.account_code as ManualKey] as (number | null)[])[mi] = item.amount
+    }
+  }
+}
+
+async function savePlan() {
+  saving.value = true
+  saveMessage.value = ''
+  try {
+    const items = buildCFItems()
+    if (planId.value) {
+      await api.put(`/cockpit/cashflow-plan/${planId.value}`, { name: planName.value, items })
+    } else {
+      const res = await api.post('/cockpit/cashflow-plan', {
+        company_id: parseInt(companyId), name: planName.value, year: currentYear, items,
+      })
+      planId.value = res.data.id
+    }
+    saveMessage.value = '保存成功'
+  } catch (e: any) {
+    saveMessage.value = '保存失败: ' + (e?.response?.data?.detail || e.message)
+  } finally { saving.value = false }
+}
+
+async function loadPlan() {
+  loading.value = true
+  try {
+    const res = await api.get('/cockpit/cashflow-plan/list', { params: { company_id: companyId, year: currentYear } })
+    if (res.data?.length > 0) {
+      const detail = await api.get(`/cockpit/cashflow-plan/${res.data[0].id}`)
+      const plan = detail.data
+      planId.value = plan.id
+      planName.value = plan.name
+      loadFromCFItems(plan.items || [])
+    }
+  } catch (_e) { /* no saved plan */ }
+  finally { loading.value = false }
+}
+
+onMounted(() => { loadPlan() })
 </script>
 
 <template>
   <div class="space-y-6">
     <div class="page-header">
       <h2>现金流计划与融资计划</h2>
+      <div class="flex items-center gap-2">
+        <span v-if="saveMessage" :class="saveMessage.includes('失败') ? 'text-red-600' : 'text-emerald-600'" class="text-xs">{{ saveMessage }}</span>
+        <button class="btn-primary text-xs" :disabled="saving" @click="savePlan">{{ saving ? '保存中...' : '保存' }}</button>
+      </div>
     </div>
 
     <!-- ═══════════ 现金流计划表 ═══════════ -->
