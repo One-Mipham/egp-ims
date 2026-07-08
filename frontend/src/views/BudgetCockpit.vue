@@ -403,6 +403,25 @@ async function loadBudget() {
   }
 }
 
+function exportBudget() {
+  const rows = ['项目,' + months.join(',') + ',Q1小计,Q2小计,Q3小计,Q4小计,年度合计']
+  for (const row of tableRows.value) {
+    const cells = [row.label]
+    for (let i = 0; i < 12; i++) {
+      const v = row.getValue(i)
+      cells.push(v != null ? v.toLocaleString() : '')
+    }
+    for (let q = 1; q <= 4; q++) cells.push(fmt(qSum(row.type === 'manual' ? months.map((_, i) => row.getValue(i)) : [], q)))
+    cells.push(fmt(annualSum(months.map((_, i) => row.getValue(i)))))
+    rows.push(cells.join(','))
+  }
+  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = `预算_${currentYear}.csv`; a.click()
+  URL.revokeObjectURL(url)
+}
+
 onMounted(() => {
   loadBudget()
 })
@@ -432,6 +451,9 @@ onMounted(() => {
           @click="saveBudget"
         >
           {{ saving ? '保存中...' : '保存' }}
+        </button>
+        <button class="px-3 py-1 text-xs bg-stone-500 text-white rounded hover:bg-stone-600" @click="exportBudget">
+          导出CSV
         </button>
       </div>
     </div>

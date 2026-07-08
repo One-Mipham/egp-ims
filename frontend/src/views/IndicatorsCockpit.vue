@@ -49,12 +49,32 @@ const dimensions = [
   { key: '盈利能力', label: '三、盈利能力维度' },
   { key: '成长能力', label: '四、成长能力维度（发展潜力）' },
 ]
+
+function exportIndicators() {
+  const rows = ['维度,指标名称,当前值,单位,绿灯阈值,黄灯阈值,状态']
+  for (const item of items.value) {
+    rows.push([
+      item.dimension, item.name,
+      item.value != null ? item.value.toLocaleString() : '-',
+      item.unit,
+      item.green_min ?? item.green_max ?? '-',
+      item.yellow_min ?? item.yellow_max ?? '-',
+      LIGHT_LABELS[item.light] || item.light,
+    ].join(','))
+  }
+  const blob = new Blob(['﻿' + rows.join('\n')], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = '经营分析指标.csv'; a.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
   <div class="space-y-6">
     <div class="page-header">
       <h2>公司经营分析指标</h2>
+      <button class="px-3 py-1 text-xs bg-stone-500 text-white rounded hover:bg-stone-600" @click="exportIndicators">导出CSV</button>
     </div>
 
     <div v-if="loading" class="text-stone-400 text-xs">加载中...</div>
