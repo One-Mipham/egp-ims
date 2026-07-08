@@ -10,12 +10,12 @@ const { t } = useI18n()
 type LightStatus = 'green' | 'yellow' | 'red' | 'gray'
 
 const indicators = ref([
-  { label: '预算完成表现', status: 'gray' as LightStatus },
-  { label: '现金流安全', status: 'gray' as LightStatus },
-  { label: '偿债能力', status: 'gray' as LightStatus },
-  { label: '营运能力', status: 'gray' as LightStatus },
-  { label: '盈利能力', status: 'gray' as LightStatus },
-  { label: '成长能力', status: 'gray' as LightStatus },
+  { apiKey: '预算完成表现', i18nKey: 'finance.cockpitBudgetPerf', status: 'gray' as LightStatus },
+  { apiKey: '现金流安全', i18nKey: 'finance.cockpitCashflowSafety', status: 'gray' as LightStatus },
+  { apiKey: '偿债能力', i18nKey: 'finance.indicators_page.solvency', status: 'gray' as LightStatus },
+  { apiKey: '营运能力', i18nKey: 'finance.indicators_page.operations', status: 'gray' as LightStatus },
+  { apiKey: '盈利能力', i18nKey: 'finance.indicators_page.profitability', status: 'gray' as LightStatus },
+  { apiKey: '成长能力', i18nKey: 'finance.indicators_page.growth', status: 'gray' as LightStatus },
 ])
 
 const cockpitPaths: Record<string, string> = {
@@ -27,8 +27,8 @@ const cockpitPaths: Record<string, string> = {
   成长能力: '/cockpit/indicators',
 }
 
-function goCockpit(label: string) {
-  const path = cockpitPaths[label]
+function goCockpit(apiKey: string) {
+  const path = cockpitPaths[apiKey]
   if (path) router.push(path)
 }
 
@@ -66,7 +66,7 @@ onMounted(async () => {
     const res = await api.get('/cockpit/cockpit-lights', { params: { company_id: companyId } })
     if (res.data) {
       for (const ind of indicators.value) {
-        if (res.data[ind.label]) ind.status = res.data[ind.label]
+        if (res.data[ind.apiKey]) ind.status = res.data[ind.apiKey]
       }
     }
   } catch {
@@ -109,8 +109,8 @@ const financeMenu = [
         <div class="flex flex-wrap gap-5 justify-center">
           <div
             v-for="ind in indicators"
-            :key="ind.label"
-            @click="goCockpit(ind.label)"
+            :key="ind.apiKey"
+            @click="goCockpit(ind.apiKey)"
             :class="['cockpit-circle', STATUS_CIRCLE_CLASS[ind.status]]"
           >
             <div class="circle-ring" />
@@ -118,7 +118,7 @@ const financeMenu = [
               :class="['pi', STATUS_ICON[ind.status], 'circle-icon']"
               :style="{ color: STATUS_ICON_COLOR[ind.status] }"
             />
-            <div class="circle-label">{{ ind.label }}</div>
+            <div class="circle-label">{{ t(ind.i18nKey) }}</div>
             <div class="text-[10px] mt-1 font-medium" :style="{ color: STATUS_ICON_COLOR[ind.status] }">
               {{ STATUS_LABEL[ind.status] }}
             </div>
@@ -127,7 +127,7 @@ const financeMenu = [
       </div>
     </div>
 
-    <p class="text-xs text-stone-400 mt-3">点击圆形指示卡可查看详细指标分析</p>
+    <p class="text-xs text-stone-400 mt-3">{{ t('finance.cockpitClickHint') }}</p>
     <p v-if="loading" class="text-stone-400 text-xs tracking-wide">{{ t('common.loading') }}</p>
   </div>
 </template>

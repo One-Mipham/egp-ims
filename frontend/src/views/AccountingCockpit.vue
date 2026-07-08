@@ -5,10 +5,10 @@ import { useI18n } from '@/i18n'
 
 const { t } = useI18n()
 const stats = ref([
-  { label: '凭证总数', value: 0, icon: 'pi pi-file', circleClass: 'circle-sky' },
-  { label: '科目数量', value: 0, icon: 'pi pi-book', circleClass: 'circle-indigo' },
-  { label: '部门数量', value: 0, icon: 'pi pi-building', circleClass: 'circle-emerald' },
-  { label: '已结账期间', value: 0, icon: 'pi pi-check-circle', circleClass: 'circle-violet' },
+  { label: t('accounting.cockpit_stats.voucherCount'), value: 0, icon: 'pi pi-file', circleClass: 'circle-sky' },
+  { label: t('accounting.cockpit_stats.accountCount'), value: 0, icon: 'pi pi-book', circleClass: 'circle-indigo' },
+  { label: t('accounting.cockpit_stats.deptCount'), value: 0, icon: 'pi pi-building', circleClass: 'circle-emerald' },
+  { label: t('accounting.cockpit_stats.closedPeriods'), value: 0, icon: 'pi pi-check-circle', circleClass: 'circle-violet' },
 ])
 
 const taxFiledOnTime = ref<boolean | null>(null)
@@ -75,9 +75,9 @@ onMounted(async () => {
           }"
         />
         <div class="text-xs font-medium mt-1">
-          {{ taxFiledOnTime === true ? '已报税' : taxFiledOnTime === false ? '未报税' : '点击设置' }}
+          {{ taxFiledOnTime === true ? t('accounting.cockpit_stats.taxFiled') : taxFiledOnTime === false ? t('accounting.cockpit_stats.taxUnfiled') : t('accounting.cockpit_stats.clickToSet') }}
         </div>
-        <div class="circle-label">按时报税</div>
+        <div class="circle-label">{{ t('accounting.cockpit_stats.taxOnTime') }}</div>
       </div>
 
       <div
@@ -104,9 +104,9 @@ onMounted(async () => {
           }"
         />
         <div class="text-xs font-medium mt-1">
-          {{ bankReconciled === true ? '已对账' : bankReconciled === false ? '未对账' : '点击设置' }}
+          {{ bankReconciled === true ? t('accounting.cockpit_stats.bankReconciled') : bankReconciled === false ? t('accounting.cockpit_stats.bankUnreconciled') : t('accounting.cockpit_stats.clickToSet') }}
         </div>
-        <div class="circle-label">银行对账</div>
+        <div class="circle-label">{{ t('accounting.cockpit_stats.bankReconciliation') }}</div>
       </div>
     </div>
 

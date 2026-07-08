@@ -31,11 +31,11 @@ function showNotification(msg: string) {
 }
 
 const THEMES = [
-  { id: 'classic', name: '墨绿经典', swatch: ['#1a3525', '#6ee7b0', '#991B1B'] },
-  { id: 'light', name: '极简亮色', swatch: ['#24292f', '#79c0ff', '#cf222e'] },
-  { id: 'dark', name: '深邃暗色', swatch: ['#0d1117', '#58a6ff', '#f85149'] },
-  { id: 'blue', name: '蓝调专业', swatch: ['#1a2744', '#fbbf24', '#d97706'] },
-  { id: 'contrast', name: '高对比度', swatch: ['#000000', '#ffff00', '#cc0000'] },
+  { id: 'classic', i18n: 'app.theme_classic', swatch: ['#1a3525', '#6ee7b0', '#991B1B'] },
+  { id: 'light', i18n: 'app.theme_light', swatch: ['#24292f', '#79c0ff', '#cf222e'] },
+  { id: 'dark', i18n: 'app.theme_dark', swatch: ['#0d1117', '#58a6ff', '#f85149'] },
+  { id: 'blue', i18n: 'app.theme_blue', swatch: ['#1a2744', '#fbbf24', '#d97706'] },
+  { id: 'contrast', i18n: 'app.theme_contrast', swatch: ['#000000', '#ffff00', '#cc0000'] },
 ]
 const currentTheme = ref(localStorage.getItem('theme') || 'classic')
 const showThemePopup = ref(false)
@@ -139,7 +139,7 @@ function handleLogout() {
             class="w-3 h-3 rounded-full"
             :style="{ background: THEMES.find(t => t.id === currentTheme)?.swatch[1] || '#6ee7b0' }"
           />
-          <span class="flex-1 text-left">{{ THEMES.find(t => t.id === currentTheme)?.name || '经典' }}</span>
+          <span class="flex-1 text-left">{{ t(THEMES.find(t => t.id === currentTheme)?.i18n || 'app.theme_classic') }}</span>
           <i
             class="pi pi-chevron-up text-[9px] transition-transform"
             :style="{ transform: showThemePopup ? 'rotate(0deg)' : 'rotate(180deg)' }"
@@ -147,16 +147,16 @@ function handleLogout() {
         </button>
         <div v-if="showThemePopup" class="theme-popup">
           <button
-            v-for="t in THEMES"
-            :key="t.id"
-            :class="['theme-option', { active: currentTheme === t.id }]"
-            @click="applyTheme(t.id)"
+            v-for="theme in THEMES"
+            :key="theme.id"
+            :class="['theme-option', { active: currentTheme === theme.id }]"
+            @click="applyTheme(theme.id)"
           >
             <span
               class="theme-swatch"
-              :style="{ background: `linear-gradient(135deg, ${t.swatch[0]} 50%, ${t.swatch[1]} 50%)` }"
+              :style="{ background: `linear-gradient(135deg, ${theme.swatch[0]} 50%, ${theme.swatch[1]} 50%)` }"
             />
-            <span>{{ t.name }}</span>
+            <span>{{ t(theme.i18n) }}</span>
           </button>
         </div>
       </div>
