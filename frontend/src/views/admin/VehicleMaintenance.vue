@@ -17,6 +17,9 @@ import {
   submitVehicleMaintenance,
   listVehicles,
 } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const vehicles = ref<any[]>([])
@@ -65,16 +68,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteVehicleMaintenance(id)
     await load()
   } catch (_e: any) {
-    alert('删除失败')
+    alert(t('common.deleteFailed'))
   }
 }
 async function doSubmit(id: number) {
@@ -103,7 +106,7 @@ onMounted(load)
 
 <template>
   <div>
-    <div class="flex justify-end mb-4"><Button label="新建维保申请" icon="pi pi-plus" @click="openCreate" /></div>
+    <div class="flex justify-end mb-4"><Button :label="`${t('common.add')}${t('admin.vehicleMaintenance')}`" icon="pi pi-plus" @click="openCreate" /></div>
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="15">
         <Column header="车辆" sortable
@@ -112,10 +115,10 @@ onMounted(load)
         <Column field="maintenance_type" header="维保类型" sortable />
         <Column field="vendor" header="维修商" sortable />
         <Column field="estimated_cost" header="预估费用" sortable />
-        <Column header="状态"
+        <Column :header="t('common.status')"
           ><template #body="{ data }"><Tag :value="data.status" :severity="statusSeverity(data.status)" /></template
         ></Column>
-        <Column header="操作" style="min-width: 160px">
+        <Column :header="t('common.actions')" style="min-width: 160px">
           <template #body="{ data }">
             <Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" />
             <Button v-if="data.status === 'draft'" text size="small" icon="pi pi-send" @click="doSubmit(data.id)" />
@@ -167,12 +170,12 @@ onMounted(load)
           ><InputNumber v-model="form.actual_cost" class="w-full" />
         </div>
         <div class="col-span-2">
-          <label class="block text-xs text-zinc-500 mb-1">描述</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.description') }}</label
           ><Textarea v-model="form.description" rows="2" class="w-full" />
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button :label="t('common.save')" @click="save"
       /></template>
     </Dialog>
   </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import Dialog from 'primevue/dialog'
@@ -12,6 +13,8 @@ import {
   deleteAccount,
   importAuxConfig,
 } from '@/api'
+
+const { t } = useI18n()
 
 const accounts = ref<any[]>([])
 const loading = ref(false)
@@ -49,23 +52,23 @@ const editAccount = ref({
 })
 
 const CATEGORY_OPTIONS = [
-  { label: '资产', value: 'asset' },
-  { label: '负债', value: 'liability' },
-  { label: '共同', value: 'common' },
-  { label: '权益', value: 'equity' },
-  { label: '收入', value: 'revenue' },
-  { label: '成本', value: 'cost' },
-  { label: '损益', value: 'profit_loss' },
+  { label: t('accounting.accounts_page.category_asset'), value: 'asset' },
+  { label: t('accounting.accounts_page.category_liability'), value: 'liability' },
+  { label: t('accounting.accounts_page.category_common'), value: 'common' },
+  { label: t('accounting.accounts_page.category_equity'), value: 'equity' },
+  { label: t('accounting.accounts_page.category_revenue'), value: 'revenue' },
+  { label: t('accounting.accounts_page.category_cost'), value: 'cost' },
+  { label: t('accounting.accounts_page.category_profit_loss'), value: 'profit_loss' },
 ]
 const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(CATEGORY_OPTIONS.map(o => [o.value, o.label]))
-const DIRECTION_LABELS: Record<string, string> = { debit: '借', credit: '贷' }
+const DIRECTION_LABELS: Record<string, string> = { debit: t('accounting.accounts_page.direction_debit'), credit: t('accounting.accounts_page.direction_credit') }
 
 const LEVEL_OPTIONS = [
-  { label: '全部级次', value: 0 },
-  { label: '一级科目', value: 1 },
-  { label: '二级科目', value: 2 },
-  { label: '三级科目', value: 3 },
-  { label: '四级科目', value: 4 },
+  { label: t('accounting.accounts_page.levelAll'), value: 0 },
+  { label: t('accounting.accounts_page.level1'), value: 1 },
+  { label: t('accounting.accounts_page.level2'), value: 2 },
+  { label: t('accounting.accounts_page.level3'), value: 3 },
+  { label: t('accounting.accounts_page.level4'), value: 4 },
 ]
 
 // Filtered accounts
@@ -124,7 +127,7 @@ function doEdit(a: any) {
 }
 
 async function doDelete(a: any) {
-  if (!confirm(`确认删除科目「${a.name}」？`)) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteAccount(a.id)
     await loadAccounts()
@@ -136,7 +139,7 @@ async function doDelete(a: any) {
 function doCopy(a: any) {
   newAccount.value = {
     code: '',
-    name: a.name + ' (复制)',
+    name: a.name + ' (' + t('common.copy') + ')',
     level: a.level,
     parent_code: a.parent_code,
     category: a.category,
@@ -162,7 +165,7 @@ function doAuxSetup(a?: any) {
     }
   } else {
     // Toolbar button: pick first account (legacy behavior)
-    if (!accounts.value.length) { alert('暂无科目'); return }
+    if (!accounts.value.length) { alert(t('common.noData')); return }
     const first = accounts.value[0]
     selectedAuxAccountId.value = first.id
     auxForm.value = {
@@ -310,9 +313,9 @@ onMounted(loadAccounts)
 
     <!-- Toolbar -->
     <div class="toolbar">
-      <Button label="新增" icon="pi pi-plus" text size="small" @click="doNew" />
+      <Button :label="t('accounting.accounts_page.addAccount')" icon="pi pi-plus" text size="small" @click="doNew" />
       <Button
-        label="修改"
+        :label="t('accounting.accounts_page.editAccount')"
         icon="pi pi-pencil"
         text
         size="small"
@@ -320,7 +323,7 @@ onMounted(loadAccounts)
         :disabled="!editTarget"
       />
       <Button
-        label="删除"
+        :label="t('accounting.accounts_page.deleteAccount')"
         icon="pi pi-trash"
         text
         severity="danger"
@@ -329,7 +332,7 @@ onMounted(loadAccounts)
         :disabled="!editTarget"
       />
       <Button
-        label="复制"
+        :label="t('common.copy')"
         icon="pi pi-copy"
         text
         size="small"
@@ -337,16 +340,16 @@ onMounted(loadAccounts)
         :disabled="!editTarget"
       />
       <span class="border-r border-stone-200 mx-1" />
-      <Button label="辅助核算设置" icon="pi pi-cog" text size="small"
+      <Button :label="t('accounting.accounts_page.auxSetup')" icon="pi pi-cog" text size="small"
         @click="doAuxSetup(editTarget || undefined)" />
-      <Button label="查找" icon="pi pi-search" text size="small" @click="doSearch" />
+      <Button :label="t('accounting.accounts_page.searchAccount')" icon="pi pi-search" text size="small" @click="doSearch" />
       <Button label="栏目" icon="pi pi-table" text size="small" />
       <span class="border-r border-stone-200 mx-1" />
-      <Button label="导入" icon="pi pi-upload" text size="small" @click="doImport" />
-      <Button label="导出" icon="pi pi-download" text size="small" @click="doExport" />
+      <Button :label="t('common.import')" icon="pi pi-upload" text size="small" @click="doImport" />
+      <Button :label="t('accounting.accounts_page.exportCSV')" icon="pi pi-download" text size="small" @click="doExport" />
       <Button label="科目对照" icon="pi pi-th-large" text size="small" @click="doCompare" />
       <span class="border-r border-stone-200 mx-1" />
-      <Button label="打印" icon="pi pi-print" text size="small" @click="doPrint" />
+      <Button :label="t('common.print')" icon="pi pi-print" text size="small" @click="doPrint" />
       <Button label="退出" icon="pi pi-times" text severity="secondary" size="small" @click="$router.push('')" />
     </div>
 
@@ -359,14 +362,14 @@ onMounted(loadAccounts)
               <input type="checkbox" @change="toggleSelectAll" class="rounded-sm border-stone-300" />
             </th>
             <th class="w-12 text-center">序号</th>
-            <th class="w-14 text-center">级次</th>
-            <th class="w-24">科目编码</th>
-            <th>科目名称</th>
-            <th class="w-24">科目类型</th>
+            <th class="w-14 text-center">{{ t('accounting.accounts_page.level') }}</th>
+            <th class="w-24">{{ t('accounting.accounts_page.code') }}</th>
+            <th>{{ t('accounting.accounts_page.name') }}</th>
+            <th class="w-24">{{ t('accounting.accounts_page.category') }}</th>
             <th class="w-32 text-right">余额</th>
-            <th class="w-16 text-center">余额方向</th>
-            <th class="w-24 text-center">辅助核算</th>
-            <th class="w-20 text-center">账页格式</th>
+            <th class="w-16 text-center">{{ t('accounting.accounts_page.balanceDirection') }}</th>
+            <th class="w-24 text-center">{{ t('accounting.accounts_page.auxiliaryItems') }}</th>
+            <th class="w-20 text-center">{{ t('accounting.accounts_page.amountFormat') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -403,28 +406,28 @@ onMounted(loadAccounts)
             <td class="text-center text-xs text-stone-400">金额式</td>
           </tr>
           <tr v-if="!filteredAccounts.length">
-            <td colspan="10" class="py-12 text-center text-stone-400">暂无科目数据</td>
+            <td colspan="10" class="py-12 text-center text-stone-400">{{ t('common.noData') }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
     <!-- Add dialog -->
-    <Dialog v-model:visible="showAddDialog" header="新增科目" :style="{ width: '500px' }">
+    <Dialog v-model:visible="showAddDialog" :header="t('accounting.accounts_page.addDialogTitle')" :style="{ width: '500px' }">
       <div class="flex flex-col gap-4 py-4">
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">科目编码</label>
-            <InputText v-model="newAccount.code" class="w-full" placeholder="如：100201" />
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.code') }}</label>
+            <InputText v-model="newAccount.code" class="w-full" :placeholder="t('accounting.accounts_page.codePlaceholder')" />
           </div>
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">科目名称</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.name') }}</label>
             <InputText v-model="newAccount.name" class="w-full" />
           </div>
         </div>
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">科目级次</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.level') }}</label>
             <Dropdown
               v-model="newAccount.level"
               :options="LEVEL_OPTIONS.filter(o => o.value > 0)"
@@ -434,7 +437,7 @@ onMounted(loadAccounts)
             />
           </div>
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">科目类型</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.category') }}</label>
             <Dropdown
               v-model="newAccount.category"
               :options="CATEGORY_OPTIONS"
@@ -446,12 +449,12 @@ onMounted(loadAccounts)
         </div>
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">余额方向</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.balanceDirection') }}</label>
             <Dropdown
               v-model="newAccount.balance_direction"
               :options="[
-                { label: '借', value: 'debit' },
-                { label: '贷', value: 'credit' },
+                { label: t('accounting.accounts_page.direction_debit'), value: 'debit' },
+                { label: t('accounting.accounts_page.direction_credit'), value: 'credit' },
               ]"
               optionLabel="label"
               optionValue="value"
@@ -459,33 +462,33 @@ onMounted(loadAccounts)
             />
           </div>
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">父科目编码（可选）</label>
-            <InputText v-model="newAccount.parent_code" class="w-full" placeholder="如：1002" />
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.parentCode') }}</label>
+            <InputText v-model="newAccount.parent_code" class="w-full" :placeholder="t('accounting.accounts_page.parentCodePlaceholder')" />
           </div>
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showAddDialog = false" />
-        <Button label="保存" icon="pi pi-check" @click="handleAdd" :disabled="!newAccount.code || !newAccount.name" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showAddDialog = false" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="handleAdd" :disabled="!newAccount.code || !newAccount.name" />
       </template>
     </Dialog>
 
     <!-- Edit dialog -->
-    <Dialog v-model:visible="showEditDialog" header="修改科目" :style="{ width: '500px' }" :modal="true">
+    <Dialog v-model:visible="showEditDialog" :header="t('accounting.accounts_page.editDialogTitle')" :style="{ width: '500px' }" :modal="true">
       <div class="flex flex-col gap-4 py-4">
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">科目编码</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.code') }}</label>
             <InputText v-model="editAccount.code" class="w-full" :disabled="editTarget?.is_system" />
           </div>
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">科目名称</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.name') }}</label>
             <InputText v-model="editAccount.name" class="w-full" />
           </div>
         </div>
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">科目级次</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.level') }}</label>
             <Dropdown
               v-model="editAccount.level"
               :options="LEVEL_OPTIONS.filter(o => o.value > 0)"
@@ -496,7 +499,7 @@ onMounted(loadAccounts)
             />
           </div>
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">科目类型</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.category') }}</label>
             <Dropdown
               v-model="editAccount.category"
               :options="CATEGORY_OPTIONS"
@@ -508,25 +511,25 @@ onMounted(loadAccounts)
           </div>
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">父科目编码（可选）</label>
-          <InputText v-model="editAccount.parent_code" class="w-full" placeholder="如：1002" />
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.accounts_page.parentCode') }}</label>
+          <InputText v-model="editAccount.parent_code" class="w-full" :placeholder="t('accounting.accounts_page.parentCodePlaceholder')" />
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showEditDialog = false" />
-        <Button label="保存" icon="pi pi-check" @click="handleEdit" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showEditDialog = false" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="handleEdit" />
       </template>
     </Dialog>
 
     <!-- Search dialog -->
-    <Dialog v-model:visible="showSearchDialog" header="查找科目" :style="{ width: '400px' }">
+    <Dialog v-model:visible="showSearchDialog" :header="t('accounting.accounts_page.searchAccount')" :style="{ width: '400px' }">
       <div class="flex flex-col gap-4 py-4">
         <div>
           <label class="block text-xs text-zinc-500 mb-1">关键字（编码/名称）</label>
           <InputText v-model="searchText" class="w-full" placeholder="输入后按回车查找" @keyup.enter="() => {}" />
         </div>
         <div class="flex gap-2">
-          <Button label="查找" icon="pi pi-search" @click="showSearchDialog = false" />
+          <Button :label="t('common.search')" icon="pi pi-search" @click="showSearchDialog = false" />
           <Button
             label="清除"
             icon="pi pi-refresh"
@@ -538,33 +541,33 @@ onMounted(loadAccounts)
     </Dialog>
 
     <!-- Auxiliary dialog -->
-    <Dialog v-model:visible="showAuxDialog" header="辅助核算设置" :style="{ width: '500px' }" :modal="true">
+    <Dialog v-model:visible="showAuxDialog" :header="t('accounting.accounts_page.auxSetup')" :style="{ width: '500px' }" :modal="true">
       <div class="flex flex-col gap-4 py-4">
         <p class="text-sm text-zinc-500">选择启用的辅助核算项目：</p>
         <div class="flex items-center gap-2">
           <Checkbox inputId="aux_dept" v-model="auxForm.dept" />
-          <label for="aux_dept" class="text-sm text-zinc-600 cursor-pointer">部门核算</label>
+          <label for="aux_dept" class="text-sm text-zinc-600 cursor-pointer">{{ t('accounting.accounts_page.auxDept') }}</label>
         </div>
         <div class="flex items-center gap-2">
           <Checkbox inputId="aux_person" v-model="auxForm.person" />
-          <label for="aux_person" class="text-sm text-zinc-600 cursor-pointer">人员核算</label>
+          <label for="aux_person" class="text-sm text-zinc-600 cursor-pointer">{{ t('accounting.accounts_page.auxPerson') }}</label>
         </div>
         <div class="flex items-center gap-2">
           <Checkbox inputId="aux_customer" v-model="auxForm.customer" />
-          <label for="aux_customer" class="text-sm text-zinc-600 cursor-pointer">客户核算</label>
+          <label for="aux_customer" class="text-sm text-zinc-600 cursor-pointer">{{ t('accounting.accounts_page.auxCustomer') }}</label>
         </div>
         <div class="flex items-center gap-2">
           <Checkbox inputId="aux_supplier" v-model="auxForm.supplier" />
-          <label for="aux_supplier" class="text-sm text-zinc-600 cursor-pointer">供应商核算</label>
+          <label for="aux_supplier" class="text-sm text-zinc-600 cursor-pointer">{{ t('accounting.accounts_page.auxSupplier') }}</label>
         </div>
         <div class="flex items-center gap-2">
           <Checkbox inputId="aux_project" v-model="auxForm.project" />
-          <label for="aux_project" class="text-sm text-zinc-600 cursor-pointer">项目核算</label>
+          <label for="aux_project" class="text-sm text-zinc-600 cursor-pointer">{{ t('accounting.accounts_page.auxProject') }}</label>
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showAuxDialog = false" />
-        <Button label="保存设置" icon="pi pi-check" @click="saveAuxSettings" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showAuxDialog = false" />
+        <Button :label="t('accounting.accounts_page.saveAuxSettings')" icon="pi pi-check" @click="saveAuxSettings" />
       </template>
     </Dialog>
   </div>

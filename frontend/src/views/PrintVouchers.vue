@@ -3,6 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import { printVouchers, listAccounts } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const data = ref<any>(null)
 const accounts = ref<any[]>([])
@@ -21,7 +24,11 @@ const RANGE_OPTIONS = [
 
 const showCustomDate = computed(() => selectedRange.value === 'custom')
 
-const TYPE_LABELS: Record<string, string> = { receipt: '收款凭证', payment: '付款凭证', transfer: '转账凭证' }
+const TYPE_LABELS = computed<Record<string, string>>(() => ({
+  receipt: t('accounting.vouchers_page.receipt'),
+  payment: t('accounting.vouchers_page.payment'),
+  transfer: t('accounting.vouchers_page.transfer'),
+}))
 
 const accountMap = computed(() => {
   const m: Record<string, string> = {}
@@ -103,18 +110,18 @@ onMounted(load)
         <input v-model="noFrom" placeholder="凭证号 从" class="border rounded px-2 py-1.5 text-sm w-32" @change="load" />
         <span class="text-zinc-400 text-sm">至</span>
         <input v-model="noTo" placeholder="凭证号 到" class="border rounded px-2 py-1.5 text-sm w-32" @change="load" />
-        <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!data?.vouchers?.length" />
+        <Button :label="t('common.print')" icon="pi pi-print" @click="doPrint" :disabled="!data?.vouchers?.length" />
       </div>
       <p v-if="data?.vouchers?.length" class="text-xs text-zinc-400">共 {{ data.vouchers.length }} 张凭证</p>
     </div>
 
-    <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
-    <p v-if="data && !data.vouchers.length" class="text-zinc-400 text-sm">该范围内无凭证</p>
+    <p v-if="loading" class="text-zinc-400 text-sm">{{ t('common.loading') }}</p>
+    <p v-if="data && !data.vouchers.length" class="text-zinc-400 text-sm">{{ t('common.noData') }}</p>
 
     <div v-if="data?.vouchers?.length" class="print-area">
       <div v-for="v in data.vouchers" :key="v.id" class="voucher-page">
         <!-- Header -->
-        <h1 class="voucher-title">{{ TYPE_LABELS[v.voucher_type] || '记账凭证' }}</h1>
+        <h1 class="voucher-title">{{ TYPE_LABELS[v.voucher_type] || t('accounting.vouchers_page.title') }}</h1>
         <div class="voucher-meta">
           <span>{{ v.date }}</span>
           <span>{{ v.voucher_no }}</span>
@@ -125,11 +132,11 @@ onMounted(load)
         <table class="voucher-table">
           <thead>
             <tr>
-              <th class="col-summary">摘&emsp;要</th>
-              <th class="col-account">科&emsp;目</th>
-              <th class="col-debit">借方金额</th>
-              <th class="col-credit">贷方金额</th>
-              <th v-if="hasAuxData(v)" class="col-aux">辅助核算</th>
+              <th class="col-summary">{{ t('accounting.vouchers_page.summary') }}</th>
+              <th class="col-account">{{ t('accounting.vouchers_page.entry_account') }}</th>
+              <th class="col-debit">{{ t('accounting.vouchers_page.entry_debit') }}</th>
+              <th class="col-credit">{{ t('accounting.vouchers_page.entry_credit') }}</th>
+              <th v-if="hasAuxData(v)" class="col-aux">{{ t('accounting.accounts_page.auxiliaryItems') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -141,7 +148,7 @@ onMounted(load)
               <td v-if="hasAuxData(v)" class="col-aux">{{ auxLabel(e) }}</td>
             </tr>
             <tr class="total-row">
-              <td class="col-summary">合&emsp;计</td>
+              <td class="col-summary">{{ t('common.total') }}</td>
               <td class="col-account">&yen; 人民币</td>
               <td class="col-debit">{{ entryTotal(v.entries, 'debit') }}</td>
               <td class="col-credit">{{ entryTotal(v.entries, 'credit') }}</td>

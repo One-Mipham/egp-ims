@@ -2,6 +2,9 @@
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import type { MenuSection } from '@/config/menuConfig'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{
   sections: MenuSection[]
@@ -82,7 +85,7 @@ function isLocked(item: { roles?: string[] }): boolean {
 }
 
 function _handleLockedClick(item: { lockedMessage?: string }) {
-  emit('locked', item.lockedMessage || '您无权访问此功能')
+  emit('locked', item.lockedMessage ? t(item.lockedMessage) : t('menu.locked_default'))
 }
 
 // Find which top-level item (or child) matches current route
@@ -105,7 +108,7 @@ function _isItemActive(item: { to?: string; children?: Array<{ to: string }> }):
         :class="activeSection.title === section.title ? 'sidebar-col1-active' : 'sidebar-col1-item'"
       >
         <i :class="[section.icon, 'text-sm']" />
-        <span class="leading-tight text-center">{{ section.shortTitle }}</span>
+        <span class="leading-tight text-center">{{ t(section.shortTitle) }}</span>
       </button>
     </div>
 
@@ -113,7 +116,7 @@ function _isItemActive(item: { to?: string; children?: Array<{ to: string }> }):
     <div class="flex-1 overflow-y-auto py-1">
       <!-- Active section title -->
       <div class="px-3 py-2 text-[11px] font-semibold sidebar-col2-header tracking-wide border-b border-white/5">
-        {{ activeSection.title }}
+        {{ t(activeSection.title) }}
       </div>
 
       <template v-for="item in activeSection.items" :key="item.label">
@@ -124,7 +127,7 @@ function _isItemActive(item: { to?: string; children?: Array<{ to: string }> }):
             class="w-full flex items-center gap-2 pl-3 pr-2 py-1.5 text-[10px] sidebar-item-sub transition-colors tracking-wide"
           >
             <i :class="['pi', item.icon, 'text-[10px] w-4 text-center']" />
-            <span class="flex-1 text-left">{{ item.label }}</span>
+            <span class="flex-1 text-left">{{ t(item.label) }}</span>
             <i
               :class="[
                 'pi text-[10px] sidebar-item-sub transition-transform',
@@ -140,7 +143,7 @@ function _isItemActive(item: { to?: string; children?: Array<{ to: string }> }):
               class="flex items-center gap-2 pl-9 pr-2 py-1 text-[10px] sidebar-item-sub transition-colors"
               :class="{ 'sidebar-item-active': route.path === child.to }"
             >
-              {{ child.label }}
+              {{ t(child.label) }}
             </router-link>
           </div>
         </div>
@@ -153,7 +156,7 @@ function _isItemActive(item: { to?: string; children?: Array<{ to: string }> }):
           :class="{ 'sidebar-item-active': route.path === item.to }"
         >
           <i :class="['pi', item.icon, 'text-[10px] w-4 text-center']" />
-          <span>{{ item.label }}</span>
+          <span>{{ t(item.label) }}</span>
         </router-link>
       </template>
     </div>

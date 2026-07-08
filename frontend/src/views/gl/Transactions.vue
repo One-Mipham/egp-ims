@@ -6,31 +6,31 @@
       <TabPanel header="余额汇总" value="0">
         <div class="flex gap-2 items-end mb-3">
           <div>
-            <label class="text-xs block mb-1">起始期间</label>
+            <label class="text-xs block mb-1">{{ t('accounting.gl_page.startPeriod') }}</label>
             <InputText v-model="filters.start_period" size="small" placeholder="yyyy-MM" class="w-32" />
           </div>
           <div>
-            <label class="text-xs block mb-1">截止期间</label>
+            <label class="text-xs block mb-1">{{ t('accounting.gl_page.endPeriod') }}</label>
             <InputText v-model="filters.end_period" size="small" placeholder="yyyy-MM" class="w-32" />
           </div>
           <div>
-            <label class="text-xs block mb-1">科目代码</label>
+            <label class="text-xs block mb-1">{{ t('accounting.gl_page.accountCode') }}</label>
             <InputText v-model="filters.account_code" size="small" placeholder="如 1122" class="w-28" />
           </div>
-          <Button label="查询" icon="pi pi-search" size="small" @click="loadBalances" />
+          <Button :label="t('common.search')" icon="pi pi-search" size="small" @click="loadBalances" />
         </div>
         <DataTable :value="balances" stripedRows @row-click="drillDown">
-          <Column field="counterparty_name" header="往来单位" />
-          <Column field="beginning_balance" header="期初余额" style="width: 8rem">
+          <Column field="counterparty_name" :header="t('accounting.gl_page.counterparty')" />
+          <Column field="beginning_balance" :header="t('accounting.gl_page.beginningBalance')" style="width: 8rem">
             <template #body="{ data }">{{ data.beginning_balance.toLocaleString() }}</template>
           </Column>
-          <Column field="current_debit" header="本期借方" style="width: 8rem">
+          <Column field="current_debit" :header="t('accounting.gl_page.currentPeriodDebit')" style="width: 8rem">
             <template #body="{ data }">{{ data.current_debit.toLocaleString() }}</template>
           </Column>
-          <Column field="current_credit" header="本期贷方" style="width: 8rem">
+          <Column field="current_credit" :header="t('accounting.gl_page.currentPeriodCredit')" style="width: 8rem">
             <template #body="{ data }">{{ data.current_credit.toLocaleString() }}</template>
           </Column>
-          <Column field="ending_balance" header="期末余额" style="width: 8rem">
+          <Column field="ending_balance" :header="t('accounting.gl_page.endingBalance')" style="width: 8rem">
             <template #body="{ data }">
               <span :class="data.direction === 'debit' ? 'text-blue-600' : 'text-red-600'">
                 {{ data.direction === 'debit' ? '借' : '贷' }} {{ data.ending_balance.toLocaleString() }}
@@ -55,15 +55,15 @@
             />
           </div>
           <div>
-            <label class="text-xs block mb-1">起始期间</label>
+            <label class="text-xs block mb-1">{{ t('accounting.gl_page.startPeriod') }}</label>
             <InputText v-model="detailFilters.start_period" size="small" class="w-28" />
           </div>
           <div>
-            <label class="text-xs block mb-1">截止期间</label>
+            <label class="text-xs block mb-1">{{ t('accounting.gl_page.endPeriod') }}</label>
             <InputText v-model="detailFilters.end_period" size="small" class="w-28" />
           </div>
           <Button
-            label="查询"
+            :label="t('common.search')"
             icon="pi pi-search"
             size="small"
             @click="loadDetail"
@@ -71,7 +71,7 @@
           />
         </div>
         <DataTable v-if="detail" :value="detail.entries" stripedRows size="small">
-          <Column field="date" header="日期" style="width: 7rem" />
+          <Column field="date" :header="t('common.date')" style="width: 7rem" />
           <Column field="voucher_no" header="凭证号" style="width: 7rem" />
           <Column field="account_code" header="科目" style="width: 6rem" />
           <Column field="account_name" header="科目名称" style="width: 8rem" />
@@ -82,22 +82,22 @@
           <Column field="credit" header="贷方" style="width: 8rem">
             <template #body="{ data }">{{ data.credit ? data.credit.toLocaleString() : '' }}</template>
           </Column>
-          <Column field="balance" header="余额" style="width: 8rem">
+          <Column field="balance" :header="t('accounting.gl_page.balance')" style="width: 8rem">
             <template #body="{ data }">{{ data.balance.toLocaleString() }}</template>
           </Column>
         </DataTable>
       </TabPanel>
 
-      <TabPanel header="账龄分析" value="2">
+      <TabPanel :header="t('accounting.gl_page.aging')" value="2">
         <div class="flex gap-2 items-end mb-3">
           <div>
-            <label class="text-xs block mb-1">截止期间</label>
+            <label class="text-xs block mb-1">{{ t('accounting.gl_page.endPeriod') }}</label>
             <InputText v-model="agingFilters.end_period" size="small" class="w-32" />
           </div>
-          <Button label="查询" icon="pi pi-search" size="small" @click="loadAging" />
+          <Button :label="t('common.search')" icon="pi pi-search" size="small" @click="loadAging" />
         </div>
         <DataTable :value="aging" stripedRows>
-          <Column field="counterparty_name" header="往来单位" />
+          <Column field="counterparty_name" :header="t('accounting.gl_page.counterparty')" />
           <Column field="total_balance" header="总余额" style="width: 8rem">
             <template #body="{ data }">{{ data.total_balance.toLocaleString() }}</template>
           </Column>
@@ -114,6 +114,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
@@ -125,6 +126,7 @@ import TabPanel from 'primevue/tabpanel'
 import { getTransactionBalances, getTransactionDetail, getTransactionAging } from '../../api'
 
 const toast = useToast()
+const { t } = useI18n()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 const now = new Date()
 const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`

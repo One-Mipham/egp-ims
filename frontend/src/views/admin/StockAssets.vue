@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -10,6 +11,8 @@ import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
 import { listStockAssets, createStockAsset, updateStockAsset, deleteStockAsset, listStockCategories } from '@/api'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const categories = ref<any[]>([])
@@ -70,16 +73,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteStockAsset(id)
     await load()
   } catch (_e: any) {
-    alert('删除失败')
+    alert(t('common.deleteFailed'))
   }
 }
 onMounted(load)
@@ -108,9 +111,9 @@ onMounted(load)
         <Column field="asset_code" header="资产编码" sortable />
         <Column field="name" header="资产名称" sortable />
         <Column field="brand" header="品牌" sortable />
-        <Column field="department" header="部门" sortable />
+        <Column field="department" :header="t('admin.department')" sortable />
         <Column field="custodian" header="保管人" sortable />
-        <Column header="状态" style="min-width: 80px">
+        <Column :header="t('common.status')" style="min-width: 80px">
           <template #body="{ data }"
             ><Tag
               :value="data.status"
@@ -125,7 +128,7 @@ onMounted(load)
               "
           /></template>
         </Column>
-        <Column header="操作" style="min-width: 120px">
+        <Column :header="t('common.actions')" style="min-width: 120px">
           <template #body="{ data }">
             <Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" />
             <Button text size="small" icon="pi pi-trash" severity="danger" @click="remove(data.id)" />
@@ -167,7 +170,7 @@ onMounted(load)
           <label class="block text-xs text-zinc-500 mb-1">型号</label><InputText v-model="form.model" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">部门</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.department') }}</label
           ><InputText v-model="form.department" class="w-full" />
         </div>
         <div>
@@ -191,16 +194,16 @@ onMounted(load)
           ><InputNumber v-model="form.quantity" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">状态</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.status') }}</label
           ><Dropdown v-model="form.status" :options="['使用中', '闲置', '损坏', '已报废']" class="w-full" />
         </div>
         <div class="col-span-3">
-          <label class="block text-xs text-zinc-500 mb-1">备注</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.remark') }}</label
           ><Textarea v-model="form.notes" rows="2" class="w-full" />
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button :label="t('common.save')" @click="save"
       /></template>
     </Dialog>
   </div>

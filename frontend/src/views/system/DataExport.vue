@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import { exportData } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const selectedTables = ref(['accounts', 'vouchers', 'voucher_entries', 'departments', 'periods'])
@@ -52,7 +55,7 @@ async function doFullDownload() {
 
 <template>
   <div class="max-w-2xl">
-    <h2 class="text-lg font-bold mb-4">数据导出</h2>
+    <h2 class="text-lg font-bold mb-4">{{ t('system.exportData') }}</h2>
 
     <!-- 按表导出 -->
     <div class="bg-white border rounded p-4 mb-4">

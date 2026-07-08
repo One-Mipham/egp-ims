@@ -4,7 +4,9 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import { listAuditLogs } from '@/api'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const logs = ref<any[]>([])
 const loading = ref(false)
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
@@ -26,17 +28,17 @@ onMounted(load)
   <div>
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto max-w-fit min-w-full">
       <DataTable :value="logs" :loading="loading" stripedRows class="shadow-sm" tableStyle="min-width: auto">
-        <Column header="时间" style="width: 155px">
+        <Column :header="t('audit.createdAt')" style="width: 155px">
           <template #body="{ data }">{{ new Date(data.created_at).toLocaleString('zh-CN') }}</template>
         </Column>
         <Column field="user_id" header="操作人ID" style="width: 80px" />
-        <Column header="操作" style="width: 100px">
+        <Column :header="t('audit.action')" style="width: 100px">
           <template #body="{ data }">
             <Tag :value="data.action" :severity="data.action.includes('reverse') ? 'danger' : 'info'" />
           </template>
         </Column>
-        <Column field="target_type" header="对象类型" style="width: 80px" />
-        <Column field="target_id" header="对象ID" style="width: 70px" />
+        <Column field="target_type" :header="t('audit.targetType')" style="width: 80px" />
+        <Column field="target_id" :header="t('audit.targetId')" style="width: 70px" />
         <Column field="reason" header="原因" style="width: 200px" />
       </DataTable>
     </div>

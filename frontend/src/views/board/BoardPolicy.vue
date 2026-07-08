@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import { listFilings, upsertFiling } from '@/api/board'
+
+const { t } = useI18n()
 
 interface PolicyTab {
   label: string
@@ -62,7 +65,7 @@ async function savePolicy() {
       content: policyContent.value,
     })
   } catch (e: any) {
-    alert(e?.response?.data?.detail || '保存失败')
+    alert(e?.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }

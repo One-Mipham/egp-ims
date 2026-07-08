@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -16,6 +17,8 @@ import {
   submitDocument,
   issueDocument,
 } from '@/api'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const loading = ref(false)
@@ -68,16 +71,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteAdminDocument(id)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 async function doSubmit(id: number) {
@@ -139,7 +142,7 @@ onMounted(load)
             ><Tag :value="data.priority" :severity="prioritySeverity(data.priority)"
           /></template>
         </Column>
-        <Column field="status" header="状态" sortable style="min-width: 90px">
+        <Column field="status" :header="t('common.status')" sortable style="min-width: 90px">
           <template #body="{ data }"
             ><Tag
               :value="
@@ -158,7 +161,7 @@ onMounted(load)
               :severity="statusSeverity(data.status)"
           /></template>
         </Column>
-        <Column header="操作" style="min-width: 200px">
+        <Column :header="t('common.actions')" style="min-width: 200px">
           <template #body="{ data }">
             <Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" />
             <Button
@@ -227,8 +230,8 @@ onMounted(load)
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showDialog = false" />
-        <Button label="保存" @click="save" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.save')" @click="save" />
       </template>
     </Dialog>
   </div>

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConfirm } from 'primevue/useconfirm'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
@@ -28,6 +29,7 @@ import api from '../../api'
 
 const route = useRoute()
 const confirm = useConfirm()
+const { t } = useI18n()
 
 // ── 模式检测 ──
 const modeLabels: Record<string, string> = {
@@ -267,7 +269,7 @@ onMounted(() => {
             class="w-36"
           />
           <MultiSelect v-model="fDepartment" :options="departments" placeholder="部门" class="w-36" />
-          <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-32" showClear />
+          <Dropdown v-model="fStatus" :options="statusOptions" :placeholder="t('common.status')" class="w-32" showClear />
           <InputText v-model="fSearch" placeholder="搜索编号/名称" class="w-48" @keyup.enter="load" />
           <Button icon="pi pi-search" label="查询" @click="load" />
         </div>
@@ -285,20 +287,20 @@ onMounted(() => {
       class="text-sm"
     >
       <Column field="project_no" header="招标编号" style="min-width: 140px" />
-      <Column field="project_name" header="项目名称" style="min-width: 200px" />
+      <Column field="project_name" :header="t('bids.projectName')" style="min-width: 200px" />
       <Column field="tender_type" header="招标类型" style="min-width: 100px" />
       <Column field="procurement_category" header="采购类别" style="min-width: 80px" />
       <Column field="estimated_amount" header="预算金额" style="min-width: 100px">
         <template #body="{ data }">{{ data.estimated_amount?.toLocaleString() }}</template>
       </Column>
       <Column field="bid_deadline" header="投标截止" style="min-width: 100px" />
-      <Column field="opening_date" header="开标日期" style="min-width: 100px" />
-      <Column field="status" header="状态" style="min-width: 90px">
+      <Column field="opening_date" :header="t('bids.openingDate')" style="min-width: 100px" />
+      <Column field="status" :header="t('common.status')" style="min-width: 90px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status]" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width: 220px">
+      <Column :header="t('common.actions')" style="min-width: 220px">
         <template #body="{ data }">
           <div class="flex gap-1 flex-wrap">
             <Button
@@ -315,7 +317,7 @@ onMounted(() => {
               size="small"
               severity="warn"
               @click="doReview(data.id)"
-              v-tooltip.top="'审核'"
+              v-tooltip.top="t('bids.reviewProject')"
             />
             <Button
               v-if="isPrivileged && data.reviewer_id && data.status === 'draft'"
@@ -339,7 +341,7 @@ onMounted(() => {
               size="small"
               severity="danger"
               @click="remove(data.id)"
-              v-tooltip.top="'删除'"
+              v-tooltip.top="t('common.delete')"
             />
           </div>
         </template>
@@ -358,7 +360,7 @@ onMounted(() => {
         <!-- 基本信息 -->
         <div class="col-span-2 font-bold text-lg border-b pb-1 mb-1">基本信息</div>
         <div>
-          <label class="block text-sm font-medium mb-1">项目名称 *</label>
+          <label class="block text-sm font-medium mb-1">{{ t('bids.projectName') }} *</label>
           <InputText v-model="form.project_name" required />
         </div>
         <div>
@@ -381,7 +383,7 @@ onMounted(() => {
           <InputNumber v-model="form.estimated_amount" mode="currency" currency="CNY" class="w-full" />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">币种</label>
+          <label class="block text-sm font-medium mb-1">{{ t('system.currency') }}</label>
           <InputText v-model="form.currency" />
         </div>
 
@@ -396,7 +398,7 @@ onMounted(() => {
           <DatePicker v-model="form.bid_deadline" class="w-full" />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">开标日期</label>
+          <label class="block text-sm font-medium mb-1">{{ t('bids.openingDate') }}</label>
           <DatePicker v-model="form.opening_date" class="w-full" />
         </div>
         <div>
@@ -426,7 +428,7 @@ onMounted(() => {
           <InputNumber v-model="form.winner_amount" mode="currency" currency="CNY" class="w-full" />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">定标日期</label>
+          <label class="block text-sm font-medium mb-1">{{ t('bids.awardDate') }}</label>
           <DatePicker v-model="form.award_date" class="w-full" />
         </div>
         <div class="col-span-2">
@@ -452,17 +454,17 @@ onMounted(() => {
           <Dropdown v-model="form.department_id" :options="departments" showClear placeholder="选择部门" />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">状态</label>
+          <label class="block text-sm font-medium mb-1">{{ t('common.status') }}</label>
           <Dropdown v-model="form.status" :options="statusOptions" />
         </div>
         <div class="col-span-2">
-          <label class="block text-sm font-medium mb-1">备注</label>
+          <label class="block text-sm font-medium mb-1">{{ t('common.remark') }}</label>
           <Textarea v-model="form.notes" rows="2" />
         </div>
       </div>
       <template #footer>
-        <Button label="取消" icon="pi pi-times" severity="secondary" @click="showDialog = false" />
-        <Button label="保存" icon="pi pi-check" :loading="submitting" @click="save" />
+        <Button :label="t('common.cancel')" icon="pi pi-times" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.save')" icon="pi pi-check" :loading="submitting" @click="save" />
       </template>
     </Dialog>
 
@@ -474,7 +476,7 @@ onMounted(() => {
         <Textarea v-model="bypassReason" class="w-full" rows="3" placeholder="请填写强制跳过原因" />
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="bypassDialog = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="bypassDialog = false" />
         <Button label="确认跳过" severity="warn" :disabled="!bypassReason.trim()" @click="doBypassProject" />
       </template>
     </Dialog>

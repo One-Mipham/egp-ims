@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Calendar from 'primevue/calendar'
 import { getDeclarationsSummary } from '@/api/taxes'
 
 const route = useRoute()
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 const reportType = computed(() => {
@@ -57,7 +59,7 @@ onMounted(load)
       <div class="flex gap-2">
         <Calendar v-model="periodStart" placeholder="期间起" showIcon class="w-36" />
         <Calendar v-model="periodEnd" placeholder="期间止" showIcon class="w-36" />
-        <Button label="查询" icon="pi pi-search" severity="secondary" @click="load" />
+        <Button :label="t('common.search')" icon="pi pi-search" severity="secondary" @click="load" />
       </div>
     </div>
 

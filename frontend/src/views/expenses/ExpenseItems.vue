@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -10,6 +11,7 @@ import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 import { listExpenseItems, createExpenseItem, updateExpenseItem } from '@/api/expenses'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 const items = ref<any[]>([])
@@ -77,7 +79,7 @@ const save = async () => {
     dialog.value = false
     fetchItems()
   } catch (e: any) {
-    toast.add({ severity: 'error', summary: '保存失败', detail: e.response?.data?.detail || e.message, life: 3000 })
+    toast.add({ severity: 'error', summary: t('common.saveFailed'), detail: e.response?.data?.detail || e.message, life: 3000 })
   }
 }
 
@@ -93,15 +95,15 @@ onMounted(fetchItems)
 
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="items" :loading="loading" stripedRows size="small" class="text-sm">
-        <Column field="code" header="编码" class="font-mono" />
-        <Column field="name" header="名称" />
+        <Column field="code" :header="t('common.code')" class="font-mono" />
+        <Column field="name" :header="t('common.name')" />
         <Column field="parent_code" header="上级编码" />
         <Column field="tax_rate" header="税率(%)">
           <template #body="slotProps">
             {{ slotProps.data.tax_rate ? (slotProps.data.tax_rate * 100).toFixed(0) : '-' }}
           </template>
         </Column>
-        <Column header="操作" style="width: 6rem">
+        <Column :header="t('common.actions')" style="width: 6rem">
           <template #body="slotProps">
             <Button icon="pi pi-pencil" size="small" text rounded @click="openEdit(slotProps.data)" />
           </template>
@@ -117,11 +119,11 @@ onMounted(fetchItems)
     >
       <div class="flex flex-col gap-3">
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium">编码 <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium">{{ t('common.code') }} <span class="text-red-500">*</span></label>
           <InputText v-model="form.code" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">
-          <label class="text-sm font-medium">名称 <span class="text-red-500">*</span></label>
+          <label class="text-sm font-medium">{{ t('common.name') }} <span class="text-red-500">*</span></label>
           <InputText v-model="form.name" class="w-full" />
         </div>
         <div class="flex flex-col gap-1">
@@ -146,8 +148,8 @@ onMounted(fetchItems)
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="dialog = false" />
-        <Button label="保存" @click="save" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="dialog = false" />
+        <Button :label="t('common.save')" @click="save" />
       </template>
     </Dialog>
   </div>

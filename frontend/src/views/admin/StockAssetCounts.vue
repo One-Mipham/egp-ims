@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -9,6 +10,8 @@ import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
 import { listStockCounts, createStockCount, updateStockCount, deleteStockCount, listStockAssets } from '@/api'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const assets = ref<any[]>([])
@@ -60,16 +63,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteStockCount(id)
     await load()
   } catch (_e: any) {
-    alert('删除失败')
+    alert(t('common.deleteFailed'))
   }
 }
 const assetName = (id: number) => assets.value.find((a: any) => a.id === id)?.name || `资产#${id}`
@@ -95,7 +98,7 @@ onMounted(load)
           ></Column
         >
         <Column field="counter" header="盘点人" />
-        <Column header="操作" style="min-width: 120px">
+        <Column :header="t('common.actions')" style="min-width: 120px">
           <template #body="{ data }"
             ><Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" /><Button
               text
@@ -156,7 +159,7 @@ onMounted(load)
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button :label="t('common.save')" @click="save"
       /></template>
     </Dialog>
   </div>

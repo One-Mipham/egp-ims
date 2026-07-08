@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { listContracts, getContractCategories, getContractStats } from '@/api/contracts'
 import { listDepartments } from '@/api'
+import { useI18n } from '@/i18n'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -15,6 +16,7 @@ import MultiSelect from 'primevue/multiselect'
 
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 
 const items = ref<any[]>([])
@@ -76,7 +78,7 @@ async function load() {
     items.value = listRes.data
     stats.value = statsRes.data
   } catch (e: any) {
-    toast.add({ severity: 'error', summary: '加载失败', detail: e.message, life: 3000 })
+    toast.add({ severity: 'error', summary: t('common.error'), detail: e.message, life: 3000 })
   } finally {
     loading.value = false
   }
@@ -95,7 +97,7 @@ onMounted(async () => {
 
 <template>
   <div class="p-6 max-w-7xl mx-auto">
-    <h1 class="text-xl font-bold mb-4">合同查询统计</h1>
+    <h1 class="text-xl font-bold mb-4">{{ t('contracts.query') }}</h1>
 
     <!-- Stats Cards -->
     <div v-if="stats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -178,11 +180,11 @@ onMounted(async () => {
 
     <!-- Filters -->
     <div class="flex flex-wrap gap-3 mb-4 items-center">
-      <Dropdown v-model="fType" :options="typeOptions" placeholder="合同大类" class="w-40" showClear @change="load" />
+      <Dropdown v-model="fType" :options="typeOptions" :placeholder="t('contracts.contractType')" class="w-40" showClear @change="load" />
       <MultiSelect
         v-model="fCategory"
         :options="categories"
-        placeholder="合同类别"
+        :placeholder="t('contracts.categories')"
         class="w-56"
         display="chip"
         @change="load"
@@ -195,8 +197,8 @@ onMounted(async () => {
         display="chip"
         @change="load"
       />
-      <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-36" showClear @change="load" />
-      <InputText v-model="fSearch" placeholder="搜索..." class="w-48" @keyup.enter="load" />
+      <Dropdown v-model="fStatus" :options="statusOptions" :placeholder="t('common.status')" class="w-36" showClear @change="load" />
+      <InputText v-model="fSearch" :placeholder="t('common.searchPlaceholder')" class="w-48" @keyup.enter="load" />
       <Button icon="pi pi-search" severity="secondary" @click="load" />
     </div>
 
@@ -210,7 +212,7 @@ onMounted(async () => {
       sortField="id"
       :sortOrder="-1"
     >
-      <Column field="contract_type" header="大类" style="min-width: 90px">
+      <Column field="contract_type" :header="t('contracts.contractType')" style="min-width: 90px">
         <template #body="{ data }">
           <Tag
             :value="
@@ -222,32 +224,32 @@ onMounted(async () => {
           />
         </template>
       </Column>
-      <Column field="contract_no" header="合同号码" style="min-width: 140px" sortable />
-      <Column field="contract_name" header="合同名称" style="min-width: 160px" sortable />
-      <Column field="contract_category" header="类别" style="min-width: 110px" sortable />
-      <Column field="party_b" header="乙方" style="min-width: 140px" sortable />
-      <Column field="amount" header="金额" style="min-width: 100px" sortable>
+      <Column field="contract_no" :header="t('contracts.contractNo')" style="min-width: 140px" sortable />
+      <Column field="contract_name" :header="t('contracts.contractName')" style="min-width: 160px" sortable />
+      <Column field="contract_category" :header="t('contracts.categories')" style="min-width: 110px" sortable />
+      <Column field="party_b" :header="t('contracts.partyB')" style="min-width: 140px" sortable />
+      <Column field="amount" :header="t('contracts.contractAmount')" style="min-width: 100px" sortable>
         <template #body="{ data }">¥{{ data.amount?.toLocaleString() }}</template>
       </Column>
-      <Column field="sign_date" header="签署日期" style="min-width: 100px" sortable>
+      <Column field="sign_date" :header="t('contracts.signDate')" style="min-width: 100px" sortable>
         <template #body="{ data }">{{ fmtDate(data.sign_date) }}</template>
       </Column>
-      <Column field="end_date" header="到期日期" style="min-width: 100px" sortable>
+      <Column field="end_date" :header="t('contracts.endDate')" style="min-width: 100px" sortable>
         <template #body="{ data }">{{ fmtDate(data.end_date) }}</template>
       </Column>
-      <Column field="status" header="状态" style="min-width: 80px">
+      <Column field="status" :header="t('contracts.contractStatus')" style="min-width: 80px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status] || data.status" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width: 100px">
+      <Column :header="t('common.actions')" style="min-width: 100px">
         <template #body="{ data }">
           <Button
             icon="pi pi-print"
             severity="secondary"
             size="small"
             @click="router.push(`/finance/contracts/print/${data.id}`)"
-            v-tooltip.top="'打印'"
+            v-tooltip.top="t('contracts.print')"
           />
         </template>
       </Column>

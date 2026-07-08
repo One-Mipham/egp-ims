@@ -8,7 +8,9 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import { listCarryForwards, createCarryForward, executeCarryForward, deleteCarryForward } from '@/api'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const items = ref<any[]>([])
 const loading = ref(false)
@@ -60,7 +62,7 @@ async function handleSave() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   }
 }
 
@@ -75,12 +77,12 @@ async function handleExecute(id: number) {
 }
 
 async function handleDelete(id: number) {
-  if (!confirm('确认删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteCarryForward(id)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 
@@ -90,7 +92,7 @@ onMounted(load)
 <template>
   <div>
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-bold text-zinc-700">期末结转</h2>
+      <h2 class="text-lg font-bold text-zinc-700">{{ t('accounting.periods_page.carryForward') }}</h2>
       <Button label="新增结转" icon="pi pi-plus" @click="openAdd" />
     </div>
 
@@ -99,14 +101,14 @@ onMounted(load)
         <Column header="序号" style="width: 60px">
           <template #body="{ index }">{{ index + 1 }}</template>
         </Column>
-        <Column field="period" header="期间" style="width: 100px" />
+        <Column field="period" :header="t('accounting.periods_page.period')" style="width: 100px" />
         <Column header="结转类型" style="width: 130px">
           <template #body="{ data }">{{ typeLabels[data.entry_type] || data.entry_type }}</template>
         </Column>
-        <Column field="amount" header="金额" style="width: 120px">
+        <Column field="amount" :header="t('common.amount')" style="width: 120px">
           <template #body="{ data }">¥{{ Number(data.amount || 0).toLocaleString() }}</template>
         </Column>
-        <Column field="status" header="状态" style="width: 80px">
+        <Column field="status" :header="t('common.status')" style="width: 80px">
           <template #body="{ data }">
             <Tag
               :value="data.status === 'executed' ? '已执行' : '草稿'"
@@ -117,7 +119,7 @@ onMounted(load)
         <Column header="执行时间" style="width: 150px">
           <template #body="{ data }">{{ data.executed_at?.slice(0, 10) || '-' }}</template>
         </Column>
-        <Column header="操作" style="width: 150px">
+        <Column :header="t('common.actions')" style="width: 150px">
           <template #body="{ data }">
             <Button
               v-if="data.status !== 'executed'"
@@ -129,7 +131,7 @@ onMounted(load)
             />
             <Button
               v-if="data.status !== 'executed'"
-              label="删除"
+              :label="t('common.delete')"
               text
               severity="danger"
               size="small"
@@ -144,7 +146,7 @@ onMounted(load)
       <div class="flex flex-col gap-4 py-4">
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">期间 (yyyy-MM)</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.periods_page.period') }} (yyyy-MM)</label>
             <InputText v-model="form.period" class="w-full" placeholder="2026-05" />
           </div>
           <div class="flex-1">
@@ -160,14 +162,14 @@ onMounted(load)
         </div>
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">金额 *</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('common.amount') }} *</label>
             <InputText v-model="amountInput" class="w-full" />
           </div>
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showDialog = false" />
-        <Button label="保存" icon="pi pi-check" @click="handleSave" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="handleSave" />
       </template>
     </Dialog>
   </div>

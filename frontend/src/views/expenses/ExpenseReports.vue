@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from '@/i18n'
 import { expenseStats, listExpenseReports } from '@/api/expenses'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 const reports = ref<any[]>([])
@@ -89,10 +91,10 @@ onMounted(fetchAll)
         <template #body="slotProps">{{ slotProps.data.applicant_id }}</template>
       </Column>
       <Column field="expense_date" header="费用日期" />
-      <Column header="金额">
+      <Column :header="t('common.amount')">
         <template #body="slotProps">¥{{ slotProps.data.total_amount?.toLocaleString() }}</template>
       </Column>
-      <Column header="状态">
+      <Column :header="t('common.status')">
         <template #body="slotProps">{{ statusLabels[slotProps.data.status] || slotProps.data.status }}</template>
       </Column>
       <Column field="created_at" header="创建时间" />

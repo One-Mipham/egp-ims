@@ -10,6 +10,9 @@ import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
 import { listVehicles, createVehicle, updateVehicle, deleteVehicle } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const loading = ref(false)
@@ -66,16 +69,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteVehicle(id)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 
@@ -97,10 +100,10 @@ onMounted(load)
     </div>
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="15">
-        <Column field="license_plate" header="车牌号" sortable />
+        <Column field="license_plate" :header="t('admin.vehiclePlate')" sortable />
         <Column field="brand" header="品牌" sortable />
         <Column field="model" header="型号" sortable />
-        <Column field="department" header="部门" sortable />
+        <Column field="department" :header="t('admin.department')" sortable />
         <Column field="insurance_expiry" header="保险到期" sortable style="min-width: 100px">
           <template #body="{ data }"
             ><span :class="insuranceExpiring(data.insurance_expiry) ? 'text-orange-600 font-semibold' : ''">{{
@@ -108,7 +111,7 @@ onMounted(load)
             }}</span></template
           >
         </Column>
-        <Column header="状态" style="min-width: 80px">
+        <Column :header="t('common.status')" style="min-width: 80px">
           <template #body="{ data }"
             ><Tag
               :value="data.status"
@@ -123,7 +126,7 @@ onMounted(load)
               "
           /></template>
         </Column>
-        <Column header="操作" style="min-width: 120px">
+        <Column :header="t('common.actions')" style="min-width: 120px">
           <template #body="{ data }">
             <Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" />
             <Button text size="small" icon="pi pi-trash" severity="danger" @click="remove(data.id)" />
@@ -139,7 +142,7 @@ onMounted(load)
     >
       <div class="grid grid-cols-3 gap-3">
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">车牌号</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.vehiclePlate') }}</label
           ><InputText v-model="form.license_plate" class="w-full" />
         </div>
         <div>
@@ -157,15 +160,15 @@ onMounted(load)
           ><InputText v-model="form.vin" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">部门</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.department') }}</label
           ><InputText v-model="form.department" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">保险公司</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.insuranceCompany') }}</label
           ><InputText v-model="form.insurance_provider" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">保单号</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.policyNo') }}</label
           ><InputText v-model="form.insurance_policy_no" class="w-full" />
         </div>
         <div>
@@ -185,16 +188,16 @@ onMounted(load)
           ><InputNumber v-model="form.purchase_price" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">状态</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.status') }}</label
           ><Dropdown v-model="form.status" :options="['使用中', '闲置', '维修中', '已报废']" class="w-full" />
         </div>
         <div class="col-span-3">
-          <label class="block text-xs text-zinc-500 mb-1">备注</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.remark') }}</label
           ><Textarea v-model="form.notes" rows="2" class="w-full" />
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button :label="t('common.save')" @click="save"
       /></template>
     </Dialog>
   </div>

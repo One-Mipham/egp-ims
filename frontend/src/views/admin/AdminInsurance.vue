@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -16,6 +17,8 @@ import {
   submitInsurance,
   listExpiringInsurance,
 } from '@/api'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const expiring = ref<any[]>([])
@@ -65,16 +68,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteInsurance(id)
     await load()
   } catch (_e: any) {
-    alert('删除失败')
+    alert(t('common.deleteFailed'))
   }
 }
 async function doSubmit(id: number) {
@@ -106,16 +109,16 @@ onMounted(load)
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="15">
         <Column field="insured_assets" header="投保资产" sortable />
-        <Column field="policy_type" header="险种" sortable />
-        <Column field="insurance_company" header="保险公司" sortable />
-        <Column field="coverage_amount" header="保额" sortable />
-        <Column field="premium" header="保费" sortable />
+        <Column field="policy_type" :header="t('admin.insuranceType')" sortable />
+        <Column field="insurance_company" :header="t('admin.insuranceCompany')" sortable />
+        <Column field="coverage_amount" :header="t('admin.insuredAmount')" sortable />
+        <Column field="premium" :header="t('admin.premium')" sortable />
         <Column field="start_date" header="起期" sortable style="min-width: 90px" />
         <Column field="end_date" header="止期" sortable style="min-width: 90px" />
-        <Column header="状态" style="min-width: 80px">
+        <Column :header="t('common.status')" style="min-width: 80px">
           <template #body="{ data }"><Tag :value="data.status" :severity="statusSeverity(data.status)" /></template>
         </Column>
-        <Column header="操作" style="min-width: 160px">
+        <Column :header="t('common.actions')" style="min-width: 160px">
           <template #body="{ data }">
             <Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" />
             <Button v-if="data.status === 'draft'" text size="small" icon="pi pi-send" @click="doSubmit(data.id)" />
@@ -143,19 +146,19 @@ onMounted(load)
           ><InputText v-model="form.insured_assets" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">险种</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.insuranceType') }}</label
           ><Dropdown v-model="form.policy_type" :options="policyTypes" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">保险公司</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.insuranceCompany') }}</label
           ><InputText v-model="form.insurance_company" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">保额</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.insuredAmount') }}</label
           ><InputNumber v-model="form.coverage_amount" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">保费</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.premium') }}</label
           ><InputNumber v-model="form.premium" class="w-full" />
         </div>
         <div>
@@ -168,7 +171,7 @@ onMounted(load)
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button :label="t('common.save')" @click="save"
       /></template>
     </Dialog>
   </div>

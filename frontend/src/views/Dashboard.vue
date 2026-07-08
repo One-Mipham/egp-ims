@@ -2,7 +2,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getMe } from '@/api'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const router = useRouter()
 const userRole = ref<string>('')
 
@@ -46,7 +48,7 @@ onMounted(async () => {
             <i class="pi pi-book text-sky-700" />
           </div>
           <div>
-            <h3 class="text-base font-semibold text-stone-800">会计管理驾驶舱</h3>
+            <h3 class="text-base font-semibold text-stone-800">{{ t('menu.item_accounting_cockpit') }}</h3>
             <p class="text-xs text-stone-500">凭证 · 科目 · 报税 · 对账</p>
           </div>
         </div>
@@ -76,7 +78,7 @@ onMounted(async () => {
             <i class="pi pi-chart-line text-amber-700" />
           </div>
           <div>
-            <h3 class="text-base font-semibold text-stone-800">财务管理驾驶舱</h3>
+            <h3 class="text-base font-semibold text-stone-800">{{ t('menu.item_finance_cockpit') }}</h3>
             <p class="text-xs text-stone-500">预算 · 现金流 · 经营指标</p>
           </div>
         </div>

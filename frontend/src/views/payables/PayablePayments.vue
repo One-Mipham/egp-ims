@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import { listPayablePayments, createPayablePayment, listPayables } from '../../api'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
@@ -52,7 +54,7 @@ onMounted(load)
 <template>
   <div class="p-4">
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-lg font-bold">付款管理</h1>
+      <h1 class="text-lg font-bold">{{ t('payables.payments') }}</h1>
       <button @click="openCreate" class="px-4 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">
         + 登记付款
       </button>
@@ -61,11 +63,11 @@ onMounted(load)
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">应付发票</th>
-          <th class="p-2 border">付款日期</th>
-          <th class="p-2 border text-right">金额</th>
+          <th class="p-2 border">{{ t('payables.invoices') }}</th>
+          <th class="p-2 border">{{ t('payables.paymentDate') }}</th>
+          <th class="p-2 border text-right">{{ t('common.amount') }}</th>
           <th class="p-2 border">方式</th>
-          <th class="p-2 border text-xs text-zinc-400">备注</th>
+          <th class="p-2 border text-xs text-zinc-400">{{ t('common.remark') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -115,11 +117,11 @@ onMounted(load)
             </select>
           </div>
           <div>
-            <label class="text-xs text-zinc-500">付款日期</label
+            <label class="text-xs text-zinc-500">{{ t('payables.paymentDate') }}</label
             ><input type="date" v-model="form.payment_date" class="w-full border rounded px-2 py-1.5 text-sm" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">金额</label
+            <label class="text-xs text-zinc-500">{{ t('common.amount') }}</label
             ><input type="number" v-model.number="form.amount" class="w-full border rounded px-2 py-1.5 text-sm" />
           </div>
           <div>
@@ -131,12 +133,12 @@ onMounted(load)
             </select>
           </div>
           <div>
-            <label class="text-xs text-zinc-500">备注</label
+            <label class="text-xs text-zinc-500">{{ t('common.remark') }}</label
             ><input v-model="form.notes" class="w-full border rounded px-2 py-1.5 text-sm" />
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
+          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
           <button @click="save" class="px-4 py-1.5 bg-orange-600 text-white rounded text-sm">确认付款</button>
         </div>
       </div>

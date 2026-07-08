@@ -2,7 +2,10 @@
 import { reactive, ref, computed, onMounted } from 'vue'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
+import { useI18n } from '@/i18n'
 import { listBudgets, getBudget, createBudget, updateBudget, type BudgetData } from '@/api/budget'
+
+const { t } = useI18n()
 
 const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 const currentYear = new Date().getFullYear()
@@ -116,10 +119,12 @@ const hrBudgetId = ref<number | null>(null)
 const saving = ref(false)
 const loading = ref(false)
 const saveMessage = ref('')
+const saveError = ref(false)
 
 async function saveHrBudget() {
   saving.value = true
   saveMessage.value = ''
+  saveError.value = false
   try {
     const items: { account_code: string; month: string; amount: number }[] = []
     for (const [label, values] of Object.entries(data)) {
@@ -141,9 +146,10 @@ async function saveHrBudget() {
       const res = await createBudget({ company_id: companyId.value, name: 'HR预算', year: currentYear, items })
       hrBudgetId.value = (res.data as BudgetData).id
     }
-    saveMessage.value = '保存成功'
+    saveMessage.value = t('common.saveSuccess')
   } catch (e: any) {
-    saveMessage.value = '保存失败: ' + (e?.response?.data?.detail || e.message)
+    saveError.value = true
+    saveMessage.value = t('common.saveFailed') + ': ' + (e?.response?.data?.detail || e.message)
   } finally {
     saving.value = false
   }
@@ -189,11 +195,11 @@ onMounted(() => {
         <span
           v-if="saveMessage"
           class="text-xs"
-          :class="saveMessage.includes('失败') ? 'text-red-500' : 'text-green-600'"
+          :class="saveError ? 'text-red-500' : 'text-green-600'"
           >{{ saveMessage }}</span
         >
         <Button label="加载" size="small" severity="secondary" :loading="loading" @click="loadHrBudget" />
-        <Button label="保存" size="small" severity="success" :loading="saving" @click="saveHrBudget" />
+        <Button :label="t('common.save')" size="small" severity="success" :loading="saving" @click="saveHrBudget" />
       </div>
     </div>
 

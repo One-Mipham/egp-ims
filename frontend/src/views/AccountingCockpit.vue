@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { listVouchers, listPeriods, listAccounts, listDepartments } from '@/api'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const stats = ref([
   { label: '凭证总数', value: 0, icon: 'pi pi-file', circleClass: 'circle-sky' },
   { label: '科目数量', value: 0, icon: 'pi pi-book', circleClass: 'circle-indigo' },
@@ -38,7 +40,7 @@ onMounted(async () => {
 <template>
   <div class="space-y-6">
     <div class="page-header">
-      <h2>会计管理驾驶舱</h2>
+      <h2>{{ t('menu.item_accounting_cockpit') }}</h2>
     </div>
 
     <div class="flex flex-wrap gap-6 justify-start">
@@ -108,6 +110,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <p v-if="loading" class="text-stone-400 text-xs tracking-wide">加载数据中...</p>
+    <p v-if="loading" class="text-stone-400 text-xs tracking-wide">{{ t('common.loading') }}</p>
   </div>
 </template>

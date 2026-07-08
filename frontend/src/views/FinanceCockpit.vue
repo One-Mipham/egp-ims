@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/i18n'
 import api from '@/api'
 
 const router = useRouter()
+const { t } = useI18n()
 
 type LightStatus = 'green' | 'yellow' | 'red' | 'gray'
 
@@ -49,12 +51,12 @@ const STATUS_ICON_COLOR: Record<string, string> = {
   red: '#dc2626',
   gray: '#9ca3af',
 }
-const STATUS_LABEL: Record<string, string> = {
-  green: '绿灯',
-  yellow: '黄灯',
-  red: '红灯',
-  gray: '无数据',
-}
+const STATUS_LABEL = computed(() => ({
+  green: t('finance.indicators_page.greenLight'),
+  yellow: t('finance.indicators_page.yellowLight'),
+  red: t('finance.indicators_page.redLight'),
+  gray: t('finance.indicators_page.noData'),
+}))
 
 const companyId = localStorage.getItem('companyId') || '1'
 
@@ -75,16 +77,16 @@ onMounted(async () => {
 })
 
 const financeMenu = [
-  { label: '公司预算与分析评价', path: '/cockpit/budget', icon: 'pi-chart-line' },
-  { label: '现金流计划与融资计划', path: '/cockpit/cashflow', icon: 'pi-money-bill' },
-  { label: '公司经营分析指标', path: '/cockpit/indicators', icon: 'pi-chart-bar' },
+  { label: t('finance.budget'), path: '/cockpit/budget', icon: 'pi-chart-line' },
+  { label: t('finance.cashflow'), path: '/cockpit/cashflow', icon: 'pi-money-bill' },
+  { label: t('finance.indicators'), path: '/cockpit/indicators', icon: 'pi-chart-bar' },
 ]
 </script>
 
 <template>
   <div class="space-y-6">
     <div class="page-header">
-      <h2>财务管理驾驶舱</h2>
+      <h2>{{ t('finance.cockpit') }}</h2>
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6">
@@ -126,6 +128,6 @@ const financeMenu = [
     </div>
 
     <p class="text-xs text-stone-400 mt-3">点击圆形指示卡可查看详细指标分析</p>
-    <p v-if="loading" class="text-stone-400 text-xs tracking-wide">加载数据中...</p>
+    <p v-if="loading" class="text-stone-400 text-xs tracking-wide">{{ t('common.loading') }}</p>
   </div>
 </template>

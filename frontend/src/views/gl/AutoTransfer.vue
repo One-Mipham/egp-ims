@@ -1,13 +1,13 @@
 <template>
   <div class="p-4">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-xl font-bold">自动转账模板</h2>
+      <h2 class="text-xl font-bold">{{ t('accounting.periods_page.autoTransferTemplates') }}</h2>
       <Button label="新建模板" icon="pi pi-plus" @click="openCreate" />
     </div>
 
     <DataTable :value="templates" :loading="loading" stripedRows class="mb-4">
       <Column field="name" header="模板名称" />
-      <Column field="template_type" header="类型">
+      <Column field="template_type" :header="t('common.type')">
         <template #body="{ data }">
           <Tag
             :value="typeLabel(data.template_type)"
@@ -21,12 +21,12 @@
       <Column field="entries" header="分录数">
         <template #body="{ data }">{{ data.entries?.length || 0 }}</template>
       </Column>
-      <Column field="is_active" header="启用">
+      <Column field="is_active" :header="t('common.enable')">
         <template #body="{ data }">
           <i :class="data.is_active ? 'pi pi-check text-green-500' : 'pi pi-times text-gray-400'" />
         </template>
       </Column>
-      <Column header="操作" style="width: 16rem">
+      <Column :header="t('common.actions')" style="width: 16rem">
         <template #body="{ data }">
           <div class="flex gap-2">
             <Button
@@ -75,7 +75,7 @@
             <Button icon="pi pi-plus" size="small" severity="secondary" label="添加分录" @click="addEntry" />
           </div>
           <DataTable :value="form.entries" size="small">
-            <Column header="科目代码" style="width: 8rem">
+            <Column :header="t('accounting.gl_page.accountCode')" style="width: 8rem">
               <template #body="{ data }">
                 <InputText v-model="data.account_code" size="small" class="w-full" />
               </template>
@@ -112,12 +112,12 @@
         </div>
         <div class="flex items-center gap-2">
           <Checkbox v-model="form.is_active" :binary="true" inputId="is_active" />
-          <label for="is_active">启用</label>
+          <label for="is_active">{{ t('common.enable') }}</label>
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="dialogVisible = false" />
-        <Button label="保存" @click="save" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="dialogVisible = false" />
+        <Button :label="t('common.save')" @click="save" />
       </template>
     </Dialog>
 
@@ -132,7 +132,7 @@
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="execDialogVisible = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="execDialogVisible = false" />
         <Button label="执行" severity="success" @click="confirmExecute" />
       </template>
     </Dialog>
@@ -152,6 +152,7 @@ import Dropdown from 'primevue/dropdown'
 import SelectButton from 'primevue/selectbutton'
 import Checkbox from 'primevue/checkbox'
 import Tag from 'primevue/tag'
+import { useI18n } from '@/i18n'
 import {
   listAutoTransferTemplates,
   createAutoTransferTemplate,
@@ -160,6 +161,7 @@ import {
   executeAutoTransfer,
 } from '../../api'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 
@@ -267,7 +269,7 @@ async function save() {
         is_active: form.value.is_active,
         entries: form.value.entries,
       })
-      toast.add({ severity: 'success', summary: '已更新', life: 3000 })
+      toast.add({ severity: 'success', summary: t('common.updateSuccess'), life: 3000 })
     } else {
       await createAutoTransferTemplate({
         company_id: companyId,
@@ -283,14 +285,14 @@ async function save() {
     dialogVisible.value = false
     await load()
   } catch (err: any) {
-    toast.add({ severity: 'error', summary: '保存失败', detail: err.response?.data?.detail || '', life: 5000 })
+    toast.add({ severity: 'error', summary: t('common.saveFailed'), detail: err.response?.data?.detail || '', life: 5000 })
   }
 }
 
 async function confirmDelete(t: any) {
   if (!confirm(`确定删除模板 "${t.name}" 吗？`)) return
   await deleteAutoTransferTemplate(t.id)
-  toast.add({ severity: 'success', summary: '已删除', life: 3000 })
+  toast.add({ severity: 'success', summary: t('common.deleteSuccess'), life: 3000 })
   await load()
 }
 

@@ -7,8 +7,10 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
 import { listPortfolios, listPositions, listTransactions, getIncomeReport } from '@/api'
+import { useI18n } from '@/i18n'
 
 const router = useRouter()
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 const portfolios = ref<any[]>([])
@@ -109,7 +111,7 @@ onMounted(load)
 
 <template>
   <div class="p-4 space-y-6">
-    <h2 class="text-lg font-semibold text-zinc-700">投资仪表盘</h2>
+    <h2 class="text-lg font-semibold text-zinc-700">{{ t('investments.title') }}</h2>
 
     <!-- Summary Cards -->
     <div class="grid grid-cols-4 gap-4">
@@ -152,7 +154,7 @@ onMounted(load)
       <Card class="shadow-sm">
         <template #title><span class="text-base font-semibold text-zinc-700">持仓分布（按类型）</span></template>
         <template #content>
-          <div v-if="typeDistribution.length === 0" class="text-sm text-stone-400 py-8 text-center">暂无数据</div>
+          <div v-if="typeDistribution.length === 0" class="text-sm text-stone-400 py-8 text-center">{{ t('common.noData') }}</div>
           <div v-else class="space-y-3">
             <div v-for="(item, i) in typeDistribution" :key="item.type" class="flex items-center gap-3">
               <span class="text-xs text-stone-500 w-16 text-right">{{ TYPE_LABELS[item.type] || item.type }}</span>
@@ -175,42 +177,42 @@ onMounted(load)
         <template #content>
           <div class="grid grid-cols-2 gap-3">
             <Button
-              label="投资组合"
+              :label="t('investments.portfolios')"
               icon="pi pi-folder"
               severity="secondary"
               size="small"
               @click="router.push('/investments/portfolio')"
             />
             <Button
-              label="投资持仓"
+              :label="t('investments.positions')"
               icon="pi pi-list"
               severity="secondary"
               size="small"
               @click="router.push('/investments/positions')"
             />
             <Button
-              label="新增交易"
+              :label="t('investments.transactions')"
               icon="pi pi-arrow-right-arrow-left"
               severity="secondary"
               size="small"
               @click="router.push('/investments/transactions')"
             />
             <Button
-              label="公允价值调整"
+              :label="t('investments.adjustments')"
               icon="pi pi-chart-line"
               severity="secondary"
               size="small"
               @click="router.push('/investments/adjustments')"
             />
             <Button
-              label="投资收益"
+              :label="t('investments.income')"
               icon="pi pi-dollar"
               severity="secondary"
               size="small"
               @click="router.push('/investments/income')"
             />
             <Button
-              label="投资报表"
+              :label="t('investments.reports')"
               icon="pi pi-file"
               severity="secondary"
               size="small"
@@ -226,8 +228,8 @@ onMounted(load)
       <template #title><span class="text-base font-semibold text-zinc-700">最近交易</span></template>
       <template #content>
         <DataTable :value="recentTransactions" :loading="loading" stripedRows size="small">
-          <Column field="transaction_date" header="日期" sortable />
-          <Column header="类型">
+          <Column field="transaction_date" :header="t('common.date')" sortable />
+          <Column :header="t('common.type')">
             <template #body="{ data }">
               <Tag
                 :value="TXN_LABELS[data.transaction_type] || data.transaction_type"
@@ -242,10 +244,10 @@ onMounted(load)
           <Column field="price" header="价格">
             <template #body="{ data }">¥{{ data.price?.toLocaleString() }}</template>
           </Column>
-          <Column field="amount" header="金额">
+          <Column field="amount" :header="t('common.amount')">
             <template #body="{ data }">¥{{ data.amount?.toLocaleString() }}</template>
           </Column>
-          <Column field="notes" header="备注" />
+          <Column field="notes" :header="t('common.remark')" />
         </DataTable>
         <div v-if="recentTransactions.length === 0 && !loading" class="text-sm text-stone-400 py-4 text-center">
           暂无交易记录

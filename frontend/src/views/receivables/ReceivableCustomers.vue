@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import {
   listReceivables,
@@ -10,6 +11,7 @@ import {
   listReceivableCounterparties,
 } from '../../api'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
@@ -78,9 +80,9 @@ async function save() {
 }
 
 async function remove(id: number) {
-  if (confirm('确定删除？')) {
+  if (confirm(t('common.deleteConfirm'))) {
     await deleteReceivable(id)
-    toast.add({ severity: 'success', summary: '已删除', life: 2000 })
+    toast.add({ severity: 'success', summary: t('common.deleteSuccess'), life: 2000 })
     await load()
   }
 }
@@ -142,7 +144,7 @@ onMounted(async () => {
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-lg font-bold">客户应收管理</h1>
       <div class="flex gap-2">
-        <button @click="exportCSV" class="px-3 py-2 border rounded text-sm hover:bg-zinc-100">导出CSV</button>
+        <button @click="exportCSV" class="px-3 py-2 border rounded text-sm hover:bg-zinc-100">{{ t('receivables.exportCSV') }}</button>
         <button @click="openCreate" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
           + 新增应收
         </button>
@@ -185,14 +187,14 @@ onMounted(async () => {
       <thead>
         <tr class="bg-zinc-100 text-left">
           <th class="p-2 border">客户</th>
-          <th class="p-2 border">发票号</th>
-          <th class="p-2 border">发票日期</th>
-          <th class="p-2 border text-right">金额</th>
+          <th class="p-2 border">{{ t('receivables.invoiceNo') }}</th>
+          <th class="p-2 border">{{ t('receivables.invoiceDate') }}</th>
+          <th class="p-2 border text-right">{{ t('common.amount') }}</th>
           <th class="p-2 border text-right">已收</th>
-          <th class="p-2 border text-right">余额</th>
+          <th class="p-2 border text-right">{{ t('receivables.balance') }}</th>
           <th class="p-2 border text-right">账龄(天)</th>
-          <th class="p-2 border">状态</th>
-          <th class="p-2 border">操作</th>
+          <th class="p-2 border">{{ t('common.status') }}</th>
+          <th class="p-2 border">{{ t('common.actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -213,11 +215,11 @@ onMounted(async () => {
           </td>
           <td class="p-2 border">{{ item.status }}</td>
           <td class="p-2 border">
-            <button @click="openEdit(item)" class="text-blue-600 mr-1 text-xs">编辑</button>
+            <button @click="openEdit(item)" class="text-blue-600 mr-1 text-xs">{{ t('common.edit') }}</button>
             <button @click="openPayment(item)" v-if="(item.balance || 0) > 0" class="text-green-600 mr-1 text-xs">
               收款
             </button>
-            <button @click="remove(item.id)" class="text-red-500 text-xs">删除</button>
+            <button @click="remove(item.id)" class="text-red-500 text-xs">{{ t('common.delete') }}</button>
           </td>
         </tr>
       </tbody>
@@ -247,7 +249,7 @@ onMounted(async () => {
         <h2 class="text-lg font-bold mb-4">{{ isEdit ? '编辑应收' : '新增应收' }}</h2>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-zinc-500">客户名称</label
+            <label class="text-xs text-zinc-500">{{ t('receivables.customerName') }}</label
             ><input
               v-model="form.customer_name"
               list="counterparty-list"
@@ -255,29 +257,29 @@ onMounted(async () => {
             />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">发票号</label
+            <label class="text-xs text-zinc-500">{{ t('receivables.invoiceNo') }}</label
             ><input v-model="form.invoice_no" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">发票日期</label
+            <label class="text-xs text-zinc-500">{{ t('receivables.invoiceDate') }}</label
             ><input type="date" v-model="form.invoice_date" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">到期日</label
+            <label class="text-xs text-zinc-500">{{ t('receivables.dueDate') }}</label
             ><input type="date" v-model="form.due_date" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">金额</label
+            <label class="text-xs text-zinc-500">{{ t('common.amount') }}</label
             ><input type="number" v-model.number="form.amount" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
         </div>
         <div class="mt-3">
-          <label class="text-xs text-zinc-500">备注</label
+          <label class="text-xs text-zinc-500">{{ t('common.remark') }}</label
           ><textarea v-model="form.notes" rows="2" class="w-full border rounded px-2 py-1 text-sm"></textarea>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
-          <button @click="save" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">保存</button>
+          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
+          <button @click="save" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">{{ t('common.save') }}</button>
         </div>
       </div>
     </div>
@@ -289,11 +291,11 @@ onMounted(async () => {
           发票号：{{ selectedItem?.invoice_no }} | 余额：{{ (selectedItem?.balance || 0).toLocaleString() }}
         </p>
         <div>
-          <label class="text-xs text-zinc-500">收款金额</label
+          <label class="text-xs text-zinc-500">{{ t('receivables.paymentAmount') }}</label
           ><input type="number" v-model.number="paymentAmount" class="w-full border rounded px-2 py-1 text-sm" />
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="paymentDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
+          <button @click="paymentDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
           <button @click="submitPayment" class="px-4 py-1.5 bg-green-600 text-white rounded text-sm">确认收款</button>
         </div>
       </div>

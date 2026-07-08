@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -11,6 +12,7 @@ import Tag from 'primevue/tag'
 import api from '@/api/index'
 import { listCounterparties } from '@/api'
 
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const items = ref<any[]>([])
 const counterparties = ref<any[]>([])
@@ -170,21 +172,21 @@ onMounted(load)
     </div>
 
     <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="10">
-      <Column field="borrower_name" header="借款人" sortable />
-      <Column header="类型"
+      <Column field="borrower_name" :header="t('investments.borrowerName')" sortable />
+      <Column :header="t('common.type')"
         ><template #body="{ data }"
           ><Tag :value="TYPE_LABELS[data.instrument_type] || data.instrument_type" severity="info" /></template
       ></Column>
-      <Column header="本金"
+      <Column :header="t('investments.creditAmount')"
         ><template #body="{ data }">¥{{ data.principal_amount?.toLocaleString() }}</template></Column
       >
-      <Column header="利率"
+      <Column :header="t('investments.interestRate')"
         ><template #body="{ data }">{{ data.interest_rate }}%</template></Column
       >
       <Column header="未偿本金"
         ><template #body="{ data }">¥{{ data.outstanding_principal?.toLocaleString() }}</template></Column
       >
-      <Column field="maturity_date" header="到期日" />
+      <Column field="maturity_date" :header="t('investments.maturityDate')" />
       <Column header="评级"
         ><template #body="{ data }"
           ><Tag
@@ -198,7 +200,7 @@ onMounted(load)
                   : 'danger'
             " /></template
       ></Column>
-      <Column header="状态"
+      <Column :header="t('common.status')"
         ><template #body="{ data }"
           ><Tag
             :value="STATUS_LABELS[data.status] || data.status"
@@ -212,7 +214,7 @@ onMounted(load)
                     : 'danger'
             " /></template
       ></Column>
-      <Column header="操作" style="width: 140px">
+      <Column :header="t('common.actions')" style="width: 140px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button
@@ -232,15 +234,15 @@ onMounted(load)
     </DataTable>
 
     <!-- Credit Dialog -->
-    <Dialog v-model:visible="showDialog" :header="isEdit ? '编辑信贷' : '新增信贷'" :style="{ width: '520px' }" modal>
+    <Dialog v-model:visible="showDialog" :header="isEdit ? t('common.edit') : t('common.add')" :style="{ width: '520px' }" modal>
       <div class="flex flex-col gap-3 pt-2">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">借款人 *</label
+            <label class="text-sm text-stone-600">{{ t('investments.borrowerName') }} *</label
             ><InputText v-model="form.borrower_name" class="w-full" />
           </div>
           <div>
-            <label class="text-sm text-stone-600">类型</label
+            <label class="text-sm text-stone-600">{{ t('common.type') }}</label
             ><Dropdown
               v-model="form.instrument_type"
               :options="INST_TYPES"
@@ -252,7 +254,7 @@ onMounted(load)
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">本金</label
+            <label class="text-sm text-stone-600">{{ t('investments.creditAmount') }}</label
             ><InputNumber v-model="form.principal_amount" mode="currency" currency="CNY" class="w-full" />
           </div>
           <div>
@@ -266,7 +268,7 @@ onMounted(load)
             ><InputText v-model="form.origination_date" class="w-full" placeholder="YYYY-MM-DD" />
           </div>
           <div>
-            <label class="text-sm text-stone-600">到期日</label
+            <label class="text-sm text-stone-600">{{ t('investments.maturityDate') }}</label
             ><InputText v-model="form.maturity_date" class="w-full" placeholder="YYYY-MM-DD" />
           </div>
         </div>
@@ -302,8 +304,8 @@ onMounted(load)
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button
-          label="保存"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button
+          :label="t('common.save')"
           @click="handleSave"
           :disabled="!form.borrower_name"
       /></template>
@@ -318,11 +320,11 @@ onMounted(load)
     >
       <div class="flex gap-2 mb-3 items-end">
         <div>
-          <label class="text-xs text-stone-400 block">日期</label
+          <label class="text-xs text-stone-400 block">{{ t('common.date') }}</label
           ><InputText v-model="payForm.payment_date" class="w-28" placeholder="YYYY-MM-DD" />
         </div>
         <div>
-          <label class="text-xs text-stone-400 block">类型</label
+          <label class="text-xs text-stone-400 block">{{ t('common.type') }}</label
           ><Dropdown
             v-model="payForm.payment_type"
             :options="[
@@ -336,7 +338,7 @@ onMounted(load)
           />
         </div>
         <div>
-          <label class="text-xs text-stone-400 block">金额</label
+          <label class="text-xs text-stone-400 block">{{ t('common.amount') }}</label
           ><InputNumber v-model="payForm.amount" mode="currency" currency="CNY" class="w-36" />
         </div>
         <Button
@@ -347,8 +349,8 @@ onMounted(load)
         />
       </div>
       <DataTable :value="payments" stripedRows size="small">
-        <Column field="payment_date" header="日期" />
-        <Column header="类型"
+        <Column field="payment_date" :header="t('common.date')" />
+        <Column :header="t('common.type')"
           ><template #body="{ data }"
             ><Tag
               :value="data.payment_type === 'interest' ? '利息' : data.payment_type === 'principal' ? '本金' : '费用'"
@@ -356,7 +358,7 @@ onMounted(load)
                 data.payment_type === 'interest' ? 'info' : data.payment_type === 'principal' ? 'success' : 'warn'
               " /></template
         ></Column>
-        <Column header="金额"
+        <Column :header="t('common.amount')"
           ><template #body="{ data }">¥{{ data.amount?.toLocaleString() }}</template></Column
         >
         <Column header="凭证"

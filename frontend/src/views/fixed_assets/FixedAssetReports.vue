@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { listFixedAssets } from '../../api'
 
+const { t } = useI18n()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
 
@@ -97,7 +99,7 @@ function exportCSV() {
         <div class="text-2xl font-bold">{{ summary.totalOriginal.toLocaleString() }}</div>
       </div>
       <div class="bg-zinc-50 rounded p-4 text-center">
-        <div class="text-xs text-zinc-500 mb-1">累计折旧</div>
+        <div class="text-xs text-zinc-500 mb-1">{{ t('assets.accumulatedDepreciation') }}</div>
         <div class="text-2xl font-bold text-amber-600">{{ summary.totalDepreciation.toLocaleString() }}</div>
       </div>
       <div class="bg-zinc-50 rounded p-4 text-center">
@@ -110,11 +112,11 @@ function exportCSV() {
     <table class="w-full text-sm border-collapse mb-6">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">类别</th>
+          <th class="p-2 border">{{ t('assets.assetCategory') }}</th>
           <th class="p-2 border text-right">数量</th>
-          <th class="p-2 border text-right">原值</th>
-          <th class="p-2 border text-right">累计折旧</th>
-          <th class="p-2 border text-right">净值</th>
+          <th class="p-2 border text-right">{{ t('assets.originalValue') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.accumulatedDepreciation') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.netValue') }}</th>
           <th class="p-2 border text-right">折旧率</th>
         </tr>
       </thead>
@@ -134,7 +136,7 @@ function exportCSV() {
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">状态</th>
+          <th class="p-2 border">{{ t('common.status') }}</th>
           <th class="p-2 border text-right">数量</th>
         </tr>
       </thead>

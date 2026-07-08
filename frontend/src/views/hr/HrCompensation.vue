@@ -8,7 +8,10 @@ import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
+import { useI18n } from '@/i18n'
 import { listHrSalaries, createHrSalary, updateHrSalary, deleteHrSalary, listHrEmployees } from '@/api'
+
+const { t } = useI18n()
 
 const salaries = ref<any[]>([])
 const employees = ref<any[]>([])
@@ -73,7 +76,7 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   }
 }
 async function handleDelete(id: number) {
@@ -86,7 +89,7 @@ onMounted(load)
 
 <template>
   <div>
-    <div class="page-header"><h2>薪酬管理</h2></div>
+    <div class="page-header"><h2>{{ t('hr.salaries') }}</h2></div>
     <div class="flex justify-between items-center mb-4 gap-2 flex-wrap">
       <div class="flex gap-2">
         <Dropdown
@@ -127,10 +130,10 @@ onMounted(load)
           ><span class="font-semibold">{{ data.net_salary?.toLocaleString() }}</span></template
         ></Column
       >
-      <Column header="操作" style="width: 120px"
+      <Column :header="t('common.actions')" style="width: 120px"
         ><template #body="{ data }"
           ><Button label="编辑" text size="small" @click="openEdit(data)" /><Button
-            label="删除"
+            :label="t('common.delete')"
             text
             severity="danger"
             size="small"
@@ -180,10 +183,10 @@ onMounted(load)
           ><InputNumber v-model="form.net_salary" class="w-full" disabled mode="currency" currency="CNY" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">备注</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.remark') }}</label
           ><Textarea v-model="form.notes" rows="2" class="w-full" />
         </div>
-        <Button label="保存" icon="pi pi-check" @click="save" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="save" />
       </div>
     </Dialog>
   </div>

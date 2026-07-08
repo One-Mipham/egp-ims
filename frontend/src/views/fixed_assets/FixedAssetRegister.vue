@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import { listFixedAssets, createFixedAsset, updateFixedAsset, deleteFixedAsset } from '../../api'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
@@ -93,7 +95,7 @@ async function save() {
 }
 
 async function remove(id: number) {
-  if (confirm('确定删除该资产？')) {
+  if (confirm(t('common.deleteConfirm'))) {
     await deleteFixedAsset(id)
     toast.add({ severity: 'success', summary: '已删除', life: 2000 })
     await load()
@@ -135,7 +137,7 @@ onMounted(load)
       <div class="flex gap-2">
         <button @click="exportCSV" class="px-3 py-2 border rounded text-sm hover:bg-zinc-100">导出CSV</button>
         <button @click="openCreate" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
-          + 新增资产
+          + {{ t('assets.addAsset') }}
         </button>
       </div>
     </div>
@@ -168,14 +170,14 @@ onMounted(load)
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">资产编号</th>
-          <th class="p-2 border">名称</th>
-          <th class="p-2 border">类别</th>
-          <th class="p-2 border text-right">原值</th>
-          <th class="p-2 border text-right">累计折旧</th>
-          <th class="p-2 border text-right">净值</th>
-          <th class="p-2 border">状态</th>
-          <th class="p-2 border">操作</th>
+          <th class="p-2 border">{{ t('assets.assetCode') }}</th>
+          <th class="p-2 border">{{ t('common.name') }}</th>
+          <th class="p-2 border">{{ t('assets.assetCategory') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.originalValue') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.accumulatedDepreciation') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.netValue') }}</th>
+          <th class="p-2 border">{{ t('common.status') }}</th>
+          <th class="p-2 border">{{ t('common.actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -190,8 +192,8 @@ onMounted(load)
             <span :class="item.status === '使用中' ? 'text-green-600' : 'text-red-500'">{{ item.status }}</span>
           </td>
           <td class="p-2 border">
-            <button @click="openEdit(item)" class="text-blue-600 mr-2 text-xs">编辑</button>
-            <button @click="remove(item.id)" class="text-red-500 text-xs">删除</button>
+            <button @click="openEdit(item)" class="text-blue-600 mr-2 text-xs">{{ t('common.edit') }}</button>
+            <button @click="remove(item.id)" class="text-red-500 text-xs">{{ t('common.delete') }}</button>
           </td>
         </tr>
       </tbody>
@@ -218,30 +220,30 @@ onMounted(load)
 
     <div v-if="dialogVisible" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div class="bg-white rounded-lg w-[600px] max-h-[80vh] overflow-auto p-6">
-        <h2 class="text-lg font-bold mb-4">{{ isEdit ? '编辑资产' : '新增资产' }}</h2>
+        <h2 class="text-lg font-bold mb-4">{{ isEdit ? t('assets.editAsset') : t('assets.addAsset') }}</h2>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-zinc-500">资产编号</label
+            <label class="text-xs text-zinc-500">{{ t('assets.assetCode') }}</label
             ><input v-model="form.asset_code" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">名称</label
+            <label class="text-xs text-zinc-500">{{ t('assets.assetName') }}</label
             ><input v-model="form.name" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">类别</label>
+            <label class="text-xs text-zinc-500">{{ t('assets.assetCategory') }}</label>
             <select v-model="form.category" class="w-full border rounded px-2 py-1 text-sm">
               <option v-for="c in categoryOptions" :key="c" :value="c">{{ c }}</option>
             </select>
           </div>
           <div>
-            <label class="text-xs text-zinc-500">状态</label>
+            <label class="text-xs text-zinc-500">{{ t('common.status') }}</label>
             <select v-model="form.status" class="w-full border rounded px-2 py-1 text-sm">
               <option v-for="s in statusOptions" :key="s" :value="s">{{ s }}</option>
             </select>
           </div>
           <div>
-            <label class="text-xs text-zinc-500">购置日期</label
+            <label class="text-xs text-zinc-500">{{ t('assets.purchaseDate') }}</label
             ><input type="date" v-model="form.acquisition_date" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
@@ -249,7 +251,7 @@ onMounted(load)
             ><input v-model="form.location" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">原值</label
+            <label class="text-xs text-zinc-500">{{ t('assets.originalValue') }}</label
             ><input
               type="number"
               v-model.number="form.original_value"
@@ -265,11 +267,11 @@ onMounted(load)
             />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">使用年限(年)</label
+            <label class="text-xs text-zinc-500">{{ t('assets.usefulLife') }}</label
             ><input type="number" v-model.number="form.useful_life" class="w-full border rounded px-2 py-1 text-sm" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500">折旧方法</label>
+            <label class="text-xs text-zinc-500">{{ t('assets.depreciationMethod') }}</label>
             <select v-model="form.depreciation_method" class="w-full border rounded px-2 py-1 text-sm">
               <option value="直线法">直线法</option>
               <option value="双倍余额递减法">双倍余额递减法</option>
@@ -277,7 +279,7 @@ onMounted(load)
             </select>
           </div>
           <div>
-            <label class="text-xs text-zinc-500">月折旧额（参考值）</label
+            <label class="text-xs text-zinc-500">{{ t('assets.monthlyDepreciation') }}</label
             ><input
               type="number"
               v-model.number="form.monthly_depreciation"
@@ -286,12 +288,12 @@ onMounted(load)
           </div>
         </div>
         <div class="mt-3">
-          <label class="text-xs text-zinc-500">备注</label
+          <label class="text-xs text-zinc-500">{{ t('common.remark') }}</label
           ><textarea v-model="form.notes" class="w-full border rounded px-2 py-1 text-sm" rows="2"></textarea>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
-          <button @click="save" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">保存</button>
+          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
+          <button @click="save" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">{{ t('common.save') }}</button>
         </div>
       </div>
     </div>

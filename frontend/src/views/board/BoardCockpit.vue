@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/i18n'
 import { getCockpitLights } from '@/api/board'
 
+const { t } = useI18n()
 const router = useRouter()
 
 const indicators = ref([
@@ -69,7 +71,7 @@ const quickLinks = [
 <template>
   <div class="space-y-6">
     <div class="page-header">
-      <h2>董事办驾驶舱</h2>
+      <h2>{{ t('board.cockpit') }}</h2>
     </div>
 
     <div class="flex flex-col lg:flex-row gap-6">
@@ -111,6 +113,6 @@ const quickLinks = [
     </div>
 
     <p class="text-xs text-stone-400 mt-3">点击圆形指示卡可查看详细报送/报批/归档记录</p>
-    <p v-if="loading" class="text-stone-400 text-xs tracking-wide">加载数据中...</p>
+    <p v-if="loading" class="text-stone-400 text-xs tracking-wide">{{ t('common.loading') }}</p>
   </div>
 </template>

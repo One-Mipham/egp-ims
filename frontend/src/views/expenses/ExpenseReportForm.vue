@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from '@/i18n'
 import {
   listExpenseItems,
   createExpenseReport,
@@ -20,6 +21,7 @@ import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
@@ -159,7 +161,7 @@ const saveDraft = async () => {
       router.replace(`/finance/expenses/report-form/${res.data.id}`)
     }
   } catch (e: any) {
-    toast.add({ severity: 'error', summary: '保存失败', detail: e.response?.data?.detail || e.message, life: 3000 })
+    toast.add({ severity: 'error', summary: t('common.saveFailed'), detail: e.response?.data?.detail || e.message, life: 3000 })
   } finally {
     saving.value = false
   }
@@ -220,7 +222,7 @@ const onDeleteAttachment = async (attId: number) => {
     attachments.value = attachments.value.filter((a: any) => a.id !== attId)
     toast.add({ severity: 'success', summary: '附件已删除', life: 2000 })
   } catch (e: any) {
-    toast.add({ severity: 'error', summary: '删除失败', detail: e.response?.data?.detail || e.message, life: 3000 })
+    toast.add({ severity: 'error', summary: t('common.deleteFailed'), detail: e.response?.data?.detail || e.message, life: 3000 })
   }
 }
 
@@ -274,8 +276,8 @@ onMounted(async () => {
           <tr>
             <th class="p-2 text-left w-10">#</th>
             <th class="p-2 text-left">费用类型</th>
-            <th class="p-2 text-left w-32">日期</th>
-            <th class="p-2 text-right w-32">金额</th>
+            <th class="p-2 text-left w-32">{{ t('common.date') }}</th>
+            <th class="p-2 text-right w-32">{{ t('common.amount') }}</th>
             <th class="p-2 text-left">说明</th>
             <th class="p-2 text-right w-20">发票</th>
             <th class="p-2 text-center w-10"></th>
@@ -332,7 +334,7 @@ onMounted(async () => {
     <!-- Attachments (edit mode) -->
     <div v-if="isEdit" class="bg-white rounded-sm border border-stone-200 p-4 mb-4">
       <div class="flex items-center justify-between mb-2">
-        <h2 class="text-lg font-semibold">附件 ({{ attachments.length }})</h2>
+        <h2 class="text-lg font-semibold">{{ t('expenses.attachments') }} ({{ attachments.length }})</h2>
         <Button
           label="展开上传"
           icon="pi pi-paperclip"
@@ -362,7 +364,7 @@ onMounted(async () => {
             <input type="file" @change="(e: any) => (uploadFile = e.target.files?.[0] || null)" class="text-sm" />
           </div>
           <Button
-            label="上传"
+            :label="t('common.upload')"
             icon="pi pi-upload"
             size="small"
             :loading="uploading"

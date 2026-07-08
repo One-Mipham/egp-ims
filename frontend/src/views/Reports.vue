@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import Button from 'primevue/button'
 import { getBalanceSheet, getIncomeStatement, getCashFlow } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const activeReport = ref('balance')
 const currentPeriod = ref(new Date().toISOString().slice(0, 7))
@@ -48,37 +51,37 @@ onMounted(loadReport)
           class="px-3 py-2 border border-zinc-300 rounded-sm text-sm focus:ring-1 focus:ring-zinc-400 outline-none"
           @change="loadReport"
         />
-        <Button label="刷新" icon="pi pi-refresh" text @click="loadReport" :loading="loading" />
+        <Button :label="t('common.refresh')" icon="pi pi-refresh" text @click="loadReport" :loading="loading" />
       </div>
     </div>
 
     <div class="flex gap-1 mb-6">
       <Button
-        label="资产负债表"
+        :label="t('reports.balanceSheet')"
         :severity="activeReport === 'balance' ? 'danger' : 'secondary'"
         :text="activeReport !== 'balance'"
         @click="activeReport = 'balance'"
       />
       <Button
-        label="利润表"
+        :label="t('reports.incomeStatement')"
         :severity="activeReport === 'income' ? 'danger' : 'secondary'"
         :text="activeReport !== 'income'"
         @click="activeReport = 'income'"
       />
       <Button
-        label="现金流量表"
+        :label="t('reports.cashflowStatement')"
         :severity="activeReport === 'cashflow' ? 'danger' : 'secondary'"
         :text="activeReport !== 'cashflow'"
         @click="activeReport = 'cashflow'"
       />
     </div>
 
-    <p v-if="loading" class="text-zinc-400 text-sm tracking-wide">加载中...</p>
+    <p v-if="loading" class="text-zinc-400 text-sm tracking-wide">{{ t('common.loading') }}</p>
 
     <!-- ═══════ 资产负债表 会企01表 ═══════ -->
     <div v-if="activeReport === 'balance' && balanceData" class="print-area">
       <div class="report-container bg-white shadow-sm px-12 pt-6 pb-4 max-w-[96%] mx-auto">
-        <h1 class="text-2xl font-bold text-center mb-4">资产负债表</h1>
+        <h1 class="text-2xl font-bold text-center mb-4">{{ t('reports.balanceSheet') }}</h1>
         <div class="flex justify-between text-sm text-stone-500 mb-4">
           <span>公司名称：{{ COMPANY_NAME }}</span>
           <span>{{ balanceData.date_display }}</span>
@@ -89,13 +92,13 @@ onMounted(loadReport)
           <thead>
             <tr class="border-b-2 border-stone-400">
               <th class="text-left py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 30%">
-                资 产
+                {{ t('reports.assets') }}
               </th>
               <th
                 class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
                 style="width: 12%"
               >
-                期末余额
+                {{ t('accounting.gl_page.endingBalance') }}
               </th>
               <th
                 class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
@@ -110,7 +113,7 @@ onMounted(loadReport)
                 class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
                 style="width: 12%"
               >
-                期末余额
+                {{ t('accounting.gl_page.endingBalance') }}
               </th>
               <th
                 class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
@@ -212,7 +215,7 @@ onMounted(loadReport)
     <!-- ═══════ 利润表 会企02表 ═══════ -->
     <div v-if="activeReport === 'income' && incomeData" class="print-area">
       <div class="report-container bg-white shadow-sm px-12 pt-6 pb-4 max-w-5xl mx-auto">
-        <h1 class="text-2xl font-bold text-center mb-4">利润表</h1>
+        <h1 class="text-2xl font-bold text-center mb-4">{{ t('reports.incomeStatement') }}</h1>
         <div class="flex justify-between text-sm text-stone-500 mb-4">
           <span>公司名称：{{ COMPANY_NAME }}</span>
           <span>{{ incomeData.period_display }}</span>
@@ -263,7 +266,7 @@ onMounted(loadReport)
     <!-- ═══════ 现金流量表 会企03表 ═══════ -->
     <div v-if="activeReport === 'cashflow' && cashFlowData" class="print-area">
       <div class="report-container bg-white shadow-sm px-12 pt-6 pb-4 max-w-5xl mx-auto">
-        <h1 class="text-2xl font-bold text-center mb-4">现金流量表</h1>
+        <h1 class="text-2xl font-bold text-center mb-4">{{ t('reports.cashflowStatement') }}</h1>
         <div class="flex justify-between text-sm text-stone-500 mb-4">
           <span>公司名称：{{ COMPANY_NAME }}</span>
           <span>{{ cashFlowData.date_display }}</span>

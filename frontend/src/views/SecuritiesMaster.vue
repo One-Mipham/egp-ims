@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -9,6 +10,7 @@ import Dropdown from 'primevue/dropdown'
 import Tag from 'primevue/tag'
 import { listSecurities, createSecurity, updateSecurity, deleteSecurity } from '@/api'
 
+const { t } = useI18n()
 const items = ref<any[]>([])
 const loading = ref(false)
 const showDialog = ref(false)
@@ -80,7 +82,7 @@ async function handleSave() {
   await load()
 }
 async function handleDelete(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   await deleteSecurity(id)
   await load()
 }
@@ -122,9 +124,9 @@ onMounted(load)
     </div>
 
     <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="15">
-      <Column field="security_code" header="代码" sortable />
-      <Column field="security_name" header="名称" sortable />
-      <Column header="类型" sortable
+      <Column field="security_code" :header="t('common.code')" sortable />
+      <Column field="security_name" :header="t('common.name')" sortable />
+      <Column :header="t('common.type')" sortable
         ><template #body="{ data }"
           ><Tag
             :value="TYPE_LABELS[data.security_type] || data.security_type"
@@ -136,7 +138,7 @@ onMounted(load)
       >
       <Column field="currency" header="币种" />
       <Column field="isin_code" header="ISIN" />
-      <Column header="状态"
+      <Column :header="t('common.status')"
         ><template #body="{ data }"
           ><Tag
             :value="data.status === 'active' ? '活跃' : data.status === 'inactive' ? '停用' : '已退市'"
@@ -144,7 +146,7 @@ onMounted(load)
               data.status === 'active' ? 'success' : data.status === 'inactive' ? 'warn' : 'danger'
             " /></template
       ></Column>
-      <Column header="操作" style="width: 100px">
+      <Column :header="t('common.actions')" style="width: 100px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" size="small" severity="secondary" text rounded @click="openEdit(data)" />
@@ -154,21 +156,21 @@ onMounted(load)
       </Column>
     </DataTable>
 
-    <Dialog v-model:visible="showDialog" :header="isEdit ? '编辑证券' : '新增证券'" :style="{ width: '480px' }" modal>
+    <Dialog v-model:visible="showDialog" :header="isEdit ? t('common.edit') : t('common.add')" :style="{ width: '480px' }" modal>
       <div class="flex flex-col gap-3 pt-2">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">代码 *</label
+            <label class="text-sm text-stone-600">{{ t('common.code') }} *</label
             ><InputText v-model="form.security_code" class="w-full" placeholder="如 00700.HK" />
           </div>
           <div>
-            <label class="text-sm text-stone-600">名称 *</label
+            <label class="text-sm text-stone-600">{{ t('common.name') }} *</label
             ><InputText v-model="form.security_name" class="w-full" placeholder="如 腾讯控股" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">类型</label
+            <label class="text-sm text-stone-600">{{ t('common.type') }}</label
             ><Dropdown
               v-model="form.security_type"
               :options="SEC_TYPES"
@@ -200,8 +202,8 @@ onMounted(load)
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showDialog = false" />
-        <Button label="保存" @click="handleSave" :disabled="!form.security_code || !form.security_name" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.save')" @click="handleSave" :disabled="!form.security_code || !form.security_name" />
       </template>
     </Dialog>
   </div>

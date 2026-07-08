@@ -4,6 +4,9 @@ import { useRoute } from 'vue-router'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import { listPeriods, printPeriodic, exportPeriodicExcel } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const route = useRoute()
 const data = ref<any>(null)
@@ -13,11 +16,11 @@ const allClosedPeriods = ref<string[]>([])
 const selectedPeriod = ref<string>('')
 const noDataMessage = ref('')
 
-const REPORT_OPTIONS = [
-  { label: '资产负债表', value: 'balance' },
-  { label: '利润表', value: 'income' },
-  { label: '现金流量表', value: 'cashflow' },
-]
+const REPORT_OPTIONS = computed(() => [
+  { label: t('accounting.prints_page.balanceSheet'), value: 'balance' },
+  { label: t('accounting.prints_page.incomeStatement'), value: 'income' },
+  { label: t('accounting.prints_page.cashflowStatement'), value: 'cashflow' },
+])
 
 const reportType = computed(() => {
   const path = route.path
@@ -188,13 +191,13 @@ onMounted(fetchClosedPeriods)
           optionValue="value"
           class="w-40"
         />
-        <Button label="导出Excel" icon="pi pi-file-excel" severity="success" @click="doExport" :disabled="!data" :loading="exporting" />
-        <Button label="打印PDF" icon="pi pi-print" @click="doPrint" :disabled="!data" />
+        <Button :label="t('accounting.prints_page.exportExcel')" icon="pi pi-file-excel" severity="success" @click="doExport" :disabled="!data" :loading="exporting" />
+        <Button :label="t('accounting.prints_page.printPDF')" icon="pi pi-print" @click="doPrint" :disabled="!data" />
       </div>
       <p v-if="noDataMessage && periodOptions.length === 0" class="text-zinc-400 text-sm mt-2">{{ noDataMessage }}</p>
     </div>
 
-    <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
+    <p v-if="loading" class="text-zinc-400 text-sm">{{ t('common.loading') }}</p>
 
     <!-- 未关帐提示 -->
     <div
@@ -209,7 +212,7 @@ onMounted(fetchClosedPeriods)
       v-if="selectedReport === 'balance' && data"
       class="print-area bg-white shadow-sm px-12 pt-8 pb-4 max-w-[96%] mx-auto"
     >
-      <h1 class="text-2xl font-bold text-center mb-4">资产负债表</h1>
+      <h1 class="text-2xl font-bold text-center mb-4">{{ t('accounting.prints_page.balanceSheet') }}</h1>
       <div class="flex justify-between text-sm text-gray-600 mb-4">
         <span>{{ data.date_display }}</span>
         <span>金额单位：元</span>
@@ -218,13 +221,13 @@ onMounted(fetchClosedPeriods)
         <thead>
           <tr class="border-b-2 border-stone-400">
             <th class="text-left py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 30%">
-              资 产
+              {{ t('reports.assets') }}
             </th>
             <th
               class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
               style="width: 12%"
             >
-              期末余额
+              {{ t('accounting.gl_page.endingBalance') }}
             </th>
             <th
               class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
@@ -239,7 +242,7 @@ onMounted(fetchClosedPeriods)
               class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
               style="width: 12%"
             >
-              期末余额
+              {{ t('accounting.gl_page.endingBalance') }}
             </th>
             <th
               class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
@@ -332,7 +335,7 @@ onMounted(fetchClosedPeriods)
       v-if="selectedReport === 'income' && data"
       class="print-area bg-white shadow-sm px-12 pt-8 pb-4 max-w-5xl mx-auto"
     >
-      <h1 class="text-2xl font-bold text-center mb-4">利润表</h1>
+      <h1 class="text-2xl font-bold text-center mb-4">{{ t('accounting.prints_page.incomeStatement') }}</h1>
       <div class="flex justify-between text-sm text-gray-600 mb-4">
         <span>{{ data.period_display }}</span>
         <span>金额单位：元</span>
@@ -375,7 +378,7 @@ onMounted(fetchClosedPeriods)
       v-if="selectedReport === 'cashflow' && data"
       class="print-area bg-white shadow-sm px-12 pt-8 pb-4 max-w-5xl mx-auto"
     >
-      <h1 class="text-2xl font-bold text-center mb-4">现金流量表</h1>
+      <h1 class="text-2xl font-bold text-center mb-4">{{ t('accounting.prints_page.cashflowStatement') }}</h1>
       <div class="flex justify-between text-sm text-gray-600 mb-4">
         <span>{{ data.date_display }}</span>
         <span>金额单位：元</span>

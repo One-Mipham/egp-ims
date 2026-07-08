@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from '@/i18n'
 import { listExpenseReports, approveReport, rejectReport, cancelReport, bypassReport } from '@/api/expenses'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
@@ -12,6 +13,7 @@ import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import Textarea from 'primevue/textarea'
 
+const { t } = useI18n()
 const router = useRouter()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('company_id') || '1')
@@ -154,10 +156,10 @@ onMounted(fetchReports)
         <template #body="slotProps">{{ slotProps.data.applicant_id }}</template>
       </Column>
       <Column field="expense_date" header="费用日期" />
-      <Column header="金额">
+      <Column :header="t('common.amount')">
         <template #body="slotProps">{{ slotProps.data.total_amount?.toLocaleString() }}</template>
       </Column>
-      <Column header="状态">
+      <Column :header="t('common.status')">
         <template #body="slotProps">
           <Tag
             :value="statusLabels[slotProps.data.status] || slotProps.data.status"
@@ -165,7 +167,7 @@ onMounted(fetchReports)
           />
         </template>
       </Column>
-      <Column header="操作" style="width: 12rem">
+      <Column :header="t('common.actions')" style="width: 12rem">
         <template #body="slotProps">
           <div class="flex gap-1">
             <Button
@@ -223,7 +225,7 @@ onMounted(fetchReports)
     <Dialog v-model:visible="approveDialog" header="审批通过" :modal="true" :style="{ width: '24rem' }">
       <Textarea v-model="comment" class="w-full" rows="3" placeholder="审批意见（可选）" />
       <template #footer>
-        <Button label="取消" severity="secondary" @click="approveDialog = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="approveDialog = false" />
         <Button label="确认通过" @click="doApprove" />
       </template>
     </Dialog>
@@ -232,7 +234,7 @@ onMounted(fetchReports)
     <Dialog v-model:visible="rejectDialog" header="审批驳回" :modal="true" :style="{ width: '24rem' }">
       <Textarea v-model="comment" class="w-full" rows="3" placeholder="驳回原因" />
       <template #footer>
-        <Button label="取消" severity="secondary" @click="rejectDialog = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="rejectDialog = false" />
         <Button label="确认驳回" severity="danger" @click="doReject" />
       </template>
     </Dialog>
@@ -245,7 +247,7 @@ onMounted(fetchReports)
         <Textarea v-model="bypassReason" class="w-full" rows="3" placeholder="请填写强制跳过原因" />
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="bypassDialog = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="bypassDialog = false" />
         <Button label="确认跳过" severity="warn" :disabled="!bypassReason.trim()" @click="doBypass" />
       </template>
     </Dialog>

@@ -3,11 +3,13 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 import { getContract } from '@/api/contracts'
+import { useI18n } from '@/i18n'
 import Button from 'primevue/button'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const { t } = useI18n()
 
 const contract = ref<any>(null)
 const loading = ref(true)
@@ -34,7 +36,7 @@ onMounted(async () => {
     const { data } = await getContract(id)
     contract.value = data
   } catch (e: any) {
-    toast.add({ severity: 'error', summary: '加载失败', detail: e.message, life: 3000 })
+    toast.add({ severity: 'error', summary: t('common.error'), detail: e.message, life: 3000 })
   } finally {
     loading.value = false
   }
@@ -51,8 +53,8 @@ function doPrint() {
   <div v-else-if="contract" class="max-w-4xl mx-auto p-6">
     <!-- Print toolbar -->
     <div class="flex gap-2 mb-4 print:hidden">
-      <Button label="打印合同" icon="pi pi-print" @click="doPrint" />
-      <Button label="返回" severity="secondary" icon="pi pi-arrow-left" @click="router.back()" />
+      <Button :label="t('contracts.print')" icon="pi pi-print" @click="doPrint" />
+      <Button :label="t('common.back')" severity="secondary" icon="pi pi-arrow-left" @click="router.back()" />
     </div>
 
     <!-- Contract Document A4 -->

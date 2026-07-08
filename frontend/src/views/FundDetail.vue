@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -26,6 +27,7 @@ import {
   listCounterparties,
 } from '@/api'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const fundId = computed(() => parseInt(route.params.fundId as string))
@@ -106,7 +108,7 @@ async function saveAcct() {
   await loadAll()
 }
 async function removeAcct(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   await deleteCapitalAccount(fundId.value, id)
   await loadAll()
 }
@@ -173,7 +175,7 @@ onMounted(loadAll)
       >
       <Card class="shadow-sm"
         ><template #content
-          ><div class="text-sm text-stone-500">承诺出资</div>
+          ><div class="text-sm text-stone-500">{{ t('investments.commitmentAmount') }}</div>
           <div class="text-xl font-bold text-stone-800">¥{{ totalCommitted.toLocaleString() }}</div></template
         ></Card
       >
@@ -202,10 +204,10 @@ onMounted(loadAll)
         <Button label="添加 LP" icon="pi pi-plus" size="small" @click="openAddAcct" />
       </div>
       <DataTable :value="accounts" :loading="loading" stripedRows size="small">
-        <Column header="投资人"
+        <Column :header="t('investments.investorName')"
           ><template #body="{ data }">{{ getInvestorName(data.investor_id) }}</template></Column
         >
-        <Column header="承诺出资"
+        <Column :header="t('investments.commitmentAmount')"
           ><template #body="{ data }">¥{{ data.committed_capital?.toLocaleString() }}</template></Column
         >
         <Column header="已实缴"
@@ -214,7 +216,7 @@ onMounted(loadAll)
         <Column header="占比"
           ><template #body="{ data }">{{ data.ownership_pct?.toFixed(1) }}%</template></Column
         >
-        <Column header="操作" style="width: 100px">
+        <Column :header="t('common.actions')" style="width: 100px">
           <template #body="{ data }">
             <div class="flex gap-1">
               <Button icon="pi pi-pencil" size="small" severity="secondary" text rounded @click="openEditAcct(data)" />
@@ -232,12 +234,12 @@ onMounted(loadAll)
         <Button label="发起召唤" icon="pi pi-plus" size="small" @click="openAddCall" />
       </div>
       <DataTable :value="calls" :loading="loading" stripedRows size="small">
-        <Column field="call_date" header="日期" sortable />
-        <Column header="金额"
+        <Column field="call_date" :header="t('common.date')" sortable />
+        <Column :header="t('common.amount')"
           ><template #body="{ data }">¥{{ data.call_amount?.toLocaleString() }}</template></Column
         >
         <Column field="due_date" header="截止日" />
-        <Column header="状态"
+        <Column :header="t('common.status')"
           ><template #body="{ data }"
             ><Tag
               :value="data.status === 'pending' ? '待缴' : data.status === 'paid' ? '已缴' : '逾期'"
@@ -251,8 +253,8 @@ onMounted(loadAll)
             ><span v-else class="text-stone-300">-</span></template
           ></Column
         >
-        <Column field="notes" header="备注" />
-        <Column header="操作" style="width: 60px">
+        <Column field="notes" :header="t('common.remark')" />
+        <Column :header="t('common.actions')" style="width: 60px">
           <template #body="{ data }"
             ><Button icon="pi pi-trash" size="small" severity="danger" text rounded @click="removeCall(data.id)"
           /></template>
@@ -267,8 +269,8 @@ onMounted(loadAll)
         <Button label="记录分配" icon="pi pi-plus" size="small" @click="openAddDist" />
       </div>
       <DataTable :value="distributions" :loading="loading" stripedRows size="small">
-        <Column field="distribution_date" header="日期" sortable />
-        <Column field="distribution_type" header="类型"
+        <Column field="distribution_date" :header="t('common.date')" sortable />
+        <Column field="distribution_type" :header="t('common.type')"
           ><template #body="{ data }"
             ><Tag
               :value="
@@ -280,7 +282,7 @@ onMounted(loadAll)
               "
               :severity="data.distribution_type === 'income' ? 'success' : 'info'" /></template
         ></Column>
-        <Column header="金额"
+        <Column :header="t('common.amount')"
           ><template #body="{ data }">¥{{ data.amount?.toLocaleString() }}</template></Column
         >
         <Column header="凭证"
@@ -289,8 +291,8 @@ onMounted(loadAll)
             ><span v-else class="text-stone-300">-</span></template
           ></Column
         >
-        <Column field="notes" header="备注" />
-        <Column header="操作" style="width: 60px">
+        <Column field="notes" :header="t('common.remark')" />
+        <Column :header="t('common.actions')" style="width: 60px">
           <template #body="{ data }"
             ><Button icon="pi pi-trash" size="small" severity="danger" text rounded @click="removeDist(data.id)"
           /></template>
@@ -301,13 +303,13 @@ onMounted(loadAll)
     <!-- Dialogs: Capital Account -->
     <Dialog
       v-model:visible="showAcctDialog"
-      :header="isEditAcct ? '编辑LP' : '添加LP'"
+      :header="isEditAcct ? t('common.edit') : t('common.add')"
       :style="{ width: '420px' }"
       modal
     >
       <div class="flex flex-col gap-3 pt-2">
         <div>
-          <label class="text-sm text-stone-600">投资人 *</label
+          <label class="text-sm text-stone-600">{{ t('investments.investorName') }} *</label
           ><Dropdown
             v-model="acctForm.investor_id"
             :options="counterparties"
@@ -319,7 +321,7 @@ onMounted(loadAll)
           />
         </div>
         <div>
-          <label class="text-sm text-stone-600">承诺出资</label
+          <label class="text-sm text-stone-600">{{ t('investments.commitmentAmount') }}</label
           ><InputNumber v-model="acctForm.committed_capital" mode="currency" currency="CNY" class="w-full" />
         </div>
         <div>
@@ -332,8 +334,8 @@ onMounted(loadAll)
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showAcctDialog = false" /><Button
-          label="保存"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showAcctDialog = false" /><Button
+          :label="t('common.save')"
           @click="saveAcct"
           :disabled="!acctForm.investor_id"
       /></template>
@@ -344,7 +346,7 @@ onMounted(loadAll)
       <div class="flex flex-col gap-3 pt-2">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">日期 *</label
+            <label class="text-sm text-stone-600">{{ t('common.date') }} *</label
             ><InputText v-model="callForm.call_date" class="w-full" placeholder="YYYY-MM-DD" />
           </div>
           <div>
@@ -353,16 +355,16 @@ onMounted(loadAll)
           </div>
         </div>
         <div>
-          <label class="text-sm text-stone-600">金额 *</label
+          <label class="text-sm text-stone-600">{{ t('common.amount') }} *</label
           ><InputNumber v-model="callForm.call_amount" mode="currency" currency="CNY" class="w-full" />
         </div>
         <div>
-          <label class="text-sm text-stone-600">备注</label
+          <label class="text-sm text-stone-600">{{ t('common.remark') }}</label
           ><Textarea v-model="callForm.notes" rows="2" class="w-full" />
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showCallDialog = false" /><Button
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showCallDialog = false" /><Button
           label="保存并生成凭证"
           @click="saveCall"
           :disabled="!callForm.call_date || !callForm.call_amount"
@@ -374,11 +376,11 @@ onMounted(loadAll)
       <div class="flex flex-col gap-3 pt-2">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">日期 *</label
+            <label class="text-sm text-stone-600">{{ t('common.date') }} *</label
             ><InputText v-model="distForm.distribution_date" class="w-full" placeholder="YYYY-MM-DD" />
           </div>
           <div>
-            <label class="text-sm text-stone-600">类型</label
+            <label class="text-sm text-stone-600">{{ t('common.type') }}</label
             ><Dropdown
               v-model="distForm.distribution_type"
               :options="DIST_TYPES"
@@ -389,16 +391,16 @@ onMounted(loadAll)
           </div>
         </div>
         <div>
-          <label class="text-sm text-stone-600">金额 *</label
+          <label class="text-sm text-stone-600">{{ t('common.amount') }} *</label
           ><InputNumber v-model="distForm.amount" mode="currency" currency="CNY" class="w-full" />
         </div>
         <div>
-          <label class="text-sm text-stone-600">备注</label
+          <label class="text-sm text-stone-600">{{ t('common.remark') }}</label
           ><Textarea v-model="distForm.notes" rows="2" class="w-full" />
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDistDialog = false" /><Button
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDistDialog = false" /><Button
           label="保存并生成凭证"
           @click="saveDist"
           :disabled="!distForm.distribution_date || !distForm.amount"

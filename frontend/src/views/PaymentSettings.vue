@@ -4,7 +4,9 @@ import { useToast } from 'primevue/usetoast'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const toast = useToast()
 
 const bankAccounts = ref<any[]>([])
@@ -37,7 +39,7 @@ function removeAccount(idx: number) {
 
 function saveAccounts() {
   localStorage.setItem('payment_accounts', JSON.stringify(bankAccounts.value))
-  toast.add({ severity: 'success', summary: '已保存', life: 2000 })
+  toast.add({ severity: 'success', summary: t('common.saveSuccess'), life: 2000 })
 }
 </script>
 
@@ -54,7 +56,7 @@ function saveAccounts() {
           <InputText v-model="acct.name" class="w-full" />
         </div>
         <div class="w-48">
-          <label class="block text-xs text-zinc-500 mb-1">类型</label>
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.type') }}</label>
           <Dropdown
             v-model="acct.type"
             :options="BANK_TYPE_OPTIONS"
@@ -70,7 +72,7 @@ function saveAccounts() {
         <Button icon="pi pi-trash" text severity="danger" size="small" @click="removeAccount(idx)" />
       </div>
       <div class="flex gap-2 pt-2">
-        <Button label="保存" icon="pi pi-check" @click="saveAccounts" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="saveAccounts" />
       </div>
     </div>
   </div>

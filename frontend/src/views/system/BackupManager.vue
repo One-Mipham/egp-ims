@@ -3,6 +3,9 @@ import { ref, onMounted } from 'vue'
 import Button from 'primevue/button'
 import api from '@/api'
 import { listBackups, createBackup } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const props = defineProps<{ type: 'monthly' | 'yearly'; title: string }>()
 
@@ -120,8 +123,8 @@ onMounted(fetchBackups)
     <!-- Backup list -->
     <div class="bg-white border rounded p-4">
       <h3 class="font-bold text-sm mb-3">已有备份 ({{ backups.length }})</h3>
-      <p v-if="loading" class="text-xs text-zinc-400">加载中...</p>
-      <p v-if="!loading && !backups.length" class="text-xs text-zinc-400">暂无备份</p>
+      <p v-if="loading" class="text-xs text-zinc-400">{{ t('common.loading') }}</p>
+      <p v-if="!loading && !backups.length" class="text-xs text-zinc-400">{{ t('common.noData') }}</p>
       <div v-if="backups.length" class="overflow-x-auto">
         <table class="w-full text-sm border-collapse">
           <thead>
@@ -129,7 +132,7 @@ onMounted(fetchBackups)
               <th class="py-2">文件名</th>
               <th class="py-2">大小</th>
               <th class="py-2">创建时间</th>
-              <th class="py-2">操作</th>
+              <th class="py-2">{{ t('common.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -139,8 +142,8 @@ onMounted(fetchBackups)
               <td class="py-2 text-xs text-zinc-500">{{ b.created_at }}</td>
               <td class="py-2">
                 <div class="flex gap-1">
-                  <button @click="doDownload(b.filename)" class="text-blue-600 hover:text-blue-800 text-xs">下载</button>
-                  <button @click="doDelete(b.filename)" class="text-red-500 hover:text-red-700 text-xs ml-2">删除</button>
+                  <button @click="doDownload(b.filename)" class="text-blue-600 hover:text-blue-800 text-xs">{{ t('common.download') }}</button>
+                  <button @click="doDelete(b.filename)" class="text-red-500 hover:text-red-700 text-xs ml-2">{{ t('common.delete') }}</button>
                 </div>
               </td>
             </tr>

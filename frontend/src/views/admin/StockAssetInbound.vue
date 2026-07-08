@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -17,6 +18,8 @@ import {
   submitStockInbound,
   listStockAssets,
 } from '@/api'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const assets = ref<any[]>([])
@@ -64,16 +67,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteStockInbound(id)
     await load()
   } catch (_e: any) {
-    alert('删除失败')
+    alert(t('common.deleteFailed'))
   }
 }
 async function doSubmit(id: number) {
@@ -104,10 +107,10 @@ onMounted(load)
         <Column field="quantity" header="数量" />
         <Column field="receiver" header="接收人" />
         <Column field="inbound_date" header="入库日期" sortable />
-        <Column header="状态"
+        <Column :header="t('common.status')"
           ><template #body="{ data }"><Tag :value="data.status" :severity="statusSeverity(data.status)" /></template
         ></Column>
-        <Column header="操作" style="min-width: 160px">
+        <Column :header="t('common.actions')" style="min-width: 160px">
           <template #body="{ data }"
             ><Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" /><Button
               v-if="data.status === 'draft'"
@@ -162,12 +165,12 @@ onMounted(load)
           ><InputText v-model="form.inbound_date" type="date" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">备注</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.remark') }}</label
           ><Textarea v-model="form.notes" rows="2" class="w-full" />
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button :label="t('common.save')" @click="save"
       /></template>
     </Dialog>
   </div>

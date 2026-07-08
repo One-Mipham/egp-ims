@@ -48,7 +48,7 @@
               />
             </div>
             <div v-if="queryForm.query_type === 'subject'">
-              <label class="text-xs block mb-1">科目代码</label>
+              <label class="text-xs block mb-1">{{ t('accounting.gl_page.accountCode') }}</label>
               <InputText v-model="queryForm.filters.account_code" size="small" placeholder="如 660" class="w-32" />
             </div>
             <div v-if="queryForm.query_type === 'aux'">
@@ -73,11 +73,11 @@
               />
             </div>
             <div>
-              <label class="text-xs block mb-1">起始期间</label>
+              <label class="text-xs block mb-1">{{ t('accounting.gl_page.startPeriod') }}</label>
               <InputText v-model="queryForm.filters.start_period" size="small" placeholder="yyyy-MM" class="w-28" />
             </div>
             <div>
-              <label class="text-xs block mb-1">截止期间</label>
+              <label class="text-xs block mb-1">{{ t('accounting.gl_page.endPeriod') }}</label>
               <InputText v-model="queryForm.filters.end_period" size="small" placeholder="yyyy-MM" class="w-28" />
             </div>
             <Button label="执行" icon="pi pi-play" size="small" @click="runQuery" />
@@ -97,8 +97,8 @@
         <InputText v-model="saveName" class="w-full" />
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="saveVisible = false" />
-        <Button label="保存" @click="doSave" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="saveVisible = false" />
+        <Button :label="t('common.save')" @click="doSave" />
       </template>
     </Dialog>
   </div>
@@ -106,6 +106,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
@@ -123,6 +124,7 @@ import {
 } from '../../api'
 
 const toast = useToast()
+const { t } = useI18n()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 const now = new Date()
 const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -235,7 +237,7 @@ async function doSave() {
     query_type: queryForm.value.query_type,
     filters: queryForm.value.filters,
   })
-  toast.add({ severity: 'success', summary: '已保存', life: 3000 })
+  toast.add({ severity: 'success', summary: t('common.saveSuccess'), life: 3000 })
   saveVisible.value = false
   await loadQueries()
 }
@@ -244,7 +246,7 @@ async function confirmDelete() {
   if (!selectedQuery.value) return
   if (!confirm(`确定删除 "${selectedQuery.value.name}" 吗？`)) return
   await deleteCustomQuery(selectedQuery.value.id)
-  toast.add({ severity: 'success', summary: '已删除', life: 3000 })
+  toast.add({ severity: 'success', summary: t('common.deleteSuccess'), life: 3000 })
   selectedQuery.value = null
   await loadQueries()
 }

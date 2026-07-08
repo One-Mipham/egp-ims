@@ -3,7 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
 import { listAccounts, bulkSetInitialBalance } from '@/api'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const accounts = ref<any[]>([])
 const loading = ref(false)
 const saving = ref(false)
@@ -79,7 +81,7 @@ async function saveAll() {
     edits.value = {}
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -135,16 +137,16 @@ onMounted(load)
       <table class="w-full text-sm border-collapse">
         <thead>
           <tr class="border-b bg-stone-50 text-left text-xs text-zinc-500">
-            <th class="py-2 px-3">代码</th>
-            <th class="py-2 px-3">名称</th>
+            <th class="py-2 px-3">{{ t('common.code') }}</th>
+            <th class="py-2 px-3">{{ t('common.name') }}</th>
             <th class="py-2 px-3">级别</th>
             <th class="py-2 px-3">类别</th>
             <th class="py-2 px-3">方向</th>
-            <th class="py-2 px-3 text-right">期初余额</th>
+            <th class="py-2 px-3 text-right">{{ t('accounting.accounts_page.initialBalance') }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="6" class="py-4 text-center text-zinc-400">加载中...</td></tr>
+          <tr v-if="loading"><td colspan="6" class="py-4 text-center text-zinc-400">{{ t('common.loading') }}</td></tr>
           <tr v-for="a in filtered" :key="a.code" class="border-b last:border-b-0 hover:bg-stone-50">
             <td class="py-1.5 px-3 font-mono text-xs">{{ a.code }}</td>
             <td class="py-1.5 px-3">{{ a.name }}</td>

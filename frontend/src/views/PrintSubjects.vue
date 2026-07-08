@@ -3,6 +3,9 @@ import { ref, onMounted } from 'vue'
 import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import { printSubjects } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const subjects = ref<any[]>([])
 const loading = ref(false)
@@ -48,23 +51,23 @@ onMounted(load)
           @change="load"
           placeholder="选择级别"
         />
-        <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!subjects.length" />
+        <Button :label="t('common.print')" icon="pi pi-print" @click="doPrint" :disabled="!subjects.length" />
       </div>
     </div>
 
-    <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
+    <p v-if="loading" class="text-zinc-400 text-sm">{{ t('common.loading') }}</p>
 
     <div v-if="subjects.length" class="print-area bg-white shadow-sm px-12 pt-8 pb-6 max-w-5xl mx-auto">
-      <h1 class="text-2xl font-bold text-center mb-6">科目表</h1>
+      <h1 class="text-2xl font-bold text-center mb-6">{{ t('accounting.prints_page.printSubjects') }}</h1>
 
       <table class="data-table border-collapse border border-stone-300">
         <thead>
           <tr class="border-b-2 border-stone-400 bg-stone-50">
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 90px">科目编码</th>
-            <th class="text-left py-1.5 px-2 border border-stone-200">科目名称</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 70px">级别</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 80px">科目类别</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 70px">余额方向</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 90px">{{ t('accounting.accounts_page.code') }}</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200">{{ t('accounting.accounts_page.name') }}</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 70px">{{ t('accounting.accounts_page.level') }}</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 80px">{{ t('accounting.accounts_page.category') }}</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 70px">{{ t('accounting.accounts_page.balanceDirection') }}</th>
           </tr>
         </thead>
         <tbody>

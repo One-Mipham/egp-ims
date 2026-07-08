@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -15,6 +16,8 @@ import {
   deleteStockRequisition,
   submitStockRequisition,
 } from '@/api'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const loading = ref(false)
@@ -59,16 +62,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteStockRequisition(id)
     await load()
   } catch (_e: any) {
-    alert('删除失败')
+    alert(t('common.deleteFailed'))
   }
 }
 async function doSubmit(id: number) {
@@ -92,12 +95,12 @@ onMounted(load)
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="15">
         <Column field="applicant" header="申请人" sortable />
-        <Column field="department" header="部门" sortable />
+        <Column field="department" :header="t('admin.department')" sortable />
         <Column field="quantity" header="数量" />
-        <Column header="状态"
+        <Column :header="t('common.status')"
           ><template #body="{ data }"><Tag :value="data.status" :severity="statusSeverity(data.status)" /></template
         ></Column>
-        <Column header="操作" style="min-width: 160px">
+        <Column :header="t('common.actions')" style="min-width: 160px">
           <template #body="{ data }">
             <Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" />
             <Button v-if="data.status === 'draft'" text size="small" icon="pi pi-send" @click="doSubmit(data.id)" />
@@ -129,7 +132,7 @@ onMounted(load)
           ><InputText v-model="form.applicant" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">部门</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('admin.department') }}</label
           ><InputText v-model="form.department" class="w-full" />
         </div>
         <div>
@@ -142,7 +145,7 @@ onMounted(load)
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button :label="t('common.save')" @click="save"
       /></template>
     </Dialog>
   </div>

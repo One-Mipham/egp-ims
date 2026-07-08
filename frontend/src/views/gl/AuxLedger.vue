@@ -1,6 +1,6 @@
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">辅助账</h2>
+    <h2 class="text-xl font-bold mb-4">{{ t('accounting.gl_page.auxLedger') }}</h2>
 
     <div class="flex gap-3 items-end mb-4 flex-wrap">
       <div>
@@ -26,18 +26,18 @@
         />
       </div>
       <div>
-        <label class="block text-sm mb-1">科目代码(可选)</label>
+        <label class="block text-sm mb-1">{{ t('accounting.gl_page.accountCode') }}({{ t('common.optional') }})</label>
         <InputText v-model="filters.account_code" placeholder="如 660" />
       </div>
       <div>
-        <label class="block text-sm mb-1">起始期间</label>
+        <label class="block text-sm mb-1">{{ t('accounting.gl_page.startPeriod') }}</label>
         <InputText v-model="filters.start_period" placeholder="yyyy-MM" />
       </div>
       <div>
-        <label class="block text-sm mb-1">截止期间</label>
+        <label class="block text-sm mb-1">{{ t('accounting.gl_page.endPeriod') }}</label>
         <InputText v-model="filters.end_period" placeholder="yyyy-MM" />
       </div>
-      <Button label="查询" icon="pi pi-search" @click="search" />
+      <Button :label="t('common.search')" icon="pi pi-search" @click="search" />
     </div>
 
     <div v-if="result">
@@ -47,7 +47,7 @@
         {{ result.ending_balance?.toLocaleString() }}
       </div>
       <DataTable :value="result.entries" stripedRows>
-        <Column field="date" header="日期" style="width: 7rem" />
+        <Column field="date" :header="t('common.date')" style="width: 7rem" />
         <Column field="voucher_no" header="凭证号" style="width: 7rem" />
         <Column field="account_code" header="科目" style="width: 6rem" />
         <Column field="account_name" header="科目名称" style="width: 8rem" />
@@ -58,7 +58,7 @@
         <Column field="credit" header="贷方" style="width: 8rem">
           <template #body="{ data }">{{ data.credit ? data.credit.toLocaleString() : '' }}</template>
         </Column>
-        <Column field="balance" header="余额" style="width: 8rem">
+        <Column field="balance" :header="t('accounting.gl_page.balance')" style="width: 8rem">
           <template #body="{ data }">{{ data.balance?.toLocaleString() }}</template>
         </Column>
       </DataTable>
@@ -68,6 +68,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
@@ -79,6 +80,7 @@ import { getAuxLedger } from '../../api'
 import { listDepartments, listPersons, listCounterparties, listProjects } from '../../api'
 
 const toast = useToast()
+const { t } = useI18n()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 const now = new Date()
 const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`

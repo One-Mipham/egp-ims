@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { reactive, computed, ref, onMounted } from 'vue'
 import api from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
 
@@ -359,6 +362,7 @@ const planName = ref('现金流计划')
 const saving = ref(false)
 const loading = ref(false)
 const saveMessage = ref('')
+const saveError = ref(false)
 const companyId = localStorage.getItem('companyId') || '1'
 
 function buildCFItems(): { account_code: string; month: string; amount: number }[] {
@@ -406,9 +410,11 @@ async function savePlan() {
       })
       planId.value = res.data.id
     }
-    saveMessage.value = '保存成功'
+    saveMessage.value = t('common.saveSuccess')
+    saveError.value = false
   } catch (e: any) {
-    saveMessage.value = '保存失败: ' + (e?.response?.data?.detail || e.message)
+    saveMessage.value = t('common.saveFailed') + ': ' + (e?.response?.data?.detail || e.message)
+    saveError.value = true
   } finally { saving.value = false }
 }
 
@@ -455,11 +461,11 @@ onMounted(() => { loadPlan() })
 <template>
   <div class="space-y-6">
     <div class="page-header">
-      <h2>现金流计划与融资计划</h2>
+      <h2>{{ t('finance.cashflow_page.title') }}</h2>
       <div class="flex items-center gap-2">
-        <span v-if="saveMessage" :class="saveMessage.includes('失败') ? 'text-red-600' : 'text-emerald-600'" class="text-xs">{{ saveMessage }}</span>
-        <button class="btn-primary text-xs" :disabled="saving" @click="savePlan">{{ saving ? '保存中...' : '保存' }}</button>
-        <button class="px-3 py-1 text-xs bg-stone-500 text-white rounded hover:bg-stone-600" @click="exportCF">导出CSV</button>
+        <span v-if="saveMessage" :class="saveError ? 'text-red-600' : 'text-emerald-600'" class="text-xs">{{ saveMessage }}</span>
+        <button class="btn-primary text-xs" :disabled="saving" @click="savePlan">{{ saving ? t('common.loading') : t('finance.cashflow_page.savePlan') }}</button>
+        <button class="px-3 py-1 text-xs bg-stone-500 text-white rounded hover:bg-stone-600" @click="exportCF">{{ t('finance.cashflow_page.exportCSV') }}</button>
       </div>
     </div>
 

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import { listReceivables, updateReceivable } from '../../api'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
@@ -55,13 +57,13 @@ onMounted(load)
       <thead>
         <tr class="bg-zinc-100 text-left">
           <th class="p-2 border">客户</th>
-          <th class="p-2 border">发票号</th>
-          <th class="p-2 border text-right">金额</th>
-          <th class="p-2 border text-right">余额</th>
+          <th class="p-2 border">{{ t('receivables.invoiceNo') }}</th>
+          <th class="p-2 border text-right">{{ t('common.amount') }}</th>
+          <th class="p-2 border text-right">{{ t('receivables.balance') }}</th>
           <th class="p-2 border text-right">账龄(天)</th>
-          <th class="p-2 border">状态</th>
-          <th class="p-2 border">到期日</th>
-          <th class="p-2 border">操作</th>
+          <th class="p-2 border">{{ t('common.status') }}</th>
+          <th class="p-2 border">{{ t('receivables.dueDate') }}</th>
+          <th class="p-2 border">{{ t('common.actions') }}</th>
         </tr>
       </thead>
       <tbody>

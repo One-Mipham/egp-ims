@@ -9,8 +9,10 @@ import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
 import Tag from 'primevue/tag'
 import { listPortfolios, createPortfolio, updatePortfolio, deletePortfolio } from '@/api'
+import { useI18n } from '@/i18n'
 
 const portfolios = ref<any[]>([])
+const { t } = useI18n()
 const loading = ref(false)
 const saving = ref(false)
 const showDialog = ref(false)
@@ -105,7 +107,7 @@ async function handleSave() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -117,7 +119,7 @@ async function handleDelete(id: number) {
     await deletePortfolio(id)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 
@@ -127,19 +129,19 @@ onMounted(load)
 <template>
   <div>
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-zinc-700">投资组合总览</h2>
+      <h2 class="text-lg font-semibold text-zinc-700">{{ t('investments.portfolios') }}</h2>
       <Button label="新增组合" icon="pi pi-plus" @click="openAdd" />
     </div>
 
     <DataTable :value="portfolios" :loading="loading" stripedRows size="small" paginator :rows="10">
-      <Column field="name" header="组合名称" sortable />
+      <Column field="name" :header="t('investments.portfolioName')" sortable />
       <Column field="investment_type" header="投资类型" sortable>
         <template #body="{ data }">
           <Tag :value="TYPE_LABELS[data.investment_type] || data.investment_type" />
         </template>
       </Column>
       <Column field="currency" header="币种" sortable style="width: 80px" />
-      <Column field="status" header="状态" sortable style="width: 100px">
+      <Column field="status" :header="t('common.status')" sortable style="width: 100px">
         <template #body="{ data }">
           <Tag
             :value="STATUS_LABELS[data.status] || data.status"
@@ -147,8 +149,8 @@ onMounted(load)
           />
         </template>
       </Column>
-      <Column field="description" header="备注" />
-      <Column header="操作" style="width: 140px">
+      <Column field="description" :header="t('common.remark')" />
+      <Column :header="t('common.actions')" style="width: 140px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
@@ -185,13 +187,11 @@ onMounted(load)
             class="w-full"
           />
         </div>
-        <div>
-          <label class="block text-sm mb-1">备注</label><Textarea v-model="form.description" rows="2" class="w-full" />
-        </div>
+        <div><label class="block text-sm mb-1">{{ t('common.remark') }}</label><Textarea v-model="form.description" rows="2" class="w-full" /></div>
       </div>
       <template #footer>
-        <Button label="取消" text @click="showDialog = false" />
-        <Button label="保存" :loading="saving" @click="handleSave" />
+        <Button :label="t('common.cancel')" text @click="showDialog = false" />
+        <Button :label="t('common.save')" :loading="saving" @click="handleSave" />
       </template>
     </Dialog>
   </div>

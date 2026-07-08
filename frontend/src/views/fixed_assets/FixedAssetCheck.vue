@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import { listFixedAssets, updateFixedAsset } from '../../api'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
@@ -92,14 +94,14 @@ onMounted(load)
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">资产编号</th>
-          <th class="p-2 border">名称</th>
-          <th class="p-2 border">类别</th>
-          <th class="p-2 border text-right">原值</th>
-          <th class="p-2 border text-right">净值</th>
-          <th class="p-2 border">状态</th>
+          <th class="p-2 border">{{ t('assets.assetCode') }}</th>
+          <th class="p-2 border">{{ t('common.name') }}</th>
+          <th class="p-2 border">{{ t('assets.assetCategory') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.originalValue') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.netValue') }}</th>
+          <th class="p-2 border">{{ t('common.status') }}</th>
           <th class="p-2 border">存放地点</th>
-          <th class="p-2 border">操作</th>
+          <th class="p-2 border">{{ t('common.actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -132,8 +134,8 @@ onMounted(load)
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="editDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
-          <button @click="saveEdit" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">保存</button>
+          <button @click="editDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
+          <button @click="saveEdit" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">{{ t('common.save') }}</button>
         </div>
       </div>
     </div>

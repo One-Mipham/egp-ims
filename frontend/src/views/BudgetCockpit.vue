@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { reactive, computed, ref, onMounted } from 'vue'
 import { listBudgets, getBudget, createBudget, updateBudget, type BudgetData } from '@/api/budget'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const currentYear = new Date().getFullYear()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
@@ -306,6 +309,7 @@ const profitCompletion = computed(() => {
 const saving = ref(false)
 const loading = ref(false)
 const saveMessage = ref('')
+const saveError = ref(false)
 
 function buildBudgetItems(): { account_code: string; month: string; amount: number }[] {
   const items: { account_code: string; month: string; amount: number }[] = []
@@ -369,9 +373,11 @@ async function saveBudget() {
       const res = await createBudget(payload as any)
       budgetId.value = (res.data as BudgetData).id
     }
-    saveMessage.value = '保存成功'
+    saveMessage.value = t('common.saveSuccess')
+    saveError.value = false
   } catch (e: any) {
-    saveMessage.value = '保存失败: ' + (e?.response?.data?.detail || e.message)
+    saveMessage.value = t('common.saveFailed') + ': ' + (e?.response?.data?.detail || e.message)
+    saveError.value = true
   } finally {
     saving.value = false
   }
@@ -428,12 +434,12 @@ onMounted(() => {
 <template>
   <div class="space-y-6">
     <div class="page-header flex items-center justify-between">
-      <h2>公司预算与绩效评价</h2>
+      <h2>{{ t('finance.budget_page.title') }}</h2>
       <div class="flex items-center gap-2">
         <span
           v-if="saveMessage"
           class="text-xs"
-          :class="saveMessage.includes('失败') ? 'text-red-500' : 'text-green-600'"
+          :class="saveError ? 'text-red-500' : 'text-green-600'"
           >{{ saveMessage }}</span
         >
         <button
@@ -441,27 +447,27 @@ onMounted(() => {
           :disabled="loading"
           @click="loadBudget"
         >
-          {{ loading ? '加载中...' : '加载' }}
+          {{ loading ? t('common.loading') : t('finance.budget_page.loadBudget') }}
         </button>
         <button
           class="px-3 py-1 text-xs bg-amber-500 text-white rounded hover:bg-amber-600 disabled:opacity-50"
           :disabled="saving"
           @click="saveBudget"
         >
-          {{ saving ? '保存中...' : '保存' }}
+          {{ saving ? t('common.loading') : t('finance.budget_page.saveBudget') }}
         </button>
         <button class="px-3 py-1 text-xs bg-stone-500 text-white rounded hover:bg-stone-600" @click="exportBudget">
-          导出CSV
+          {{ t('finance.budget_page.exportCSV') }}
         </button>
       </div>
     </div>
 
     <!-- ═══════════ 增长率与调整设置 ═══════════ -->
     <div class="form-card">
-      <h3 class="text-sm font-semibold text-stone-700 mb-3">规划变量设置</h3>
+      <h3 class="text-sm font-semibold text-stone-700 mb-3">{{ t('finance.budget_page.growthRateSettings') }}</h3>
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-xs text-stone-500 mb-1">年度销售收入增长率 (%)</label>
+          <label class="block text-xs text-stone-500 mb-1">{{ t('finance.budget_page.revenueGrowthRate') }}</label>
           <div class="flex items-center gap-1">
             <input
               type="number"
@@ -481,7 +487,7 @@ onMounted(() => {
           <p class="text-[10px] text-stone-400 mt-1">设定目标增长率，未来三年收入自动计算</p>
         </div>
         <div>
-          <label class="block text-xs text-stone-500 mb-1">手动调整输入</label>
+          <label class="block text-xs text-stone-500 mb-1">{{ t('finance.budget_page.manualAdjustment') }}</label>
           <div class="flex items-center gap-1">
             <input
               type="number"
@@ -500,7 +506,7 @@ onMounted(() => {
           <p class="text-[10px] text-stone-400 mt-1">对未来每年收入统一增减额（负数表示调减）</p>
         </div>
         <div>
-          <label class="block text-xs text-stone-500 mb-1">成本占收入比 (%)</label>
+          <label class="block text-xs text-stone-500 mb-1">{{ t('finance.budget_page.costRate') }}</label>
           <div class="flex items-center gap-1">
             <input type="number" step="0.1" class="w-24 px-2 py-1 border border-stone-300 rounded text-sm font-number focus:border-amber-400 focus:outline-none"
               :value="costRate != null ? costRate : ''" placeholder="如 60"
@@ -509,7 +515,7 @@ onMounted(() => {
           </div>
         </div>
         <div>
-          <label class="block text-xs text-stone-500 mb-1">经营费用占收入比 (%)</label>
+          <label class="block text-xs text-stone-500 mb-1">{{ t('finance.budget_page.operatingExpRate') }}</label>
           <div class="flex items-center gap-1">
             <input type="number" step="0.1" class="w-24 px-2 py-1 border border-stone-300 rounded text-sm font-number focus:border-amber-400 focus:outline-none"
               :value="operatingExpRate != null ? operatingExpRate : ''" placeholder="如 10"
@@ -518,7 +524,7 @@ onMounted(() => {
           </div>
         </div>
         <div>
-          <label class="block text-xs text-stone-500 mb-1">管理费用占收入比 (%)</label>
+          <label class="block text-xs text-stone-500 mb-1">{{ t('finance.budget_page.adminExpRate') }}</label>
           <div class="flex items-center gap-1">
             <input type="number" step="0.1" class="w-24 px-2 py-1 border border-stone-300 rounded text-sm font-number focus:border-amber-400 focus:outline-none"
               :value="adminExpRate != null ? adminExpRate : ''" placeholder="如 15"
@@ -527,7 +533,7 @@ onMounted(() => {
           </div>
         </div>
         <div>
-          <label class="block text-xs text-stone-500 mb-1">财务费用占收入比 (%)</label>
+          <label class="block text-xs text-stone-500 mb-1">{{ t('finance.budget_page.financeExpRate') }}</label>
           <div class="flex items-center gap-1">
             <input type="number" step="0.1" class="w-24 px-2 py-1 border border-stone-300 rounded text-sm font-number focus:border-amber-400 focus:outline-none"
               :value="financeExpRate != null ? financeExpRate : ''" placeholder="如 3"
@@ -536,7 +542,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <p class="text-[10px] text-stone-400 mt-3">成本及费用占收入比设定后，未来三年对应项目自动预填。可在未来年表格中手工覆盖自动值。</p>
+      <p class="text-[10px] text-stone-400 mt-3">{{ t('finance.budget_page.autoComputeHint') }}</p>
     </div>
 
     <!-- ═══════════ 年度预算表 ═══════════ -->

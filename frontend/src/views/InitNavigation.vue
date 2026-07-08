@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import Card from 'primevue/card'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const sections = [
   {
@@ -52,7 +55,7 @@ const sections = [
 
 <template>
   <div>
-    <h1 class="text-xl font-light text-zinc-800 mb-1 tracking-tight">初始化导航</h1>
+    <h1 class="text-xl font-light text-zinc-800 mb-1 tracking-tight">{{ t('investments.initData') }}</h1>
     <p class="text-sm text-zinc-500 mb-6 leading-relaxed">
       用户可以进入公共资料修改基本信息、会计期间、业务流程或设置用户、用户组一级赋予相应功能、字段和数据权限
     </p>

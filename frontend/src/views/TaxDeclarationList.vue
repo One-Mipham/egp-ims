@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useRoute } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -11,6 +12,7 @@ import Calendar from 'primevue/calendar'
 import { listDeclarations, createDeclaration, updateDeclaration, deleteDeclaration } from '@/api/taxes'
 
 const route = useRoute()
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 const taxTypeMap: Record<string, string> = {
@@ -150,17 +152,17 @@ async function handleSave() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   }
 }
 
 async function handleDelete(id: number) {
-  if (!confirm('确认删除该申报记录？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteDeclaration(id)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 
@@ -173,8 +175,8 @@ onMounted(load)
       <h2 class="text-lg font-bold text-zinc-700">{{ pageTitle }}</h2>
       <div class="flex gap-2">
         <InputText v-model="search" placeholder="搜索备注..." class="w-48" />
-        <Button label="查询" icon="pi pi-search" severity="secondary" @click="load" />
-        <Button label="新增" icon="pi pi-plus" @click="openAdd" />
+        <Button :label="t('common.search')" icon="pi pi-search" severity="secondary" @click="load" />
+        <Button :label="t('common.add')" icon="pi pi-plus" @click="openAdd" />
       </div>
     </div>
 
@@ -193,12 +195,12 @@ onMounted(load)
             {{ data.tax_base != null ? `¥${Number(data.tax_base).toLocaleString()}` : '-' }}
           </template>
         </Column>
-        <Column v-if="!isPenalty" field="tax_rate" header="税率" style="width: 70px">
+        <Column v-if="!isPenalty" field="tax_rate" :header="t('accounting.taxes_page.taxRate')" style="width: 70px">
           <template #body="{ data }">
             {{ data.tax_rate != null ? `${data.tax_rate}%` : '-' }}
           </template>
         </Column>
-        <Column field="tax_amount" header="税额" style="width: 120px">
+        <Column field="tax_amount" :header="t('accounting.taxes_page.taxAmount')" style="width: 120px">
           <template #body="{ data }">¥{{ Number(data.tax_amount || 0).toLocaleString() }}</template>
         </Column>
         <Column field="paid_amount" header="已缴金额" style="width: 120px">
@@ -209,7 +211,7 @@ onMounted(load)
             ¥{{ (Number(data.tax_amount || 0) - Number(data.paid_amount || 0)).toLocaleString() }}
           </template>
         </Column>
-        <Column field="status" header="状态" style="width: 80px">
+        <Column field="status" :header="t('common.status')" style="width: 80px">
           <template #body="{ data }">
             <span
               :class="{
@@ -228,10 +230,10 @@ onMounted(load)
         <Column header="缴纳日期" style="width: 110px">
           <template #body="{ data }">{{ data.payment_date?.slice(0, 10) || '-' }}</template>
         </Column>
-        <Column header="操作" style="width: 130px">
+        <Column :header="t('common.actions')" style="width: 130px">
           <template #body="{ data }">
-            <Button label="编辑" text severity="info" size="small" @click="openEdit(data)" />
-            <Button label="删除" text severity="danger" size="small" @click="handleDelete(data.id)" />
+            <Button :label="t('common.edit')" text severity="info" size="small" @click="openEdit(data)" />
+            <Button :label="t('common.delete')" text severity="danger" size="small" @click="handleDelete(data.id)" />
           </template>
         </Column>
       </DataTable>
@@ -253,7 +255,7 @@ onMounted(load)
             </div>
           </div>
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">状态</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('common.status') }}</label>
             <Select
               v-model="form.status"
               :options="statusOptions"
@@ -281,7 +283,7 @@ onMounted(load)
             />
           </div>
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">税额 *</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.taxes_page.taxAmount') }} *</label>
             <input
               type="number"
               v-model.number="form.tax_amount"
@@ -330,11 +332,11 @@ onMounted(load)
           </div>
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">备注</label>
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.remark') }}</label>
           <InputText v-model="form.notes" class="w-full" />
         </div>
         <div>
-          <Button label="保存" icon="pi pi-check" @click="handleSave" />
+          <Button :label="t('common.save')" icon="pi pi-check" @click="handleSave" />
         </div>
       </div>
     </Dialog>

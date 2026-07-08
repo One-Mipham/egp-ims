@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
+import { useI18n } from '@/i18n'
 import { useRoute } from 'vue-router'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -12,6 +13,7 @@ import { listInvoices, createInvoice, updateInvoice, deleteInvoice } from '@/api
 import { listCounterparties } from '@/api'
 
 const route = useRoute()
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 const mode = computed(() => {
@@ -150,17 +152,17 @@ async function handleSave() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   }
 }
 
 async function handleDelete(id: number) {
-  if (!confirm('确认删除该发票记录？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteInvoice(id)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 
@@ -181,8 +183,8 @@ onMounted(load)
         <InputText v-model="search" placeholder="搜索发票号/类别..." class="w-56" />
         <Calendar v-model="dateFrom" placeholder="起始日期" showIcon class="w-36" @value-change="load" />
         <Calendar v-model="dateTo" placeholder="截止日期" showIcon class="w-36" @value-change="load" />
-        <Button label="查询" icon="pi pi-search" severity="secondary" @click="load" />
-        <Button v-if="mode !== 'query'" label="新增" icon="pi pi-plus" @click="openAdd" />
+        <Button :label="t('common.search')" icon="pi pi-search" severity="secondary" @click="load" />
+        <Button v-if="mode !== 'query'" :label="t('common.add')" icon="pi pi-plus" @click="openAdd" />
       </div>
     </div>
 
@@ -192,10 +194,10 @@ onMounted(load)
           <template #body="{ index }">{{ index + 1 }}</template>
         </Column>
         <Column field="invoice_number" header="发票号码" style="width: 150px" />
-        <Column field="invoice_date" header="开票日期" style="width: 110px">
+        <Column field="invoice_date" :header="t('accounting.taxes_page.invoiceDate')" style="width: 110px">
           <template #body="{ data }">{{ data.invoice_date?.slice(0, 10) }}</template>
         </Column>
-        <Column v-if="mode === 'query'" field="invoice_type" header="类型" style="width: 80px">
+        <Column v-if="mode === 'query'" field="invoice_type" :header="t('common.type')" style="width: 80px">
           <template #body="{ data }">{{ data.invoice_type === 'sales' ? '销项' : '进项' }}</template>
         </Column>
         <Column header="对方单位" style="width: 160px">
@@ -204,23 +206,23 @@ onMounted(load)
         <Column field="amount" header="金额（不含税）" style="width: 130px">
           <template #body="{ data }">¥{{ Number(data.amount || 0).toLocaleString() }}</template>
         </Column>
-        <Column field="tax_rate" header="税率" style="width: 70px">
+        <Column field="tax_rate" :header="t('accounting.taxes_page.taxRate')" style="width: 70px">
           <template #body="{ data }">{{ data.tax_rate }}%</template>
         </Column>
-        <Column field="tax_amount" header="税额" style="width: 110px">
+        <Column field="tax_amount" :header="t('accounting.taxes_page.taxAmount')" style="width: 110px">
           <template #body="{ data }">¥{{ Number(data.tax_amount || 0).toLocaleString() }}</template>
         </Column>
         <Column field="total_amount" header="价税合计" style="width: 130px">
           <template #body="{ data }">¥{{ Number(data.total_amount || 0).toLocaleString() }}</template>
         </Column>
         <Column field="category" header="类别" style="width: 90px" />
-        <Column field="status" header="状态" style="width: 80px">
+        <Column field="status" :header="t('common.status')" style="width: 80px">
           <template #body="{ data }">{{ statusLabels[data.status] || data.status }}</template>
         </Column>
-        <Column header="操作" style="width: 130px">
+        <Column :header="t('common.actions')" style="width: 130px">
           <template #body="{ data }">
-            <Button label="编辑" text severity="info" size="small" @click="openEdit(data)" />
-            <Button label="删除" text severity="danger" size="small" @click="handleDelete(data.id)" />
+            <Button :label="t('common.edit')" text severity="info" size="small" @click="openEdit(data)" />
+            <Button :label="t('common.delete')" text severity="danger" size="small" @click="handleDelete(data.id)" />
           </template>
         </Column>
       </DataTable>
@@ -306,7 +308,7 @@ onMounted(load)
         </div>
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">状态</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('common.status') }}</label>
             <Select
               v-model="form.status"
               :options="[
@@ -320,12 +322,12 @@ onMounted(load)
             />
           </div>
           <div class="flex-[2]">
-            <label class="block text-xs text-zinc-500 mb-1">备注</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('common.remark') }}</label>
             <InputText v-model="form.notes" class="w-full" />
           </div>
         </div>
         <div>
-          <Button label="保存" icon="pi pi-check" @click="handleSave" />
+          <Button :label="t('common.save')" icon="pi pi-check" @click="handleSave" />
         </div>
       </div>
     </Dialog>

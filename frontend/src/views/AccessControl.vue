@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
 import SelectButton from 'primevue/selectbutton'
 import { listAccessRecords, createAccessRecord, deleteAccessRecord } from '@/api'
 
+const { t } = useI18n()
 const records = ref<any[]>([])
 const total = ref(0)
 const page = ref(1)
@@ -25,11 +27,11 @@ const form = ref({
 })
 
 const DIR_OPTIONS = [
-  { label: '全部', value: null },
-  { label: '进入', value: 'entry' },
-  { label: '离开', value: 'exit' },
+  { label: t('common.all'), value: null },
+  { label: t('accessControl.checkIn'), value: 'entry' },
+  { label: t('accessControl.checkOut'), value: 'exit' },
 ]
-const DIR_LABELS: Record<string, string> = { entry: '进入', exit: '离开' }
+const DIR_LABELS: Record<string, string> = { entry: t('accessControl.checkIn'), exit: t('accessControl.checkOut') }
 const DIR_COLORS: Record<string, string> = {
   entry: 'bg-emerald-100 text-emerald-700',
   exit: 'bg-orange-100 text-orange-700',
@@ -61,7 +63,7 @@ async function handleSave() {
 }
 
 async function handleDelete(id: number) {
-  if (!confirm('确定删除该记录？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   await deleteAccessRecord(id)
   await load()
 }
@@ -77,7 +79,7 @@ onMounted(load)
 
 <template>
   <div class="max-w-5xl">
-    <h2 class="text-lg font-bold mb-1">门禁管理</h2>
+    <h2 class="text-lg font-bold mb-1">{{ t('accessControl.title') }}</h2>
     <p class="text-xs text-zinc-400 mb-4">人员出入记录登记与查询</p>
 
     <!-- Filters -->
@@ -91,11 +93,11 @@ onMounted(load)
         @change="page = 1; load()"
       />
       <InputText v-model="filterName" placeholder="搜索人员..." size="small" class="w-40" @keyup.enter="page = 1; load()" />
-      <Button label="登记出入" icon="pi pi-plus" size="small" severity="success" @click="openCreate" />
+      <Button :label="t('accessControl.addRecord')" icon="pi pi-plus" size="small" severity="success" @click="openCreate" />
     </div>
 
     <!-- Table -->
-    <div v-if="loading" class="text-sm text-zinc-400 py-8 text-center">加载中...</div>
+    <div v-if="loading" class="text-sm text-zinc-400 py-8 text-center">{{ t('common.loading') }}</div>
 
     <div v-else-if="!records.length" class="text-sm text-zinc-400 py-8 text-center">暂无出入记录。</div>
 
@@ -103,14 +105,14 @@ onMounted(load)
       <table class="w-full text-sm border-collapse">
         <thead>
           <tr class="border-b bg-stone-50 text-left text-xs text-zinc-500">
-            <th class="py-2 px-3">时间</th>
-            <th class="py-2 px-3">姓名</th>
-            <th class="py-2 px-3">部门</th>
-            <th class="py-2 px-3">方向</th>
-            <th class="py-2 px-3">门禁点</th>
-            <th class="py-2 px-3">事由</th>
+            <th class="py-2 px-3">{{ t('accessControl.accessTime') }}</th>
+            <th class="py-2 px-3">{{ t('accessControl.personName') }}</th>
+            <th class="py-2 px-3">{{ t('accessControl.department') }}</th>
+            <th class="py-2 px-3">{{ t('accessControl.direction') }}</th>
+            <th class="py-2 px-3">{{ t('accessControl.accessPoint') }}</th>
+            <th class="py-2 px-3">{{ t('accessControl.reason') }}</th>
             <th class="py-2 px-3">电话</th>
-            <th class="py-2 px-3 w-16">操作</th>
+            <th class="py-2 px-3 w-16">{{ t('common.actions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -140,15 +142,15 @@ onMounted(load)
     </div>
 
     <!-- Dialog -->
-    <Dialog v-model:visible="showDialog" header="登记出入记录" :modal="true" class="w-full max-w-md">
+    <Dialog v-model:visible="showDialog" :header="t('accessControl.addRecord')" :modal="true" class="w-full max-w-md">
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-zinc-500 block mb-1">姓名 *</label>
+          <label class="text-xs text-zinc-500 block mb-1">{{ t('accessControl.personName') }} *</label>
           <InputText v-model="form.person_name" class="w-full" placeholder="人员姓名" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-zinc-500 block mb-1">部门</label>
+            <label class="text-xs text-zinc-500 block mb-1">{{ t('accessControl.department') }}</label>
             <InputText v-model="form.department" class="w-full" placeholder="部门" />
           </div>
           <div>
@@ -158,16 +160,16 @@ onMounted(load)
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-zinc-500 block mb-1">方向 *</label>
+            <label class="text-xs text-zinc-500 block mb-1">{{ t('accessControl.direction') }} *</label>
             <select v-model="form.direction" class="border rounded px-2 py-1.5 text-sm w-full">
               <option value="entry">进入</option>
               <option value="exit">离开</option>
             </select>
           </div>
           <div>
-            <label class="text-xs text-zinc-500 block mb-1">门禁点</label>
+            <label class="text-xs text-zinc-500 block mb-1">{{ t('accessControl.accessPoint') }}</label>
             <select v-model="form.access_point" class="border rounded px-2 py-1.5 text-sm w-full">
-              <option value="">请选择</option>
+              <option value="">{{ t('common.pleaseSelect') }}</option>
               <option value="正门">正门</option>
               <option value="侧门">侧门</option>
               <option value="车库入口">车库入口</option>
@@ -177,17 +179,17 @@ onMounted(load)
           </div>
         </div>
         <div>
-          <label class="text-xs text-zinc-500 block mb-1">事由</label>
+          <label class="text-xs text-zinc-500 block mb-1">{{ t('accessControl.reason') }}</label>
           <InputText v-model="form.reason" class="w-full" placeholder="来访事由" />
         </div>
         <div>
-          <label class="text-xs text-zinc-500 block mb-1">备注</label>
+          <label class="text-xs text-zinc-500 block mb-1">{{ t('common.remark') }}</label>
           <InputText v-model="form.notes" class="w-full" placeholder="其他备注" />
         </div>
       </div>
       <template #footer>
-        <Button label="取消" size="small" text @click="showDialog = false" />
-        <Button label="保存" size="small" icon="pi pi-check" @click="handleSave" :disabled="!form.person_name" />
+        <Button :label="t('common.cancel')" size="small" text @click="showDialog = false" />
+        <Button :label="t('common.save')" size="small" icon="pi pi-check" @click="handleSave" :disabled="!form.person_name" />
       </template>
     </Dialog>
   </div>

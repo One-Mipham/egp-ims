@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { listPayables } from '../../api'
 
+const { t } = useI18n()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
 
@@ -77,10 +79,10 @@ onMounted(load)
         <thead>
           <tr class="bg-zinc-50 text-left">
             <th class="p-2 border text-xs">供应商</th>
-            <th class="p-2 border text-xs">发票号</th>
-            <th class="p-2 border text-xs text-right">金额</th>
-            <th class="p-2 border text-xs text-right">余额</th>
-            <th class="p-2 border text-xs">状态</th>
+            <th class="p-2 border text-xs">{{ t('payables.invoiceNo') }}</th>
+            <th class="p-2 border text-xs text-right">{{ t('common.amount') }}</th>
+            <th class="p-2 border text-xs text-right">{{ t('payables.balance') }}</th>
+            <th class="p-2 border text-xs">{{ t('common.status') }}</th>
           </tr>
         </thead>
         <tbody>

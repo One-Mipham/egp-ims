@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -10,6 +11,7 @@ import Dropdown from 'primevue/dropdown'
 import Tag from 'primevue/tag'
 import api from '@/api/index'
 
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const items = ref<any[]>([])
 const loading = ref(false)
@@ -90,7 +92,7 @@ async function handleSave() {
   await load()
 }
 async function handleDelete(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   await api.delete(`/investments/real-estate/${id}`)
   await load()
 }
@@ -118,7 +120,7 @@ async function saveValuation() {
   valForm.value = { valuation_date: '', value: 0, valuation_method: 'comparable', appraiser: '', notes: '' }
 }
 async function deleteValuation(valId: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   await api.delete(`/investments/real-estate/${selectedAsset.value.id}/valuations/${valId}`)
   try {
     const r = await api.get(`/investments/real-estate/${selectedAsset.value.id}/valuations`)
@@ -150,16 +152,16 @@ onMounted(load)
     </div>
 
     <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="10">
-      <Column field="property_name" header="资产名称" sortable />
-      <Column header="类型"
+      <Column field="property_name" :header="t('investments.realEstateName')" sortable />
+      <Column :header="t('common.type')"
         ><template #body="{ data }"
           ><Tag :value="TYPE_LABELS[data.property_type] || data.property_type" severity="info" /></template
       ></Column>
-      <Column field="location" header="位置" />
+      <Column field="location" :header="t('investments.location')" />
       <Column header="收购成本"
         ><template #body="{ data }">¥{{ data.acquisition_cost?.toLocaleString() }}</template></Column
       >
-      <Column header="当前估值"
+      <Column :header="t('investments.valuationAmount')"
         ><template #body="{ data }">¥{{ data.current_value?.toLocaleString() }}</template></Column
       >
       <Column header="出租率"
@@ -168,13 +170,13 @@ onMounted(load)
       <Column header="年租金"
         ><template #body="{ data }">¥{{ data.annual_rental_income?.toLocaleString() }}</template></Column
       >
-      <Column header="状态"
+      <Column :header="t('common.status')"
         ><template #body="{ data }"
           ><Tag
             :value="STATUS_LABELS[data.status] || data.status"
             :severity="data.status === 'active' ? 'success' : 'danger'" /></template
       ></Column>
-      <Column header="操作" style="width: 140px">
+      <Column :header="t('common.actions')" style="width: 140px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button
@@ -194,15 +196,15 @@ onMounted(load)
     </DataTable>
 
     <!-- Asset Dialog -->
-    <Dialog v-model:visible="showDialog" :header="isEdit ? '编辑资产' : '新增资产'" :style="{ width: '520px' }" modal>
+    <Dialog v-model:visible="showDialog" :header="isEdit ? t('common.edit') : t('common.add')" :style="{ width: '520px' }" modal>
       <div class="flex flex-col gap-3 pt-2">
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">名称 *</label
+            <label class="text-sm text-stone-600">{{ t('common.name') }} *</label
             ><InputText v-model="form.property_name" class="w-full" />
           </div>
           <div>
-            <label class="text-sm text-stone-600">类型</label
+            <label class="text-sm text-stone-600">{{ t('common.type') }}</label
             ><Dropdown
               v-model="form.property_type"
               :options="PROP_TYPES"
@@ -213,7 +215,7 @@ onMounted(load)
           </div>
         </div>
         <div>
-          <label class="text-sm text-stone-600">位置</label><InputText v-model="form.location" class="w-full" />
+          <label class="text-sm text-stone-600">{{ t('investments.location') }}</label><InputText v-model="form.location" class="w-full" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -227,7 +229,7 @@ onMounted(load)
         </div>
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label class="text-sm text-stone-600">建筑面积(m²)</label
+            <label class="text-sm text-stone-600">{{ t('investments.area') }}(m²)</label
             ><InputNumber v-model="form.area_sqm" class="w-full" />
           </div>
           <div>
@@ -241,18 +243,18 @@ onMounted(load)
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">当前估值</label
+            <label class="text-sm text-stone-600">{{ t('investments.valuationAmount') }}</label
             ><InputNumber v-model="form.current_value" mode="currency" currency="CNY" class="w-full" />
           </div>
           <div>
-            <label class="text-sm text-stone-600">估值日期</label
+            <label class="text-sm text-stone-600">{{ t('investments.valuationDate') }}</label
             ><InputText v-model="form.valuation_date" class="w-full" placeholder="YYYY-MM-DD" />
           </div>
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button
-          label="保存"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button
+          :label="t('common.save')"
           @click="handleSave"
           :disabled="!form.property_name"
       /></template>
@@ -280,13 +282,13 @@ onMounted(load)
         <Button icon="pi pi-plus" size="small" @click="saveValuation" :disabled="!valForm.valuation_date" />
       </div>
       <DataTable :value="valuations" stripedRows size="small">
-        <Column field="valuation_date" header="日期" />
-        <Column header="估值"
+        <Column field="valuation_date" :header="t('common.date')" />
+        <Column :header="t('investments.valuations')"
           ><template #body="{ data }">¥{{ data.value?.toLocaleString() }}</template></Column
         >
         <Column field="valuation_method" header="方法" />
         <Column field="appraiser" header="评估机构" />
-        <Column field="notes" header="备注" />
+        <Column field="notes" :header="t('common.remark')" />
         <Column header="" style="width: 50px">
           <template #body="{ data }"
             ><Button icon="pi pi-trash" size="small" severity="danger" text rounded @click="deleteValuation(data.id)"

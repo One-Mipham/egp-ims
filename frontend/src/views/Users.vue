@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
@@ -20,6 +21,7 @@ import {
   setUserPermissions,
 } from '@/api'
 
+const { t } = useI18n()
 const users = ref<any[]>([])
 const me = ref<any>(null)
 const loading = ref(false)
@@ -178,46 +180,46 @@ onMounted(load)
           size="small"
           @click="showChangeOwnDialog = true"
         />
-        <Button label="新增用户" icon="pi pi-plus" @click="showAddDialog = true" />
+        <Button :label="t('users.addUser')" icon="pi pi-plus" @click="showAddDialog = true" />
       </div>
     </div>
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto max-w-fit min-w-full">
       <DataTable :value="users" :loading="loading" stripedRows class="shadow-sm" tableStyle="min-width: auto">
-        <Column field="username" header="用户名" sortable style="width: 120px" />
-        <Column field="email" header="邮箱" style="width: 180px" />
-        <Column header="角色" style="width: 100px">
+        <Column field="username" :header="t('users.username')" sortable style="width: 120px" />
+        <Column field="email" :header="t('users.email')" style="width: 180px" />
+        <Column :header="t('users.role')" style="width: 100px">
           <template #body="{ data }">
             {{ ROLE_LABELS[data.role] || data.role }}
           </template>
         </Column>
-        <Column header="状态" style="width: 70px">
+        <Column :header="t('common.status')" style="width: 70px">
           <template #body="{ data }">
-            <Tag :value="data.is_active ? '启用' : '停用'" :severity="data.is_active ? 'success' : 'danger'" />
+            <Tag :value="data.is_active ? t('common.enable') : t('common.disable')" :severity="data.is_active ? 'success' : 'danger'" />
           </template>
         </Column>
-        <Column header="最后登录" style="width: 155px">
+        <Column :header="t('users.lastLogin')" style="width: 155px">
           <template #body="{ data }">
             <span class="text-xs text-stone-400">{{
               data.last_login ? new Date(data.last_login).toLocaleString('zh-CN') : '—'
             }}</span>
           </template>
         </Column>
-        <Column header="操作" style="width: 230px">
+        <Column :header="t('common.actions')" style="width: 230px">
           <template #body="{ data }">
             <Button
               v-if="data.is_active"
-              label="停用"
+              :label="t('common.disable')"
               text
               severity="danger"
               size="small"
               @click="handleToggleActive(data)"
             />
-            <Button v-else label="启用" text severity="success" size="small" @click="handleToggleActive(data)" />
-            <Button label="重置密码" text severity="info" size="small" @click="handleReset(data.id)" />
-            <Button label="权限" text severity="info" size="small" @click="openPermissions(data)" />
+            <Button v-else :label="t('common.enable')" text severity="success" size="small" @click="handleToggleActive(data)" />
+            <Button :label="t('users.resetPassword')" text severity="info" size="small" @click="handleReset(data.id)" />
+            <Button :label="t('users.permissions')" text severity="info" size="small" @click="openPermissions(data)" />
             <Button
               v-if="data.is_active"
-              label="删除"
+              :label="t('common.delete')"
               text
               severity="danger"
               size="small"
@@ -229,14 +231,14 @@ onMounted(load)
     </div>
 
     <!-- Add user dialog -->
-    <Dialog v-model:visible="showAddDialog" header="新增用户" :style="{ width: '450px' }">
+    <Dialog v-model:visible="showAddDialog" :header="t('users.addUser')" :style="{ width: '450px' }">
       <div class="flex flex-col gap-4 py-4">
         <div>
-          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">用户名 *</label>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">{{ t('users.username') }} *</label>
           <InputText v-model="newUser.username" class="w-full" placeholder="登录用户名" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">邮箱</label>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">{{ t('users.email') }}</label>
           <InputText v-model="newUser.email" class="w-full" type="email" />
         </div>
         <div>
@@ -244,7 +246,7 @@ onMounted(load)
           <Password v-model="newUser.password" class="w-full" toggle-mask />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">角色</label>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">{{ t('users.role') }}</label>
           <Dropdown
             v-model="newUser.role"
             :options="roleOptions"
@@ -258,11 +260,11 @@ onMounted(load)
     </Dialog>
 
     <!-- Reset password dialog -->
-    <Dialog v-model:visible="showResetDialog" header="重置密码" :style="{ width: '400px' }">
+    <Dialog v-model:visible="showResetDialog" :header="t('users.resetPassword')" :style="{ width: '400px' }">
       <div class="flex flex-col gap-4 py-4">
         <p class="text-sm text-zinc-600 tracking-wide">为该用户设置新密码</p>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">新密码</label>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">{{ t('users.newPassword') }}</label>
           <Password v-model="resetPassword" class="w-full" toggle-mask />
         </div>
         <Button label="确认重置" icon="pi pi-key" @click="confirmReset" :disabled="!resetPassword" />
@@ -308,8 +310,8 @@ onMounted(load)
           </div>
         </div>
         <div class="flex gap-2 pt-2">
-          <Button label="保存" icon="pi pi-check" @click="savePermissions" />
-          <Button label="取消" icon="pi pi-times" severity="secondary" @click="showPermDialog = false" />
+          <Button :label="t('common.save')" icon="pi pi-check" @click="savePermissions" />
+          <Button :label="t('common.cancel')" icon="pi pi-times" severity="secondary" @click="showPermDialog = false" />
         </div>
       </div>
     </Dialog>

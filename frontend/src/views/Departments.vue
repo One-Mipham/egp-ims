@@ -8,7 +8,9 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import { listDepartments, createDepartment, updateDepartment, deleteDepartment, bulkImportDepartments } from '@/api'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const departments = ref<any[]>([])
 const loading = ref(false)
 const showAddDialog = ref(false)
@@ -90,7 +92,7 @@ async function handleAdd() {
     newDept.value = { code: '', name: '', manager: '', parent_id: null }
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '添加失败')
+    alert(e.response?.data?.detail || t('common.addFailed'))
   }
 }
 
@@ -118,7 +120,7 @@ async function handleEdit() {
     showEditDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '修改失败')
+    alert(e.response?.data?.detail || t('common.updateFailed'))
   }
 }
 
@@ -158,7 +160,7 @@ async function handleImport() {
 }
 
 async function handleDelete(id: number) {
-  if (!confirm('确定停用此部门？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteDepartment(id)
     await load()
@@ -175,7 +177,7 @@ onMounted(load)
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2">
         <Button
-          label="导入"
+          :label="t('common.import')"
           icon="pi pi-upload"
           severity="secondary"
           @click="showImportDialog = true; importResult = ''"
@@ -186,7 +188,7 @@ onMounted(load)
 
     <div class="bg-white rounded-sm shadow-sm">
       <DataTable :value="sortedDepartments" :loading="loading" stripedRows class="text-sm" size="small">
-        <Column field="code" header="编码" class="font-mono text-xs" />
+        <Column field="code" :header="t('common.code')" class="font-mono text-xs" />
         <Column header="部门名称">
           <template #body="{ data }">
             <span :style="{ paddingLeft: `${(getLevel(data) - 1) * 20}px` }">
@@ -195,16 +197,16 @@ onMounted(load)
           </template>
         </Column>
         <Column field="manager" header="负责人" />
-        <Column header="状态">
+        <Column :header="t('common.status')">
           <template #body="{ data }">
-            <Tag :value="data.is_active ? '启用' : '停用'" :severity="data.is_active ? 'success' : 'danger'" />
+            <Tag :value="data.is_active ? t('common.enable') : t('common.disable')" :severity="data.is_active ? 'success' : 'danger'" />
           </template>
         </Column>
-        <Column header="操作" class="w-32">
+        <Column :header="t('common.actions')" class="w-32">
           <template #body="{ data }">
             <div class="flex gap-1">
-              <Button label="编辑" icon="pi pi-pencil" text size="small" @click="doEdit(data)" />
-              <Button label="停用" icon="pi pi-ban" text size="small" severity="danger" @click="handleDelete(data.id)" />
+              <Button :label="t('common.edit')" icon="pi pi-pencil" text size="small" @click="doEdit(data)" />
+              <Button :label="t('common.disable')" icon="pi pi-ban" text size="small" severity="danger" @click="handleDelete(data.id)" />
             </div>
           </template>
         </Column>
@@ -238,7 +240,7 @@ onMounted(load)
             :showClear="true"
           />
         </div>
-        <Button label="保存" icon="pi pi-check" @click="handleAdd" :disabled="!newDept.code || !newDept.name" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="handleAdd" :disabled="!newDept.code || !newDept.name" />
       </div>
     </Dialog>
 
@@ -269,7 +271,7 @@ onMounted(load)
             :showClear="true"
           />
         </div>
-        <Button label="保存" icon="pi pi-check" @click="handleEdit" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="handleEdit" />
       </div>
     </Dialog>
 

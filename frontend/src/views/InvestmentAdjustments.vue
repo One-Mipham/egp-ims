@@ -10,8 +10,10 @@ import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
 import Tag from 'primevue/tag'
 import { listPositions, listAdjustments, createAdjustment, updateAdjustment, deleteAdjustment } from '@/api'
+import { useI18n } from '@/i18n'
 
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const positions = ref<any[]>([])
@@ -101,7 +103,7 @@ onMounted(load)
 <template>
   <div class="p-4">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-zinc-700">公允价值调整</h2>
+      <h2 class="text-lg font-semibold text-zinc-700">{{ t('investments.adjustments') }}</h2>
       <Button label="新增调整" icon="pi pi-plus" size="small" @click="openCreate" />
     </div>
 
@@ -145,7 +147,7 @@ onMounted(load)
           <span v-else class="text-stone-300">-</span>
         </template>
       </Column>
-      <Column header="操作">
+      <Column :header="t('common.actions')">
         <template #body="{ data }">
           <div class="flex gap-2">
             <Button icon="pi pi-pencil" size="small" severity="secondary" text rounded @click="openEdit(data)" />
@@ -199,7 +201,7 @@ onMounted(load)
         <Textarea v-model="form.reason" rows="2" placeholder="如：市场价格变动、估值模型调整等" />
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" />
         <Button
           label="保存并生成凭证"
           @click="handleSave"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -9,6 +10,7 @@ import Card from 'primevue/card'
 import Tag from 'primevue/tag'
 import { getPositionsReport, getIncomeReport, getFairValueReport } from '@/api'
 
+const { t } = useI18n()
 const activeReport = ref<'positions' | 'income' | 'fair_value'>('positions')
 const typeFilter = ref<string | null>(null)
 const startDate = ref('')
@@ -97,12 +99,12 @@ onMounted(() => loadPositions())
           class="w-40"
           @change="loadPositions"
         />
-        <Button label="刷新" icon="pi pi-refresh" text size="small" @click="loadPositions" />
+        <Button :label="t('common.refresh')" icon="pi pi-refresh" text size="small" @click="loadPositions" />
       </div>
 
       <DataTable :value="positionsData" :loading="loading" stripedRows size="small">
         <Column field="portfolio_name" header="组合" sortable />
-        <Column field="investment_type" header="类型" sortable style="width: 80px">
+        <Column field="investment_type" :header="t('common.type')" sortable style="width: 80px">
           <template #body="{ data }"><Tag :value="data.investment_type" /></template>
         </Column>
         <Column field="security_name" header="标的" sortable />
@@ -110,7 +112,7 @@ onMounted(() => loadPositions())
         <Column field="cost_amount" header="成本" sortable style="width: 120px">
           <template #body="{ data }">{{ data.cost_amount.toLocaleString() }}</template>
         </Column>
-        <Column field="fair_value" header="公允价值" sortable style="width: 120px">
+        <Column field="fair_value" :header="t('investments.fairValue')" sortable style="width: 120px">
           <template #body="{ data }">{{ data.fair_value.toLocaleString() }}</template>
         </Column>
         <Column header="未实现损益" sortable style="width: 140px">
@@ -125,7 +127,7 @@ onMounted(() => loadPositions())
             </div>
           </template>
         </Column>
-        <Column field="fair_value_date" header="估值日" sortable style="width: 100px" />
+        <Column field="fair_value_date" :header="t('investments.valuationDate')" sortable style="width: 100px" />
       </DataTable>
     </div>
 
@@ -149,7 +151,7 @@ onMounted(() => loadPositions())
         <Card>
           <template #content>
             <div class="text-center">
-              <div class="text-xs text-zinc-500">合计</div>
+              <div class="text-xs text-zinc-500">{{ t('common.total') }}</div>
               <div class="text-lg font-semibold" :class="incomeData.total >= 0 ? 'text-green-600' : 'text-red-600'">
                 {{ incomeData.total.toLocaleString() }}
               </div>
@@ -159,12 +161,12 @@ onMounted(() => loadPositions())
       </div>
 
       <DataTable :value="incomeData.items" :loading="loading" stripedRows size="small">
-        <Column field="income_date" header="日期" sortable style="width: 100px" />
-        <Column field="income_type" header="类型" sortable style="width: 120px" />
-        <Column field="amount" header="金额" sortable style="width: 120px">
+        <Column field="income_date" :header="t('common.date')" sortable style="width: 100px" />
+        <Column field="income_type" :header="t('common.type')" sortable style="width: 120px" />
+        <Column field="amount" :header="t('common.amount')" sortable style="width: 120px">
           <template #body="{ data }">{{ data.amount.toLocaleString() }}</template>
         </Column>
-        <Column field="notes" header="备注" />
+        <Column field="notes" :header="t('common.remark')" />
       </DataTable>
     </div>
 
@@ -183,7 +185,7 @@ onMounted(() => loadPositions())
       </div>
 
       <DataTable :value="fairValueData.items" :loading="loading" stripedRows size="small">
-        <Column field="adjustment_date" header="日期" sortable style="width: 100px" />
+        <Column field="adjustment_date" :header="t('common.date')" sortable style="width: 100px" />
         <Column field="previous_value" header="调整前" sortable style="width: 120px">
           <template #body="{ data }">{{ data.previous_value.toLocaleString() }}</template>
         </Column>

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConfirm } from 'primevue/useconfirm'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
@@ -25,6 +26,7 @@ import api from '../../api'
 
 const route = useRoute()
 const confirm = useConfirm()
+const { t } = useI18n()
 
 // ── 模式检测 ──
 const modeLabels: Record<string, string> = {
@@ -226,7 +228,7 @@ onMounted(() => {
             placeholder="保证金状态"
             class="w-36"
           />
-          <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-32" showClear />
+          <Dropdown v-model="fStatus" :options="statusOptions" :placeholder="t('common.status')" class="w-32" showClear />
           <InputText v-model="fSearch" placeholder="搜索编号/名称/招标方" class="w-52" @keyup.enter="load" />
           <Button icon="pi pi-search" label="查询" @click="load" />
         </div>
@@ -244,7 +246,7 @@ onMounted(() => {
       class="text-sm"
     >
       <Column field="bid_no" header="投标编号" style="min-width: 140px" />
-      <Column field="project_name" header="项目名称" style="min-width: 200px" />
+      <Column field="project_name" :header="t('bids.projectName')" style="min-width: 200px" />
       <Column field="tendering_party" header="招标方" style="min-width: 140px" />
       <Column field="bid_amount" header="投标报价" style="min-width: 100px">
         <template #body="{ data }">{{ data.bid_amount?.toLocaleString() }}</template>
@@ -254,15 +256,15 @@ onMounted(() => {
           <Tag :value="data.bond_status" :severity="bondSeverity[data.bond_status] || 'info'" />
         </template>
       </Column>
-      <Column field="opening_date" header="开标日期" style="min-width: 100px" />
+      <Column field="opening_date" :header="t('bids.openingDate')" style="min-width: 100px" />
       <Column v-if="mode === 'pricing'" field="total_score" header="总得分" style="min-width: 80px" />
       <Column v-if="mode === 'pricing'" field="rank" header="排名" style="min-width: 60px" />
-      <Column field="status" header="状态" style="min-width: 90px">
+      <Column field="status" :header="t('common.status')" style="min-width: 90px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status]" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width: 120px">
+      <Column :header="t('common.actions')" style="min-width: 120px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button
@@ -279,7 +281,7 @@ onMounted(() => {
               size="small"
               severity="danger"
               @click="remove(data)"
-              v-tooltip.top="'删除'"
+              v-tooltip.top="t('common.delete')"
             />
           </div>
         </template>
@@ -321,11 +323,11 @@ onMounted(() => {
         <!-- 报价 -->
         <div class="col-span-2 font-bold text-lg border-b pb-1 mb-1">投标报价</div>
         <div>
-          <label class="block text-sm font-medium mb-1">投标金额</label>
+          <label class="block text-sm font-medium mb-1">{{ t('bids.bidAmount') }}</label>
           <InputNumber v-model="form.bid_amount" mode="currency" currency="CNY" class="w-full" />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">币种</label>
+          <label class="block text-sm font-medium mb-1">{{ t('system.currency') }}</label>
           <InputText v-model="form.currency" />
         </div>
 
@@ -359,7 +361,7 @@ onMounted(() => {
           <DatePicker v-model="form.bid_deadline" class="w-full" />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">开标日期</label>
+          <label class="block text-sm font-medium mb-1">{{ t('bids.openingDate') }}</label>
           <DatePicker v-model="form.opening_date" class="w-full" />
         </div>
 
@@ -385,7 +387,7 @@ onMounted(() => {
         <!-- 结果 -->
         <div class="col-span-2 font-bold text-lg border-b pb-1 mb-1">投标结果</div>
         <div>
-          <label class="block text-sm font-medium mb-1">状态</label>
+          <label class="block text-sm font-medium mb-1">{{ t('common.status') }}</label>
           <Dropdown v-model="form.status" :options="statusOptions" />
         </div>
         <div class="col-span-2">
@@ -407,13 +409,13 @@ onMounted(() => {
           <Dropdown v-model="form.department_id" :options="departments" showClear placeholder="选择部门" />
         </div>
         <div class="col-span-2">
-          <label class="block text-sm font-medium mb-1">备注</label>
+          <label class="block text-sm font-medium mb-1">{{ t('common.remark') }}</label>
           <Textarea v-model="form.notes" rows="2" />
         </div>
       </div>
       <template #footer>
-        <Button label="取消" icon="pi pi-times" severity="secondary" @click="showDialog = false" />
-        <Button label="保存" icon="pi pi-check" :loading="submitting" @click="save" />
+        <Button :label="t('common.cancel')" icon="pi pi-times" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.save')" icon="pi pi-check" :loading="submitting" @click="save" />
       </template>
     </Dialog>
   </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import {
   listDepreciations,
@@ -10,6 +11,7 @@ import {
   listFixedAssets,
 } from '../../api'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
@@ -116,7 +118,7 @@ onMounted(load)
       <h1 class="text-lg font-bold">折旧管理</h1>
       <div class="flex gap-2">
         <button @click="batchDialogVisible = true" class="px-3 py-2 border rounded text-sm hover:bg-zinc-100">
-          批量计提
+          {{ t('assets.batchDepreciate') }}
         </button>
         <button @click="openCreate" class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">
           + 计提折旧
@@ -133,7 +135,7 @@ onMounted(load)
           <th class="p-2 border text-right">计提前累计</th>
           <th class="p-2 border text-right">计提后累计</th>
           <th class="p-2 border text-xs text-zinc-400">计提时间</th>
-          <th class="p-2 border">操作</th>
+          <th class="p-2 border">{{ t('common.actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -145,8 +147,8 @@ onMounted(load)
           <td class="p-2 border text-right">{{ (item.accumulated_after || 0).toLocaleString() }}</td>
           <td class="p-2 border text-xs text-zinc-400">{{ item.created_at?.slice(0, 10) }}</td>
           <td class="p-2 border">
-            <button @click="openEdit(item)" class="text-blue-600 mr-2 text-xs">编辑</button>
-            <button @click="remove(item.id)" class="text-red-500 text-xs">删除</button>
+            <button @click="openEdit(item)" class="text-blue-600 mr-2 text-xs">{{ t('common.edit') }}</button>
+            <button @click="remove(item.id)" class="text-red-500 text-xs">{{ t('common.delete') }}</button>
           </td>
         </tr>
         <tr v-if="items.length === 0">
@@ -198,11 +200,11 @@ onMounted(load)
           </div>
           <div v-if="selectedAsset" class="bg-zinc-50 rounded p-3 text-xs space-y-1">
             <div class="flex justify-between">
-              <span class="text-zinc-500">原值</span
+              <span class="text-zinc-500">{{ t('assets.originalValue') }}</span
               ><span>{{ (selectedAsset.original_value || 0).toLocaleString() }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-zinc-500">累计折旧</span
+              <span class="text-zinc-500">{{ t('assets.accumulatedDepreciation') }}</span
               ><span>{{ (selectedAsset.accumulated_depreciation || 0).toLocaleString() }}</span>
             </div>
             <div class="flex justify-between">
@@ -224,7 +226,7 @@ onMounted(load)
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
+          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
           <button @click="save" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">确认计提</button>
         </div>
       </div>
@@ -244,7 +246,7 @@ onMounted(load)
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="batchDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
+          <button @click="batchDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
           <button @click="runBatch" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">执行批量计提</button>
         </div>
       </div>
@@ -259,8 +261,8 @@ onMounted(load)
           ><input type="number" v-model.number="editAmount" class="w-full border rounded px-2 py-1.5 text-sm" />
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="editDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
-          <button @click="saveEdit" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">保存</button>
+          <button @click="editDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
+          <button @click="saveEdit" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">{{ t('common.save') }}</button>
         </div>
       </div>
     </div>

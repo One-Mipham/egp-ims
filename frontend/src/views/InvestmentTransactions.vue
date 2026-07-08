@@ -10,8 +10,10 @@ import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
 import Tag from 'primevue/tag'
 import { listPositions, listTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/api'
+import { useI18n } from '@/i18n'
 
 const positions = ref<any[]>([])
+const { t } = useI18n()
 const transactions = ref<any[]>([])
 const filterPosition = ref<number | null>(null)
 const loading = ref(false)
@@ -109,7 +111,7 @@ async function handleSave() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -132,7 +134,7 @@ onMounted(load)
   <div>
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2 items-center">
-        <h2 class="text-lg font-semibold text-zinc-700">投资交易</h2>
+        <h2 class="text-lg font-semibold text-zinc-700">{{ t('investments.transactions') }}</h2>
         <Dropdown
           v-model="filterPosition"
           :options="positions"
@@ -156,11 +158,11 @@ onMounted(load)
     </div>
 
     <DataTable :value="transactions" :loading="loading" stripedRows size="small" paginator :rows="10">
-      <Column field="transaction_date" header="日期" sortable style="width: 100px" />
+      <Column field="transaction_date" :header="t('common.date')" sortable style="width: 100px" />
       <Column header="持仓" sortable style="width: 160px">
         <template #body="{ data }">{{ getPositionName(data.position_id) }}</template>
       </Column>
-      <Column field="transaction_type" header="类型" sortable style="width: 100px">
+      <Column field="transaction_type" :header="t('common.type')" sortable style="width: 100px">
         <template #body="{ data }">
           <Tag
             :value="TYPE_LABELS[data.transaction_type] || data.transaction_type"
@@ -174,7 +176,7 @@ onMounted(load)
       <Column field="price" header="价格" sortable style="width: 100px">
         <template #body="{ data }">{{ data.price.toLocaleString() }}</template>
       </Column>
-      <Column field="amount" header="金额" sortable style="width: 120px">
+      <Column field="amount" :header="t('common.amount')" sortable style="width: 120px">
         <template #body="{ data }">{{ data.amount.toLocaleString() }}</template>
       </Column>
       <Column field="voucher_id" header="凭证号" sortable style="width: 80px">
@@ -183,8 +185,8 @@ onMounted(load)
           <span v-else class="text-zinc-400">-</span>
         </template>
       </Column>
-      <Column field="notes" header="备注" />
-      <Column header="操作" style="width: 100px">
+      <Column field="notes" :header="t('common.remark')" />
+      <Column :header="t('common.actions')" style="width: 100px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" size="small" severity="secondary" text rounded @click="openEdit(data)" />
@@ -236,16 +238,16 @@ onMounted(load)
           <div><label class="block text-sm mb-1">价格</label><InputNumber v-model="form.price" class="w-full" /></div>
           <div><label class="block text-sm mb-1">手续费</label><InputNumber v-model="form.fee" class="w-full" /></div>
         </div>
-        <div><label class="block text-sm mb-1">金额 *</label><InputNumber v-model="form.amount" class="w-full" /></div>
+        <div><label class="block text-sm mb-1">{{ t('common.amount') }} *</label><InputNumber v-model="form.amount" class="w-full" /></div>
         <div>
-          <label class="block text-sm mb-1">备注</label><Textarea v-model="form.notes" rows="2" class="w-full" />
+          <label class="block text-sm mb-1">{{ t('common.remark') }}</label><Textarea v-model="form.notes" rows="2" class="w-full" />
         </div>
         <p v-if="!isEdit" class="text-xs text-zinc-400">
           <i class="pi pi-info-circle mr-1" /> 保存后将自动生成会计凭证
         </p>
       </div>
       <template #footer>
-        <Button label="取消" text @click="showDialog = false" />
+        <Button :label="t('common.cancel')" text @click="showDialog = false" />
         <Button :label="isEdit ? '更新' : '保存并生成凭证'" :loading="saving" @click="handleSave" />
       </template>
     </Dialog>

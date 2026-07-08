@@ -9,8 +9,11 @@ import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
 import Tag from 'primevue/tag'
+import { useI18n } from '@/i18n'
 import { listCounterparties, listDepartments } from '@/api'
 import api from '@/api'
+
+const { t } = useI18n()
 
 const contracts = ref<any[]>([])
 const counterparties = ref<any[]>([])
@@ -120,19 +123,19 @@ async function handleSave() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
 }
 
 async function handleDelete(id: number) {
-  if (!confirm('确认删除该合同？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await api.delete(`/investments/init/contracts/${id}`)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 
@@ -142,9 +145,9 @@ onMounted(load)
 <template>
   <div>
     <div class="flex justify-between items-center mb-2">
-      <h2 class="text-lg font-semibold text-zinc-700">业务合同</h2>
+      <h2 class="text-lg font-semibold text-zinc-700">{{ t('investments.initContracts') }}</h2>
       <div class="flex gap-2">
-        <Button label="导入" icon="pi pi-upload" outlined size="small" />
+        <Button :label="t('common.import')" icon="pi pi-upload" outlined size="small" />
         <Button label="新增合同" icon="pi pi-plus" @click="openAdd" size="small" />
       </div>
     </div>
@@ -175,18 +178,18 @@ onMounted(load)
 
     <DataTable :value="filteredContracts" :loading="loading" stripedRows size="small" paginator :rows="10">
       <Column field="contract_no" header="合同号码" sortable style="width: 130px" />
-      <Column header="客户名称" sortable style="width: 150px">
+      <Column :header="t('investments.counterpartyName')" sortable style="width: 150px">
         <template #body="{ data }">{{ getCustomerName(data.counterparty_id) }}</template>
       </Column>
       <Column field="subject" header="核心内容" sortable />
       <Column header="经办部门" sortable style="width: 100px">
         <template #body="{ data }">{{ getDepartmentName(data.department_id) }}</template>
       </Column>
-      <Column field="amount" header="金额" sortable style="width: 120px">
+      <Column field="amount" :header="t('common.amount')" sortable style="width: 120px">
         <template #body="{ data }">{{ data.amount.toLocaleString() }}</template>
       </Column>
       <Column field="sign_date" header="签订日期" sortable style="width: 100px" />
-      <Column field="status" header="状态" sortable style="width: 80px">
+      <Column field="status" :header="t('common.status')" sortable style="width: 80px">
         <template #body="{ data }">
           <Tag
             :value="STATUS_LABELS[data.status] || data.status"
@@ -194,7 +197,7 @@ onMounted(load)
           />
         </template>
       </Column>
-      <Column header="操作" style="width: 140px">
+      <Column :header="t('common.actions')" style="width: 140px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
@@ -218,7 +221,7 @@ onMounted(load)
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm mb-1">客户名称</label>
+            <label class="block text-sm mb-1">{{ t('investments.counterpartyName') }}</label>
             <Dropdown
               v-model="form.counterparty_id"
               :options="counterparties"
@@ -247,18 +250,18 @@ onMounted(load)
             <InputText v-model="form.subject" class="w-full" />
           </div>
           <div>
-            <label class="block text-sm mb-1">金额</label>
+            <label class="block text-sm mb-1">{{ t('common.amount') }}</label>
             <InputNumber v-model="form.amount" class="w-full" />
           </div>
         </div>
         <div>
-          <label class="block text-sm mb-1">备注</label>
+          <label class="block text-sm mb-1">{{ t('common.remark') }}</label>
           <Textarea v-model="form.notes" rows="2" class="w-full" />
         </div>
       </div>
       <template #footer>
-        <Button label="取消" text @click="showDialog = false" />
-        <Button label="保存" :loading="saving" @click="handleSave" />
+        <Button :label="t('common.cancel')" text @click="showDialog = false" />
+        <Button :label="t('common.save')" :loading="saving" @click="handleSave" />
       </template>
     </Dialog>
   </div>

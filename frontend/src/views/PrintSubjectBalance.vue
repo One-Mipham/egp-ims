@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import Button from 'primevue/button'
 import { printSubjectBalance } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const data = ref<any>(null)
 const loading = ref(false)
@@ -42,28 +45,28 @@ onMounted(load)
           class="px-3 py-2 border border-zinc-300 rounded-sm text-sm"
           @change="load"
         />
-        <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!data" />
+        <Button :label="t('common.print')" icon="pi pi-print" @click="doPrint" :disabled="!data" />
       </div>
     </div>
 
-    <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
+    <p v-if="loading" class="text-zinc-400 text-sm">{{ t('common.loading') }}</p>
 
     <div v-if="data" class="print-area bg-white shadow-sm px-8 pt-8 pb-6 max-w-6xl mx-auto">
-      <h1 class="text-2xl font-bold text-center mb-4">科目余额表</h1>
+      <h1 class="text-2xl font-bold text-center mb-4">{{ t('accounting.gl_page.subjectBalance') }}</h1>
       <div class="flex justify-between text-sm text-gray-600 mb-4">
-        <span>期间：{{ data.period }}</span>
+        <span>{{ t('accounting.periods_page.period') }}：{{ data.period }}</span>
         <span>金额单位：元</span>
       </div>
 
       <table class="data-table border-collapse border border-stone-300">
         <thead>
           <tr class="border-b-2 border-stone-400 bg-stone-50">
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 90px">科目编码</th>
-            <th class="text-left py-1.5 px-2 border border-stone-200">科目名称</th>
-            <th class="text-right py-1.5 px-2 border border-stone-200 report-number">期初余额</th>
-            <th class="text-right py-1.5 px-2 border border-stone-200 report-number">本期借方</th>
-            <th class="text-right py-1.5 px-2 border border-stone-200 report-number">本期贷方</th>
-            <th class="text-right py-1.5 px-2 border border-stone-200 report-number">期末余额</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 90px">{{ t('accounting.accounts_page.code') }}</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200">{{ t('accounting.accounts_page.name') }}</th>
+            <th class="text-right py-1.5 px-2 border border-stone-200 report-number">{{ t('accounting.gl_page.beginningBalance') }}</th>
+            <th class="text-right py-1.5 px-2 border border-stone-200 report-number">{{ t('accounting.gl_page.currentPeriodDebit') }}</th>
+            <th class="text-right py-1.5 px-2 border border-stone-200 report-number">{{ t('accounting.gl_page.currentPeriodCredit') }}</th>
+            <th class="text-right py-1.5 px-2 border border-stone-200 report-number">{{ t('accounting.gl_page.endingBalance') }}</th>
           </tr>
         </thead>
         <tbody>

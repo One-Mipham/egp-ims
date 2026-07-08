@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import { getQuarterlySummary } from '@/api'
-
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const year = ref(new Date().getFullYear())
 const quarters = ref<any[]>([])

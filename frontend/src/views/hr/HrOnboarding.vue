@@ -8,6 +8,7 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
+import { useI18n } from '@/i18n'
 import {
   listHrEmployees,
   createHrEmployee,
@@ -16,6 +17,8 @@ import {
   listHrPositions,
   listDepartments,
 } from '@/api'
+
+const { t } = useI18n()
 
 const employees = ref<any[]>([])
 const positions = ref<any[]>([])
@@ -130,7 +133,7 @@ async function saveEmp() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   }
 }
 async function handleDelete(id: number) {
@@ -174,7 +177,7 @@ onMounted(load)
       <Column field="employee_code" header="员工编号" style="width: 100px" />
       <Column field="name" header="姓名" style="width: 80px" />
       <Column field="gender" header="性别" style="width: 50px" />
-      <Column header="部门" style="width: 100px">
+      <Column :header="t('hr.department')" style="width: 100px">
         <template #body="{ data }">{{
           departments.find((d: any) => d.id === data.department_id)?.name || '—'
         }}</template>
@@ -182,7 +185,7 @@ onMounted(load)
       <Column header="职级" style="width: 100px">
         <template #body="{ data }">{{ positions.find((p: any) => p.id === data.position_id)?.name || '—' }}</template>
       </Column>
-      <Column header="状态" style="width: 70px">
+      <Column :header="t('common.status')" style="width: 70px">
         <template #body="{ data }">
           <Tag
             :value="data.status"
@@ -190,9 +193,9 @@ onMounted(load)
           />
         </template>
       </Column>
-      <Column field="hire_date" header="入职日期" style="width: 100px" />
+      <Column :header="t('hr.hireDate')" field="hire_date" style="width: 100px" />
       <Column field="mobile" header="手机号" style="width: 120px" />
-      <Column header="操作" style="width: 120px">
+      <Column :header="t('common.actions')" style="width: 120px">
         <template #body="{ data }">
           <Button label="编辑" text size="small" @click="openEdit(data)" />
           <Button
@@ -307,7 +310,7 @@ onMounted(load)
           />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">部门</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('hr.department') }}</label
           ><Dropdown
             v-model="form.department_id"
             :options="departments"
@@ -318,7 +321,7 @@ onMounted(load)
           />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">状态</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.status') }}</label
           ><Dropdown
             v-model="form.status"
             :options="statusOptions"
@@ -328,7 +331,7 @@ onMounted(load)
           />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">入职日期</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('hr.hireDate') }}</label
           ><InputText v-model="form.hire_date" type="date" class="w-full" />
         </div>
         <div class="col-span-2">
@@ -355,7 +358,7 @@ onMounted(load)
           ><InputText v-model="form.company_email" class="w-full" />
         </div>
       </div>
-      <Button label="保存" icon="pi pi-check" @click="saveEmp" class="w-full" />
+      <Button :label="t('common.save')" icon="pi pi-check" @click="saveEmp" class="w-full" />
     </Dialog>
   </div>
 </template>

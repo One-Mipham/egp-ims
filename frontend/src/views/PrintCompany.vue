@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import Button from 'primevue/button'
 import { printCompany } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const company = ref<any>(null)
 const loading = ref(false)
@@ -29,13 +32,13 @@ onMounted(load)
 <template>
   <div>
     <div class="flex justify-between items-center mb-4">
-      <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!company" />
+      <Button :label="t('common.print')" icon="pi pi-print" @click="doPrint" :disabled="!company" />
     </div>
 
-    <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
+    <p v-if="loading" class="text-zinc-400 text-sm">{{ t('common.loading') }}</p>
 
     <div v-if="company" class="print-area bg-white shadow-sm px-12 pt-8 pb-6 max-w-4xl mx-auto">
-      <h1 class="text-2xl font-bold text-center mb-6">公司信息</h1>
+      <h1 class="text-2xl font-bold text-center mb-6">{{ t('system.companyInfo') }}</h1>
       <div class="flex justify-between text-sm text-gray-600 mb-6">
         <span>公司名称：{{ company.name }}</span>
         <span>金额单位：{{ company.currency }}</span>
@@ -51,31 +54,31 @@ onMounted(load)
           </tr>
           <tr class="border-b border-stone-200">
             <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
-              简称
+              {{ t('system.companyShortName') }}
             </td>
             <td class="py-2 px-3 border border-stone-200">{{ company.short_name || '-' }}</td>
           </tr>
           <tr class="border-b border-stone-200">
             <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
-              行业
+              {{ t('system.industry') }}
             </td>
             <td class="py-2 px-3 border border-stone-200">{{ company.industry }}</td>
           </tr>
           <tr class="border-b border-stone-200">
             <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
-              币种
+              {{ t('system.currency') }}
             </td>
             <td class="py-2 px-3 border border-stone-200">{{ company.currency }}</td>
           </tr>
           <tr class="border-b border-stone-200">
             <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
-              会计年度起始
+              {{ t('system.fiscalYearStart') }}
             </td>
             <td class="py-2 px-3 border border-stone-200">{{ company.fiscal_year_start }}</td>
           </tr>
           <tr class="border-b border-stone-200">
             <td class="py-2 px-3 font-medium bg-stone-50 border border-stone-200 text-xs uppercase tracking-wider">
-              内控模式
+              {{ t('system.internalControlMode') }}
             </td>
             <td class="py-2 px-3 border border-stone-200">{{ company.internal_control_mode }}</td>
           </tr>

@@ -21,6 +21,7 @@ import {
   listPersons,
   listProjects,
 } from '@/api'
+import { useI18n } from '@/i18n'
 
 const vouchers = ref<any[]>([])
 const accounts = ref<any[]>([])
@@ -41,6 +42,7 @@ const reverseTarget = ref<number | null>(null)
 const editTarget = ref<any>(null)
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const companyName = computed(() => localStorage.getItem('companyName') || '')
+const { t } = useI18n()
 
 const selectedEntryIdx = ref(0)
 
@@ -129,24 +131,24 @@ const queryFilters = ref({ start_date: '', end_date: '', voucher_no: '', voucher
 const selectedForApprove = ref<any[]>([])
 
 const STATUS_LABELS: Record<string, string> = {
-  draft: '草稿',
-  approved: '已审核',
-  posted: '已记账',
-  reversed: '已反记账',
+  draft: t('accounting.vouchers_page.draft'),
+  approved: t('accounting.vouchers_page.approved'),
+  posted: t('accounting.vouchers_page.posted'),
+  reversed: t('accounting.vouchers_page.reversed'),
 }
-const TYPE_LABELS: Record<string, string> = { receipt: '收款', payment: '付款', transfer: '转账' }
+const TYPE_LABELS: Record<string, string> = { receipt: t('accounting.vouchers_page.receipt'), payment: t('accounting.vouchers_page.payment'), transfer: t('accounting.vouchers_page.transfer') }
 const STATUS_OPTIONS = [
-  { label: '全部', value: '' },
-  { label: '草稿', value: 'draft' },
-  { label: '已审核', value: 'approved' },
-  { label: '已记账', value: 'posted' },
-  { label: '已反记账', value: 'reversed' },
+  { label: t('common.all'), value: '' },
+  { label: t('accounting.vouchers_page.draft'), value: 'draft' },
+  { label: t('accounting.vouchers_page.approved'), value: 'approved' },
+  { label: t('accounting.vouchers_page.posted'), value: 'posted' },
+  { label: t('accounting.vouchers_page.reversed'), value: 'reversed' },
 ]
 const TYPE_OPTIONS = [
-  { label: '全部', value: '' },
-  { label: '收款', value: 'receipt' },
-  { label: '付款', value: 'payment' },
-  { label: '转账', value: 'transfer' },
+  { label: t('common.all'), value: '' },
+  { label: t('accounting.vouchers_page.receipt'), value: 'receipt' },
+  { label: t('accounting.vouchers_page.payment'), value: 'payment' },
+  { label: t('accounting.vouchers_page.transfer'), value: 'transfer' },
 ]
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -410,22 +412,22 @@ onMounted(() => {
     <div class="flex flex-col gap-3 mb-4">
       <div class="flex justify-between items-center">
         <Button
-          label="新增凭证"
+          :label="t('accounting.vouchers_page.addVoucher')"
           icon="pi pi-plus"
           @click="showAddDialog = true; resetForm()"
         />
       </div>
       <div class="flex gap-2">
         <Button
-          label="审核凭证"
+          :label="t('accounting.vouchers_page.approveVoucher')"
           icon="pi pi-check"
           severity="info"
           text
           @click="showBatchApproveDialog = true"
           :disabled="!draftVouchers.length"
         />
-        <Button label="查询凭证" icon="pi pi-search" severity="secondary" text @click="showQueryDialog = true" />
-        <Button label="凭证打印" icon="pi pi-print" severity="secondary" text @click="doPrintVoucher" />
+        <Button :label="t('accounting.vouchers_page.searchVoucher')" icon="pi pi-search" severity="secondary" text @click="showQueryDialog = true" />
+        <Button :label="t('accounting.vouchers_page.printVoucher')" icon="pi pi-print" severity="secondary" text @click="doPrintVoucher" />
       </div>
     </div>
 
@@ -439,13 +441,13 @@ onMounted(() => {
         class="shadow-sm"
         tableStyle="min-width: auto"
       >
-        <Column field="voucher_no" header="凭证字号" sortable style="width: 140px" />
-        <Column field="date" header="日期" sortable style="width: 90px" />
-        <Column header="类型" style="width: 60px">
+        <Column field="voucher_no" :header="t('accounting.vouchers_page.voucherNo')" sortable style="width: 140px" />
+        <Column field="date" :header="t('accounting.vouchers_page.voucherDate')" sortable style="width: 90px" />
+        <Column :header="t('accounting.vouchers_page.voucherType')" style="width: 60px">
           <template #body="{ data }">{{ TYPE_LABELS[data.voucher_type] || data.voucher_type }}</template>
         </Column>
-        <Column field="summary" header="摘要" style="width: 280px" />
-        <Column header="状态" style="width: 70px">
+        <Column field="summary" :header="t('accounting.vouchers_page.summary')" style="width: 280px" />
+        <Column :header="t('accounting.vouchers_page.status')" style="width: 70px">
           <template #body="{ data }">
             <Tag
               :value="STATUS_LABELS[data.status] || data.status"
@@ -461,18 +463,18 @@ onMounted(() => {
             />
           </template>
         </Column>
-        <Column header="金额" style="width: 120px">
+        <Column :header="t('common.amount')" style="width: 120px">
           <template #body="{ data }">
             <span class="font-number">
               {{ (data.entries || []).reduce((s: number, e: any) => s + (Number(e.debit) || 0), 0).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}
             </span>
           </template>
         </Column>
-        <Column header="操作" style="width: 220px">
+        <Column :header="t('common.actions')" style="width: 220px">
           <template #body="{ data }">
             <Button
               v-if="data.status === 'draft'"
-              label="编辑"
+              :label="t('common.edit')"
               text
               severity="secondary"
               size="small"
@@ -480,7 +482,7 @@ onMounted(() => {
             />
             <Button
               v-if="data.status === 'draft'"
-              label="审核"
+              :label="t('accounting.vouchers_page.approveVoucher')"
               text
               severity="info"
               size="small"
@@ -488,7 +490,7 @@ onMounted(() => {
             />
             <Button
               v-if="data.status === 'draft' || data.status === 'approved'"
-              label="记账"
+              :label="t('accounting.vouchers_page.postVoucher')"
               text
               severity="success"
               size="small"
@@ -496,7 +498,7 @@ onMounted(() => {
             />
             <Button
               v-if="data.status === 'posted'"
-              label="反记账"
+              :label="t('accounting.vouchers_page.reverseVoucher')"
               text
               severity="danger"
               size="small"
@@ -533,10 +535,10 @@ onMounted(() => {
             />
           </div>
           <div class="meta-item meta-summary">
-            摘要：<InputText v-model="voucherForm.summary" class="flex-1" placeholder="请输入凭证摘要" />
+            {{ t('accounting.vouchers_page.summary') }}：<InputText v-model="voucherForm.summary" class="flex-1" placeholder="请输入凭证摘要" />
           </div>
           <div class="meta-item">
-            日期：<InputText v-model="voucherForm.date" type="date" class="meta-input-date" />
+            {{ t('accounting.vouchers_page.voucherDate') }}：<InputText v-model="voucherForm.date" type="date" class="meta-input-date" />
           </div>
         </div>
 
@@ -547,9 +549,9 @@ onMounted(() => {
               <th class="col-code">科目编码</th>
               <th class="col-l1">一级科目</th>
               <th class="col-l2">明细科目</th>
-              <th class="col-amount">借方金额</th>
-              <th class="col-amount">贷方金额</th>
-              <th class="col-remark">备注</th>
+              <th class="col-amount">{{ t('accounting.vouchers_page.entry_debit') }}</th>
+              <th class="col-amount">{{ t('accounting.vouchers_page.entry_credit') }}</th>
+              <th class="col-remark">{{ t('common.remark') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -594,13 +596,13 @@ onMounted(() => {
                 />
               </td>
               <td class="col-remark">
-                <InputText v-model="entry.description" placeholder="备注" class="w-full" />
+                <InputText v-model="entry.description" :placeholder="t('common.remark')" class="w-full" />
               </td>
             </tr>
           </tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="3" class="text-center font-semibold">合&emsp;计</td>
+              <td colspan="3" class="text-center font-semibold">{{ t('common.total') }}</td>
               <td class="col-amount total-value">{{ totalDebit.toFixed(2) }}</td>
               <td class="col-amount total-value">{{ totalCredit.toFixed(2) }}</td>
               <td class="text-center">
@@ -638,7 +640,7 @@ onMounted(() => {
               />
             </div>
             <div v-if="selectedEntryAux.counterparty" class="aux-field">
-              <span class="aux-label">往来单位</span>
+              <span class="aux-label">{{ t('accounting.vouchers_page.entry_counterparty') }}</span>
               <Dropdown
                 v-model="voucherForm.entries[selectedEntryIdx].counterparty_id"
                 :options="counterparties"
@@ -649,7 +651,7 @@ onMounted(() => {
               />
             </div>
             <div v-if="selectedEntryAux.project" class="aux-field">
-              <span class="aux-label">项目</span>
+              <span class="aux-label">{{ t('accounting.vouchers_page.entry_project') }}</span>
               <Dropdown
                 v-model="voucherForm.entries[selectedEntryIdx].project_id"
                 :options="projects"
@@ -715,9 +717,9 @@ onMounted(() => {
             />
           </div>
           <div class="meta-item meta-summary">
-            摘要：<InputText v-model="editForm.summary" class="flex-1" placeholder="请输入凭证摘要" />
+            {{ t('accounting.vouchers_page.summary') }}：<InputText v-model="editForm.summary" class="flex-1" placeholder="请输入凭证摘要" />
           </div>
-          <div class="meta-item">日期：<InputText v-model="editForm.date" type="date" class="meta-input-date" /></div>
+          <div class="meta-item">{{ t('accounting.vouchers_page.voucherDate') }}：<InputText v-model="editForm.date" type="date" class="meta-input-date" /></div>
         </div>
 
         <!-- 6-column entry table -->
@@ -727,9 +729,9 @@ onMounted(() => {
               <th class="col-code">科目编码</th>
               <th class="col-l1">一级科目</th>
               <th class="col-l2">明细科目</th>
-              <th class="col-amount">借方金额</th>
-              <th class="col-amount">贷方金额</th>
-              <th class="col-remark">备注</th>
+              <th class="col-amount">{{ t('accounting.vouchers_page.entry_debit') }}</th>
+              <th class="col-amount">{{ t('accounting.vouchers_page.entry_credit') }}</th>
+              <th class="col-remark">{{ t('common.remark') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -773,13 +775,13 @@ onMounted(() => {
                 />
               </td>
               <td class="col-remark">
-                <InputText v-model="entry.description" placeholder="备注" class="w-full" />
+                <InputText v-model="entry.description" :placeholder="t('common.remark')" class="w-full" />
               </td>
             </tr>
           </tbody>
           <tfoot>
             <tr class="total-row">
-              <td colspan="3" class="text-center font-semibold">合&emsp;计</td>
+              <td colspan="3" class="text-center font-semibold">{{ t('common.total') }}</td>
               <td class="col-amount total-value">{{ editDebit.toFixed(2) }}</td>
               <td class="col-amount total-value">{{ editCredit.toFixed(2) }}</td>
               <td class="text-center">
@@ -817,7 +819,7 @@ onMounted(() => {
               />
             </div>
             <div v-if="editSelectedAux.counterparty" class="aux-field">
-              <span class="aux-label">往来单位</span>
+              <span class="aux-label">{{ t('accounting.vouchers_page.entry_counterparty') }}</span>
               <Dropdown
                 v-model="editForm.entries[selectedEditEntryIdx].counterparty_id"
                 :options="counterparties"
@@ -828,7 +830,7 @@ onMounted(() => {
               />
             </div>
             <div v-if="editSelectedAux.project" class="aux-field">
-              <span class="aux-label">项目</span>
+              <span class="aux-label">{{ t('accounting.vouchers_page.entry_project') }}</span>
               <Dropdown
                 v-model="editForm.entries[selectedEditEntryIdx].project_id"
                 :options="projects"
@@ -869,7 +871,7 @@ onMounted(() => {
     </Dialog>
 
     <!-- Query dialog -->
-    <Dialog v-model:visible="showQueryDialog" header="查询凭证" :style="{ width: '500px' }">
+    <Dialog v-model:visible="showQueryDialog" :header="t('accounting.vouchers_page.searchVoucher')" :style="{ width: '500px' }">
       <div class="flex flex-col gap-4 py-4">
         <div class="flex gap-4">
           <div class="flex-1">
@@ -882,12 +884,12 @@ onMounted(() => {
           </div>
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">凭证号</label>
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.vouchers_page.voucherNo') }}</label>
           <InputText v-model="queryFilters.voucher_no" placeholder="如：付字202601" class="w-full" />
         </div>
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">类型</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.vouchers_page.voucherType') }}</label>
             <Dropdown
               v-model="queryFilters.voucher_type"
               :options="TYPE_OPTIONS"
@@ -897,7 +899,7 @@ onMounted(() => {
             />
           </div>
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">状态</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.vouchers_page.status') }}</label>
             <Dropdown
               v-model="queryFilters.status"
               :options="STATUS_OPTIONS"
@@ -908,8 +910,8 @@ onMounted(() => {
           </div>
         </div>
         <div class="flex gap-2">
-          <Button label="查询" icon="pi pi-search" @click="handleQuery" />
-          <Button label="重置" icon="pi pi-refresh" text @click="resetQuery" />
+          <Button :label="t('common.search')" icon="pi pi-search" @click="handleQuery" />
+          <Button :label="t('common.reset')" icon="pi pi-refresh" text @click="resetQuery" />
         </div>
       </div>
     </Dialog>
@@ -928,9 +930,9 @@ onMounted(() => {
           tableStyle="min-width: auto"
         >
           <Column selectionMode="multiple" style="width: 3rem" />
-          <Column field="voucher_no" header="凭证字号" style="width: 140px" />
-          <Column field="date" header="日期" style="width: 90px" />
-          <Column field="summary" header="摘要" style="width: 200px" />
+          <Column field="voucher_no" :header="t('accounting.vouchers_page.voucherNo')" style="width: 140px" />
+          <Column field="date" :header="t('accounting.vouchers_page.voucherDate')" style="width: 90px" />
+          <Column field="summary" :header="t('accounting.vouchers_page.summary')" style="width: 200px" />
         </DataTable>
         <Button
           label="批量审核"
@@ -945,7 +947,7 @@ onMounted(() => {
     <Dialog v-model:visible="showReverseDialog" header="反记账" :style="{ width: '450px' }">
       <div class="flex flex-col gap-4 py-4">
         <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">反记账原因（必填）</label>
-        <Textarea v-model="reverseReason" rows="3" class="w-full" placeholder="请输入原因..." />
+        <Textarea v-model="reverseReason" rows="3" class="w-full" :placeholder="t('accounting.vouchers_page.reverseReasonPlaceholder')" />
         <Button
           label="确认反记账"
           icon="pi pi-exclamation-triangle"

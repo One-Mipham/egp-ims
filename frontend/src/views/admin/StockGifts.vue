@@ -9,6 +9,9 @@ import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import InputNumber from 'primevue/inputnumber'
 import { listStockGifts, createStockGift, updateStockGift, deleteStockGift, listGiftCategories } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const items = ref<any[]>([])
 const categories = ref<any[]>([])
@@ -59,16 +62,16 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '操作失败')
+    alert(e.response?.data?.detail || t('common.error'))
   }
 }
 async function remove(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await deleteStockGift(id)
     await load()
   } catch (_e: any) {
-    alert('删除失败')
+    alert(t('common.deleteFailed'))
   }
 }
 onMounted(load)
@@ -87,7 +90,7 @@ onMounted(load)
         class="w-32"
         showClear
       />
-      <Button label="新增礼品" icon="pi pi-plus" @click="openCreate" />
+      <Button :label="`${t('common.add')}礼品`" icon="pi pi-plus" @click="openCreate" />
     </div>
     <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto">
       <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="15">
@@ -101,7 +104,7 @@ onMounted(load)
           /></template>
         </Column>
         <Column field="unit_price" header="单价" />
-        <Column header="操作" style="min-width: 120px">
+        <Column :header="t('common.actions')" style="min-width: 120px">
           <template #body="{ data }"
             ><Button text size="small" icon="pi pi-pencil" @click="openEdit(data)" /><Button
               text
@@ -121,7 +124,7 @@ onMounted(load)
     >
       <div class="grid grid-cols-2 gap-3">
         <div class="col-span-2">
-          <label class="block text-xs text-zinc-500 mb-1">名称</label><InputText v-model="form.name" class="w-full" />
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.name') }}</label><InputText v-model="form.name" class="w-full" />
         </div>
         <div>
           <label class="block text-xs text-zinc-500 mb-1">类别</label
@@ -148,7 +151,7 @@ onMounted(load)
         </div>
       </div>
       <template #footer
-        ><Button label="取消" severity="secondary" @click="showDialog = false" /><Button label="保存" @click="save"
+        ><Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" /><Button :label="t('common.save')" @click="save"
       /></template>
     </Dialog>
   </div>

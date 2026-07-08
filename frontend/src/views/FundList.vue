@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -11,6 +12,7 @@ import Dropdown from 'primevue/dropdown'
 import Tag from 'primevue/tag'
 import { listFunds, createFund, updateFund, deleteFund } from '@/api'
 
+const { t } = useI18n()
 const router = useRouter()
 const items = ref<any[]>([])
 const loading = ref(false)
@@ -96,23 +98,23 @@ onMounted(load)
     </div>
 
     <DataTable :value="items" :loading="loading" stripedRows size="small" paginator :rows="10">
-      <Column field="fund_name" header="基金名称" sortable>
+      <Column field="fund_name" :header="t('investments.fundName')" sortable>
         <template #body="{ data }"
           ><a class="text-indigo-600 hover:underline cursor-pointer" @click="goDetail(data.id)">{{
             data.fund_name
           }}</a></template
         >
       </Column>
-      <Column header="类型"
+      <Column :header="t('common.type')"
         ><template #body="{ data }"
           ><Tag :value="TYPE_LABELS[data.fund_type] || data.fund_type" severity="info" class="text-xs" /></template
       ></Column>
       <Column field="management_company" header="管理公司" />
       <Column field="currency" header="币种" />
-      <Column header="总规模"
+      <Column :header="t('investments.totalCommitment')"
         ><template #body="{ data }">{{ data.total_commitment?.toLocaleString() }}</template></Column
       >
-      <Column header="状态"
+      <Column :header="t('common.status')"
         ><template #body="{ data }"
           ><Tag
             :value="STATUS_LABELS[data.status] || data.status"
@@ -120,7 +122,7 @@ onMounted(load)
               data.status === 'active' ? 'success' : data.status === 'raising' ? 'warn' : 'danger'
             " /></template
       ></Column>
-      <Column header="操作" style="width: 100px">
+      <Column :header="t('common.actions')" style="width: 100px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" size="small" severity="secondary" text rounded @click="openEdit(data)" />
@@ -130,14 +132,14 @@ onMounted(load)
       </Column>
     </DataTable>
 
-    <Dialog v-model:visible="showDialog" :header="isEdit ? '编辑基金' : '新增基金'" :style="{ width: '480px' }" modal>
+    <Dialog v-model:visible="showDialog" :header="isEdit ? t('common.edit') : t('common.add')" :style="{ width: '480px' }" modal>
       <div class="flex flex-col gap-3 pt-2">
         <div>
-          <label class="text-sm text-stone-600">基金名称 *</label><InputText v-model="form.fund_name" class="w-full" />
+          <label class="text-sm text-stone-600">{{ t('investments.fundName') }} *</label><InputText v-model="form.fund_name" class="w-full" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-sm text-stone-600">类型</label
+            <label class="text-sm text-stone-600">{{ t('common.type') }}</label
             ><Dropdown
               v-model="form.fund_type"
               :options="FUND_TYPES"
@@ -161,14 +163,14 @@ onMounted(load)
             ><InputText v-model="form.inception_date" class="w-full" placeholder="YYYY-MM-DD" />
           </div>
           <div>
-            <label class="text-sm text-stone-600">总规模</label
+            <label class="text-sm text-stone-600">{{ t('investments.totalCommitment') }}</label
             ><InputNumber v-model="form.total_commitment" mode="currency" currency="CNY" class="w-full" />
           </div>
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showDialog = false" />
-        <Button label="保存" @click="handleSave" :disabled="!form.fund_name" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.save')" @click="handleSave" :disabled="!form.fund_name" />
       </template>
     </Dialog>
   </div>

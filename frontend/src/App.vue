@@ -174,7 +174,7 @@ function handleLogout() {
           <div class="flex-1 min-w-0">
             <div class="text-xs font-medium truncate text-violet-100">{{ currentUser.username }}</div>
             <div class="text-[10px] sidebar-online-text flex items-center gap-1">
-              <span class="w-1.5 h-1.5 rounded-full sidebar-online-dot inline-block"></span> 在线
+              <span class="w-1.5 h-1.5 rounded-full sidebar-online-dot inline-block"></span> {{ t('app.online') }}
             </div>
           </div>
         </div>
@@ -193,7 +193,7 @@ function handleLogout() {
           @click="handleLogout"
           class="mt-1.5 w-full text-left text-[10px] sidebar-logout-text flex items-center gap-1.5 transition-colors"
         >
-          <i class="pi pi-sign-out text-[10px]" /> 退出登录
+          <i class="pi pi-sign-out text-[10px]" /> {{ t('app.logout') }}
         </button>
       </div>
     </aside>
@@ -205,7 +205,7 @@ function handleLogout() {
         class="h-10 bg-white/80 backdrop-blur-sm border-b border-zinc-200/50 flex items-center justify-between px-6 shrink-0 no-print"
       >
         <h1 class="text-sm font-light text-zinc-700 tracking-tight">
-          {{ menuItems.find(i => i.to === route.path)?.label || (route.path === '/init' ? '初始化导航' : '首页') }}
+          {{ menuItems.find(i => i.to === route.path)?.label || (route.path === '/init' ? '初始化导航' : t('app.dashboard')) }}
         </h1>
         <div class="flex items-center gap-4">
           <a

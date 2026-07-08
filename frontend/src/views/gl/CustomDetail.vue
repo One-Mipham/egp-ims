@@ -1,6 +1,6 @@
 <template>
   <div class="p-4">
-    <h2 class="text-xl font-bold mb-4">自定义明细表</h2>
+    <h2 class="text-xl font-bold mb-4">{{ t('accounting.gl_page.customDetail') }}</h2>
 
     <div class="border rounded p-3 mb-4">
       <div class="flex gap-2 items-end flex-wrap mb-3">
@@ -13,10 +13,10 @@
           <InputText v-model="filters.end_date" size="small" placeholder="yyyy-MM-dd" class="w-32" />
         </div>
         <div>
-          <label class="text-xs block mb-1">科目代码</label>
+          <label class="text-xs block mb-1">{{ t('accounting.gl_page.accountCode') }}</label>
           <InputText v-model="filters.account_code" size="small" placeholder="如 660" class="w-28" />
         </div>
-        <Button label="查询" icon="pi pi-search" size="small" @click="search" />
+        <Button :label="t('common.search')" icon="pi pi-search" size="small" @click="search" />
         <Button label="导出CSV" icon="pi pi-download" size="small" severity="secondary" @click="exportCsv" />
       </div>
       <div>
@@ -49,6 +49,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
@@ -58,6 +59,7 @@ import Column from 'primevue/column'
 import { getCustomDetailColumns, queryCustomDetail, exportCustomDetail } from '../../api'
 
 const toast = useToast()
+const { t } = useI18n()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 const now = new Date()
 

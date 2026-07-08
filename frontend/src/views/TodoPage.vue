@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -11,24 +12,25 @@ const tasks = ref<any[]>([])
 const loading = ref(false)
 const filterStatus = ref<string | null>(null)
 const filterPriority = ref<string | null>(null)
+const { t } = useI18n()
 
 const showDialog = ref(false)
 const editTask = ref<any>(null)
 const form = ref({ title: '', description: '', priority: 'medium', due_date: '' })
 
 const STATUS_OPTIONS = [
-  { label: '全部', value: null },
-  { label: '待处理', value: 'pending' },
-  { label: '已完成', value: 'completed' },
+  { label: t('common.all'), value: null },
+  { label: t('todo.pending'), value: 'pending' },
+  { label: t('todo.completed'), value: 'completed' },
 ]
 const PRIORITY_OPTIONS = [
-  { label: '全部', value: null },
-  { label: '高', value: 'high' },
-  { label: '中', value: 'medium' },
-  { label: '低', value: 'low' },
+  { label: t('common.all'), value: null },
+  { label: t('todo.high'), value: 'high' },
+  { label: t('todo.medium'), value: 'medium' },
+  { label: t('todo.low'), value: 'low' },
 ]
 
-const PRIORITY_LABELS: Record<string, string> = { high: '高', medium: '中', low: '低' }
+const PRIORITY_LABELS: Record<string, string> = { high: t('todo.high'), medium: t('todo.medium'), low: t('todo.low') }
 const PRIORITY_COLORS: Record<string, string> = {
   high: 'bg-red-100 text-red-700',
   medium: 'bg-yellow-100 text-yellow-700',
@@ -94,7 +96,7 @@ onMounted(load)
 <template>
   <div class="max-w-4xl">
     <div class="flex gap-2 items-center mb-1">
-      <h2 class="text-lg font-bold">协同办公</h2>
+      <h2 class="text-lg font-bold">{{ t('todo.title') }}</h2>
       <span class="text-xs text-zinc-400 ml-2">{{ pendingCount }} 项待处理</span>
     </div>
     <p class="text-xs text-zinc-400 mb-4">内部任务与待办事项管理</p>
@@ -117,11 +119,11 @@ onMounted(load)
         size="small"
         @change="load"
       />
-      <Button label="新建任务" icon="pi pi-plus" size="small" severity="success" @click="openCreate" />
+      <Button :label="t('todo.addTask')" icon="pi pi-plus" size="small" severity="success" @click="openCreate" />
     </div>
 
     <!-- Task list -->
-    <div v-if="loading" class="text-sm text-zinc-400 py-8 text-center">加载中...</div>
+    <div v-if="loading" class="text-sm text-zinc-400 py-8 text-center">{{ t('common.loading') }}</div>
 
     <div v-else-if="!tasks.length" class="text-sm text-zinc-400 py-8 text-center">暂无任务，点击"新建任务"开始。</div>
 
@@ -162,34 +164,34 @@ onMounted(load)
     </div>
 
     <!-- Dialog -->
-    <Dialog v-model:visible="showDialog" :header="editTask ? '编辑任务' : '新建任务'" :modal="true" class="w-full max-w-lg">
+    <Dialog v-model:visible="showDialog" :header="editTask ? t('todo.editTask') : t('todo.addTask')" :modal="true" class="w-full max-w-lg">
       <div class="space-y-3">
         <div>
-          <label class="text-xs text-zinc-500 block mb-1">标题 *</label>
-          <InputText v-model="form.title" class="w-full" placeholder="任务标题" />
+          <label class="text-xs text-zinc-500 block mb-1">{{ t('todo.taskTitle') }} *</label>
+          <InputText v-model="form.title" class="w-full" :placeholder="t('todo.taskTitle')" />
         </div>
         <div>
-          <label class="text-xs text-zinc-500 block mb-1">描述</label>
-          <Textarea v-model="form.description" rows="2" class="w-full" placeholder="任务描述（可选）" />
+          <label class="text-xs text-zinc-500 block mb-1">{{ t('todo.taskDescription') }}</label>
+          <Textarea v-model="form.description" rows="2" class="w-full" :placeholder="t('todo.taskDescription')" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-zinc-500 block mb-1">优先级</label>
+            <label class="text-xs text-zinc-500 block mb-1">{{ t('todo.priority') }}</label>
             <select v-model="form.priority" class="border rounded px-2 py-1.5 text-sm w-full">
-              <option value="high">高</option>
-              <option value="medium">中</option>
-              <option value="low">低</option>
+              <option value="high">{{ t('todo.high') }}</option>
+              <option value="medium">{{ t('todo.medium') }}</option>
+              <option value="low">{{ t('todo.low') }}</option>
             </select>
           </div>
           <div>
-            <label class="text-xs text-zinc-500 block mb-1">截止日期</label>
+            <label class="text-xs text-zinc-500 block mb-1">{{ t('todo.dueDate') }}</label>
             <input v-model="form.due_date" type="date" class="border rounded px-2 py-1.5 text-sm w-full" />
           </div>
         </div>
       </div>
       <template #footer>
-        <Button label="取消" size="small" text @click="showDialog = false" />
-        <Button label="保存" size="small" icon="pi pi-check" @click="handleSave" :disabled="!form.title" />
+        <Button :label="t('common.cancel')" size="small" text @click="showDialog = false" />
+        <Button :label="t('common.save')" size="small" icon="pi pi-check" @click="handleSave" :disabled="!form.title" />
       </template>
     </Dialog>
   </div>

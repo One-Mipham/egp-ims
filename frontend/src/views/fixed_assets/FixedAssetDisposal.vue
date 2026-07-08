@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import { listFixedAssets, disposeFixedAsset } from '../../api'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
@@ -51,7 +53,7 @@ onMounted(load)
 <template>
   <div class="p-4">
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-lg font-bold">资产处置</h1>
+      <h1 class="text-lg font-bold">{{ t('assets.disposeAsset') }}</h1>
       <select v-model="statusFilter" class="border rounded px-2 py-1 text-sm">
         <option value="">全部状态</option>
         <option value="使用中">使用中</option>
@@ -64,14 +66,14 @@ onMounted(load)
     <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="bg-zinc-100 text-left">
-          <th class="p-2 border">资产编号</th>
-          <th class="p-2 border">名称</th>
-          <th class="p-2 border">类别</th>
-          <th class="p-2 border text-right">原值</th>
-          <th class="p-2 border text-right">净值</th>
-          <th class="p-2 border">状态</th>
+          <th class="p-2 border">{{ t('assets.assetCode') }}</th>
+          <th class="p-2 border">{{ t('common.name') }}</th>
+          <th class="p-2 border">{{ t('assets.assetCategory') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.originalValue') }}</th>
+          <th class="p-2 border text-right">{{ t('assets.netValue') }}</th>
+          <th class="p-2 border">{{ t('common.status') }}</th>
           <th class="p-2 border">存放地点</th>
-          <th class="p-2 border">操作</th>
+          <th class="p-2 border">{{ t('common.actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -118,13 +120,13 @@ onMounted(load)
         <h2 class="text-lg font-bold mb-4">资产处置 - {{ selectedItem?.name }}</h2>
         <div class="bg-zinc-50 rounded p-3 mb-3 text-sm">
           <div class="flex justify-between">
-            <span>原值</span><span>{{ (selectedItem?.original_value || 0).toLocaleString() }}</span>
+            <span>{{ t('assets.originalValue') }}</span><span>{{ (selectedItem?.original_value || 0).toLocaleString() }}</span>
           </div>
           <div class="flex justify-between">
-            <span>累计折旧</span><span>{{ (selectedItem?.accumulated_depreciation || 0).toLocaleString() }}</span>
+            <span>{{ t('assets.accumulatedDepreciation') }}</span><span>{{ (selectedItem?.accumulated_depreciation || 0).toLocaleString() }}</span>
           </div>
           <div class="flex justify-between">
-            <span>净值</span><span class="font-bold">{{ (selectedItem?.net_value || 0).toLocaleString() }}</span>
+            <span>{{ t('assets.netValue') }}</span><span class="font-bold">{{ (selectedItem?.net_value || 0).toLocaleString() }}</span>
           </div>
           <div v-if="disposalProceeds > 0" class="flex justify-between mt-1 pt-1 border-t">
             <span>预计处置损益</span
@@ -156,7 +158,7 @@ onMounted(load)
           </div>
         </div>
         <div class="flex justify-end gap-2 mt-4">
-          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
+          <button @click="dialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
           <button @click="confirmDisposal" class="px-4 py-1.5 bg-orange-600 text-white rounded text-sm">
             确认处置
           </button>

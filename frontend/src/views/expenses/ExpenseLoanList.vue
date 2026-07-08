@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useI18n } from '@/i18n'
 import { listExpenseLoans, createExpenseLoan, approveLoan, repayLoan, bypassLoan } from '@/api/expenses'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
@@ -11,6 +12,7 @@ import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
 import Tag from 'primevue/tag'
 
+const { t } = useI18n()
 const toast = useToast()
 const companyId = Number(localStorage.getItem('company_id') || '1')
 const loans = ref<any[]>([])
@@ -122,16 +124,16 @@ onMounted(fetchLoans)
       <Column header="已还金额">
         <template #body="slotProps">¥{{ slotProps.data.repaid_amount?.toLocaleString() }}</template>
       </Column>
-      <Column header="状态">
+      <Column :header="t('common.status')">
         <template #body="slotProps">
           <Tag :value="statusLabels[slotProps.data.status] || slotProps.data.status" />
         </template>
       </Column>
-      <Column header="操作" style="width:8rem">
+      <Column :header="t('common.actions')" style="width:8rem">
         <template #body="slotProps">
           <Button v-if="slotProps.data.status === 'submitted'" icon="pi pi-check" size="small" text rounded severity="success" @click="doApprove(slotProps.data.id)" />
           <Button v-if="canBypass && slotProps.data.status === 'submitted'" icon="pi pi-forward" size="small" text rounded severity="warn" @click="openBypass(slotProps.data.id)" v-tooltip.top="'强制跳过'" />
-          <Button v-if="['approved', 'partial_repaid'].includes(slotProps.data.status)" label="还款" size="small" text @click="openRepay(slotProps.data)" />
+          <Button v-if="['approved', 'partial_repaid'].includes(slotProps.data.status)" :label="t('expenses.repayLoan')" size="small" text @click="openRepay(slotProps.data)" />
         </template>
       </Column>
     </DataTable>
@@ -157,8 +159,8 @@ onMounted(fetchLoans)
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="dialog = false" />
-        <Button label="提交" @click="createNew" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="dialog = false" />
+        <Button :label="t('common.submit')" @click="createNew" />
       </template>
     </Dialog>
 
@@ -172,7 +174,7 @@ onMounted(fetchLoans)
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="repayDialog = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="repayDialog = false" />
         <Button label="确认还款" @click="doRepay" />
       </template>
     </Dialog>
@@ -185,7 +187,7 @@ onMounted(fetchLoans)
         <Textarea v-model="bypassReason" class="w-full" rows="3" placeholder="请填写强制跳过原因" />
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="bypassDialog = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="bypassDialog = false" />
         <Button label="确认跳过" severity="warn" :disabled="!bypassReason.trim()" @click="doBypass" />
       </template>
     </Dialog>

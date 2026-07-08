@@ -8,8 +8,11 @@ import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 import Card from 'primevue/card'
+import { useI18n } from '@/i18n'
 import api from '@/api/index'
 import { listPortfolios } from '@/api'
+
+const { t } = useI18n()
 
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const configs = ref<any[]>([])
@@ -77,7 +80,7 @@ async function saveConfig() {
 }
 
 async function deleteConfig(id: number) {
-  if (!confirm('确定删除？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   await api.delete(`/investments/waterfall-configs/${id}`)
   await loadConfigs()
 }
@@ -102,7 +105,7 @@ onMounted(loadConfigs)
 <template>
   <div class="p-4 space-y-6">
     <div class="flex justify-between items-center">
-      <h2 class="text-lg font-semibold text-zinc-700">分配瀑布</h2>
+      <h2 class="text-lg font-semibold text-zinc-700">{{ t('investments.waterfall') }}</h2>
       <Button label="新建配置" icon="pi pi-plus" size="small" @click="openAddConfig" />
     </div>
 
@@ -132,7 +135,7 @@ onMounted(loadConfigs)
           <h3 class="font-semibold text-zinc-700 mb-3">{{ activeConfig.name }} — 层级结构</h3>
           <DataTable :value="activeConfig.tiers" stripedRows size="small">
             <Column field="order" header="层级" />
-            <Column field="name" header="名称" />
+            <Column field="name" :header="t('common.name')" />
             <Column header="类型"
               ><template #body="{ data }">{{
                 data.type === 'return_of_capital'
@@ -199,7 +202,7 @@ onMounted(loadConfigs)
           <h4 class="font-semibold text-zinc-700">分配明细</h4>
           <DataTable :value="result.steps" stripedRows size="small">
             <Column field="order" header="层级" />
-            <Column field="name" header="名称" />
+            <Column field="name" :header="t('common.name')" />
             <Column header="分配金额"
               ><template #body="{ data }">¥{{ data.allocated?.toLocaleString() }}</template></Column
             >
@@ -221,7 +224,7 @@ onMounted(loadConfigs)
     <Dialog v-model:visible="showConfigDialog" header="新建瀑布配置" :style="{ width: '520px' }" modal>
       <div class="flex flex-col gap-3 pt-2">
         <div>
-          <label class="text-sm text-stone-600">名称 *</label
+          <label class="text-sm text-stone-600">{{ t('common.name') }} *</label
           ><InputText v-model="configForm.name" class="w-full" placeholder="如 标准四层瀑布" />
         </div>
         <div>
@@ -266,8 +269,8 @@ onMounted(loadConfigs)
         </div>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showConfigDialog = false" />
-        <Button label="保存" @click="saveConfig" :disabled="!configForm.name" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showConfigDialog = false" />
+        <Button :label="t('common.save')" @click="saveConfig" :disabled="!configForm.name" />
       </template>
     </Dialog>
   </div>

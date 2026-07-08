@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -18,6 +19,7 @@ import {
   deleteShareholder,
 } from '@/api/board'
 
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 const data = ref<BoardShareholderData[]>([])
@@ -137,7 +139,7 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e?.response?.data?.detail || '保存失败')
+    alert(e?.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -155,18 +157,18 @@ onMounted(load)
 <template>
   <div class="space-y-6">
     <div class="page-header flex items-center justify-between">
-      <h2>股东名册</h2>
+      <h2>{{ t('board.shareholders') }}</h2>
       <Button label="新增股东" icon="pi pi-plus" size="small" @click="openAdd" />
     </div>
 
     <div class="form-card overflow-x-auto">
       <DataTable :value="data" :loading="loading" stripedRows class="text-xs" paginator :rows="15">
-        <Column field="name" header="股东名称" style="min-width: 140px" />
-        <Column field="share_type" header="股份类型" style="width: 100px" />
+        <Column field="name" :header="t('board.shareholderName')" style="min-width: 140px" />
+        <Column field="share_type" :header="t('board.shareholderType')" style="width: 100px" />
         <Column field="share_count" header="持股数量" style="width: 100px">
           <template #body="{ data: row }">{{ row.share_count.toLocaleString() }}</template>
         </Column>
-        <Column field="share_ratio" header="持股比例" style="width: 100px">
+        <Column field="share_ratio" :header="t('board.shareRatio')" style="width: 100px">
           <template #body="{ data: row }">{{ row.share_ratio }}%</template>
         </Column>
         <Column field="contact_person" header="联系人" style="width: 90px">
@@ -178,7 +180,7 @@ onMounted(load)
         <Column field="entry_date" header="入股日期" style="width: 100px">
           <template #body="{ data: row }">{{ row.entry_date || '—' }}</template>
         </Column>
-        <Column header="状态" style="width: 80px">
+        <Column :header="t('common.status')" style="width: 80px">
           <template #body="{ data: row }">
             <Tag
               :value="row.status === 'active' ? '有效' : '失效'"
@@ -186,10 +188,10 @@ onMounted(load)
             />
           </template>
         </Column>
-        <Column header="操作" style="width: 110px">
+        <Column :header="t('common.actions')" style="width: 110px">
           <template #body="{ data: row }">
-            <Button label="编辑" text size="small" @click="openEdit(row)" />
-            <Button label="删除" text severity="danger" size="small" @click="handleDelete(row.id)" />
+            <Button :label="t('common.edit')" text size="small" @click="openEdit(row)" />
+            <Button :label="t('common.delete')" text severity="danger" size="small" @click="handleDelete(row.id)" />
           </template>
         </Column>
       </DataTable>
@@ -209,7 +211,7 @@ onMounted(load)
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-zinc-500 mb-1 block">股份类型</label>
+            <label class="text-xs text-zinc-500 mb-1 block">{{ t('board.shareholderType') }}</label>
             <Dropdown
               v-model="form.share_type"
               :options="shareTypeOptions"
@@ -219,7 +221,7 @@ onMounted(load)
             />
           </div>
           <div>
-            <label class="text-xs text-zinc-500 mb-1 block">状态</label>
+            <label class="text-xs text-zinc-500 mb-1 block">{{ t('common.status') }}</label>
             <Dropdown
               v-model="form.status"
               :options="[
@@ -239,7 +241,7 @@ onMounted(load)
             <InputNumber v-model="form.share_count" :min="0" class="w-full" />
           </div>
           <div>
-            <label class="text-xs text-zinc-500 mb-1 block">持股比例 (%)</label>
+            <label class="text-xs text-zinc-500 mb-1 block">{{ t('board.shareRatio') }} (%)</label>
             <InputNumber v-model="form.share_ratio" :min="0" :max="100" :minFractionDigits="2" class="w-full" />
           </div>
         </div>
@@ -267,11 +269,11 @@ onMounted(load)
         </div>
 
         <div>
-          <label class="text-xs text-zinc-500 mb-1 block">备注</label>
+          <label class="text-xs text-zinc-500 mb-1 block">{{ t('common.remark') }}</label>
           <Textarea v-model="form.notes" rows="3" class="w-full" />
         </div>
 
-        <Button label="保存" icon="pi pi-check" :loading="saving" @click="save" />
+        <Button :label="t('common.save')" icon="pi pi-check" :loading="saving" @click="save" />
       </div>
     </Dialog>
   </div>

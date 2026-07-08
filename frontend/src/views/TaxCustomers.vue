@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -14,6 +15,7 @@ const saving = ref(false)
 const showDialog = ref(false)
 const editingId = ref<number | null>(null)
 const searchText = ref('')
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 const emptyForm = () => ({
@@ -96,19 +98,19 @@ async function handleSave(saveAndNew: boolean) {
     }
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
 }
 
 async function handleDelete(id: number) {
-  if (!confirm('确认停用该客户？')) return
+  if (!confirm(t('common.deleteConfirm'))) return
   try {
     await api.delete(`/counterparties/${id}`)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 
@@ -137,17 +139,17 @@ onMounted(load)
         <Column header="序号" style="width: 60px">
           <template #body="{ index }">{{ index + 1 }}</template>
         </Column>
-        <Column field="code" header="编码" style="width: 80px" />
-        <Column field="name" header="客户名称" style="width: 180px" />
+        <Column field="code" :header="t('common.code')" style="width: 80px" />
+        <Column field="name" :header="t('accounting.taxes_page.customerName')" style="width: 180px" />
         <Column field="tax_number" header="税号" style="width: 140px" />
         <Column field="bank_name" header="开户银行" style="width: 140px" />
         <Column field="bank_account" header="银行账号" style="width: 150px" />
         <Column field="contact_person" header="联系人" style="width: 80px" />
         <Column field="phone" header="电话" style="width: 110px" />
-        <Column header="操作" style="width: 120px">
+        <Column :header="t('common.actions')" style="width: 120px">
           <template #body="{ data }">
-            <Button label="编辑" text severity="info" size="small" @click="openEdit(data)" />
-            <Button label="停用" text severity="danger" size="small" @click="handleDelete(data.id)" />
+            <Button :label="t('common.edit')" text severity="info" size="small" @click="openEdit(data)" />
+            <Button :label="t('common.disable')" text severity="danger" size="small" @click="handleDelete(data.id)" />
           </template>
         </Column>
       </DataTable>
@@ -157,7 +159,7 @@ onMounted(load)
       <div class="flex flex-col gap-4 py-4">
         <div class="flex gap-4">
           <div class="flex-1">
-            <label class="block text-xs text-zinc-500 mb-1">客户名称 *</label>
+            <label class="block text-xs text-zinc-500 mb-1">{{ t('accounting.taxes_page.customerName') }} *</label>
             <InputText v-model="form.name" class="w-full" />
           </div>
           <div class="flex-1">
@@ -210,7 +212,7 @@ onMounted(load)
           <InputText v-model="form.address" class="w-full" />
         </div>
         <div class="flex gap-2">
-          <Button label="保存" icon="pi pi-check" @click="handleSave(false)" :loading="saving" />
+          <Button :label="t('common.save')" icon="pi pi-check" @click="handleSave(false)" :loading="saving" />
           <Button label="保存新增" icon="pi pi-plus" severity="secondary" @click="handleSave(true)" :loading="saving" />
         </div>
       </div>

@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import Button from 'primevue/button'
 import { printDepartments } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const departments = ref<any[]>([])
 const loading = ref(false)
@@ -29,10 +32,10 @@ onMounted(load)
 <template>
   <div>
     <div class="flex justify-between items-center mb-4">
-      <Button label="打印" icon="pi pi-print" @click="doPrint" :disabled="!departments.length" />
+      <Button :label="t('common.print')" icon="pi pi-print" @click="doPrint" :disabled="!departments.length" />
     </div>
 
-    <p v-if="loading" class="text-zinc-400 text-sm">加载中...</p>
+    <p v-if="loading" class="text-zinc-400 text-sm">{{ t('common.loading') }}</p>
 
     <div v-if="departments.length" class="print-area bg-white shadow-sm px-12 pt-8 pb-6 max-w-4xl mx-auto">
       <h1 class="text-2xl font-bold text-center mb-6">部门信息表</h1>
@@ -41,9 +44,9 @@ onMounted(load)
         <thead>
           <tr class="border-b-2 border-stone-400 bg-stone-50">
             <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 100px">部门编码</th>
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 180px">部门名称</th>
+            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 180px">{{ t('common.name') }}</th>
             <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 100px">负责人</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 60px">状态</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 60px">{{ t('common.status') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -51,7 +54,7 @@ onMounted(load)
             <td class="py-1.5 px-2 border border-stone-200">{{ d.code }}</td>
             <td class="py-1.5 px-2 border border-stone-200">{{ d.name }}</td>
             <td class="py-1.5 px-2 border border-stone-200">{{ d.manager || '-' }}</td>
-            <td class="text-center py-1.5 px-2 border border-stone-200">{{ d.is_active ? '启用' : '停用' }}</td>
+            <td class="text-center py-1.5 px-2 border border-stone-200">{{ d.is_active ? t('common.enable') : t('common.disable') }}</td>
           </tr>
         </tbody>
       </table>

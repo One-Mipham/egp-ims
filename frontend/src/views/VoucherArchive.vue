@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Button from 'primevue/button'
 import { listVoucherArchive, batchImportVouchers } from '@/api'
+import { useI18n } from '@/i18n'
+
+const { t } = useI18n()
 
 const year = ref(new Date().getFullYear() - 1)
 const vouchers = ref<any[]>([])
@@ -76,7 +79,11 @@ function handleFileUpload(e: Event) {
   reader.readAsText(file)
 }
 
-const TYPE_LABELS: Record<string, string> = { receipt: '收款凭证', payment: '付款凭证', transfer: '转账凭证' }
+const TYPE_LABELS = computed<Record<string, string>>(() => ({
+  receipt: t('accounting.vouchers_page.receipt'),
+  payment: t('accounting.vouchers_page.payment'),
+  transfer: t('accounting.vouchers_page.transfer'),
+}))
 
 onMounted(load)
 </script>
@@ -106,7 +113,7 @@ onMounted(load)
     <div class="flex gap-2 items-center mb-3">
       <input v-model.number="year" type="number" class="border rounded px-2 py-1.5 text-sm w-24" @change="load" />
       <span class="text-sm text-zinc-500">年度</span>
-      <Button label="查询" icon="pi pi-search" size="small" text @click="load" />
+      <Button :label="t('common.search')" icon="pi pi-search" size="small" text @click="load" />
       <span class="text-xs text-zinc-400 ml-2">共 {{ vouchers.length }} 张凭证</span>
     </div>
 
@@ -114,18 +121,18 @@ onMounted(load)
       <table class="w-full text-sm border-collapse">
         <thead>
           <tr class="border-b bg-stone-50 text-left text-xs text-zinc-500">
-            <th class="py-2 px-3">凭证号</th>
-            <th class="py-2 px-3">日期</th>
-            <th class="py-2 px-3">类型</th>
-            <th class="py-2 px-3">摘要</th>
-            <th class="py-2 px-3 text-right">金额</th>
+            <th class="py-2 px-3">{{ t('accounting.vouchers_page.voucherNo') }}</th>
+            <th class="py-2 px-3">{{ t('common.date') }}</th>
+            <th class="py-2 px-3">{{ t('common.type') }}</th>
+            <th class="py-2 px-3">{{ t('accounting.vouchers_page.summary') }}</th>
+            <th class="py-2 px-3 text-right">{{ t('common.amount') }}</th>
             <th class="py-2 px-3">分录数</th>
-            <th class="py-2 px-3">状态</th>
+            <th class="py-2 px-3">{{ t('common.status') }}</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="7" class="py-4 text-center text-zinc-400">加载中...</td></tr>
-          <tr v-if="!loading && !vouchers.length"><td colspan="7" class="py-4 text-center text-zinc-400">该年度无凭证</td></tr>
+          <tr v-if="loading"><td colspan="7" class="py-4 text-center text-zinc-400">{{ t('common.loading') }}</td></tr>
+          <tr v-if="!loading && !vouchers.length"><td colspan="7" class="py-4 text-center text-zinc-400">{{ t('common.noData') }}</td></tr>
           <tr v-for="v in vouchers" :key="v.id" class="border-b last:border-b-0 hover:bg-stone-50">
             <td class="py-1.5 px-3 font-mono text-xs">{{ v.voucher_no }}</td>
             <td class="py-1.5 px-3">{{ v.date }}</td>

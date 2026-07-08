@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import { marked } from 'marked'
 import {
@@ -16,6 +17,7 @@ import {
 import CategoryTreeNode from '../components/kb/CategoryTreeNode.vue'
 
 const toast = useToast()
+const { t } = useI18n()
 const companyId = Number(localStorage.getItem('companyId') || '1')
 const articles = ref<any[]>([])
 const categoryTree = ref<any[]>([])
@@ -137,7 +139,7 @@ async function saveCat() {
     catDialogVisible.value = false
     await loadCategories()
   } catch (e: any) {
-    toast.add({ severity: 'error', summary: e?.response?.data?.detail || '操作失败', life: 3000 })
+    toast.add({ severity: 'error', summary: e?.response?.data?.detail || t('common.error'), life: 3000 })
   }
 }
 
@@ -149,7 +151,7 @@ async function removeCat(cat: any) {
   if (!confirm(`确定删除分类「${cat.name}」？`)) return
   try {
     await deleteKbCategory(cat.id, companyId)
-    toast.add({ severity: 'success', summary: '已删除', life: 2000 })
+    toast.add({ severity: 'success', summary: t('common.deleteSuccess'), life: 2000 })
     await loadCategories()
     if (selectedCategoryId.value === cat.id) {
       selectedCategoryId.value = null
@@ -231,10 +233,10 @@ async function save() {
   const payload = { ...form.value }
   if (selectedArticle.value && editMode.value) {
     await updateKbArticle(selectedArticle.value.id, payload)
-    toast.add({ severity: 'success', summary: '已更新', life: 2000 })
+    toast.add({ severity: 'success', summary: t('common.updateSuccess'), life: 2000 })
   } else {
     await createKbArticle(payload)
-    toast.add({ severity: 'success', summary: '文章已创建', life: 2000 })
+    toast.add({ severity: 'success', summary: t('common.addSuccess'), life: 2000 })
   }
   editorVisible.value = false
   selectedArticle.value = null
@@ -244,7 +246,7 @@ async function save() {
 async function remove() {
   if (!selectedArticle.value || !confirm('确定删除该文章？')) return
   await deleteKbArticle(selectedArticle.value.id)
-  toast.add({ severity: 'success', summary: '已删除', life: 2000 })
+  toast.add({ severity: 'success', summary: t('common.deleteSuccess'), life: 2000 })
   selectedArticle.value = null
   await loadArticles()
 }
@@ -269,15 +271,15 @@ onMounted(async () => {
     <div class="w-56 border-r border-dashed border-zinc-200 bg-zinc-50 flex flex-col shrink-0">
       <div class="p-3 border-b border-dashed border-zinc-200 space-y-2">
         <button @click="openCreate" class="w-full px-3 py-2 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">
-          + 新建文章
+          + {{ t('kb.addArticle') }}
         </button>
-        <button @click="exportCSV" class="w-full px-3 py-1.5 border rounded text-xs hover:bg-zinc-100">导出CSV</button>
+        <button @click="exportCSV" class="w-full px-3 py-1.5 border rounded text-xs hover:bg-zinc-100">{{ t('kb.exportCSV') }}</button>
         <button
           v-if="selectedIds.size > 0"
           @click="batchDelete"
           class="w-full px-3 py-1.5 border border-red-300 text-red-600 rounded text-xs hover:bg-red-50"
         >
-          删除选中 ({{ selectedIds.size }})
+          {{ t('kb.batchDelete') }} ({{ selectedIds.size }})
         </button>
       </div>
       <div class="overflow-auto flex-1">
@@ -303,7 +305,7 @@ onMounted(async () => {
         <input
           v-model="searchText"
           @input="onSearch"
-          placeholder="搜索标题/正文..."
+          :placeholder="t('common.searchPlaceholder')"
           class="w-full border rounded px-2 py-1.5 text-xs"
         />
       </div>
@@ -315,7 +317,7 @@ onMounted(async () => {
             @change="toggleSelectAll"
             class="mr-2"
           />
-          <span>全选</span>
+          <span>{{ t('common.selectAll') }}</span>
         </div>
         <div
           v-for="article in articles"
@@ -403,9 +405,9 @@ onMounted(async () => {
               {{ selectedArticle.status === 'published' ? '取消发布' : '发布' }}
             </button>
             <button @click="openEdit" class="px-3 py-1 text-xs rounded border text-blue-600 border-blue-300">
-              编辑
+              {{ t('common.edit') }}
             </button>
-            <button @click="remove" class="px-3 py-1 text-xs rounded border text-red-500 border-red-300">删除</button>
+            <button @click="remove" class="px-3 py-1 text-xs rounded border text-red-500 border-red-300">{{ t('common.delete') }}</button>
           </div>
         </div>
         <div class="flex-1 overflow-auto p-6">
@@ -427,19 +429,19 @@ onMounted(async () => {
     <div v-if="editorVisible" class="fixed inset-0 bg-black/40 flex items-start justify-center z-50 pt-10">
       <div class="bg-white rounded-lg w-[800px] max-h-[85vh] flex flex-col">
         <div class="p-4 border-b flex items-center justify-between">
-          <h2 class="text-lg font-bold">{{ selectedArticle && !editMode ? '编辑文章' : '新建文章' }}</h2>
+          <h2 class="text-lg font-bold">{{ selectedArticle && !editMode ? t('kb.editArticle') : t('kb.addArticle') }}</h2>
           <button @click="editorVisible = false" class="text-zinc-400 hover:text-zinc-600">&times;</button>
         </div>
         <div class="p-4 space-y-3 overflow-auto flex-1">
           <div>
-            <label class="text-xs text-zinc-500">标题</label
+            <label class="text-xs text-zinc-500">{{ t('kb.articleTitle') }}</label
             ><input v-model="form.title" class="w-full border rounded px-2 py-1.5 text-sm" />
           </div>
           <div class="flex gap-3">
             <div class="flex-1">
-              <label class="text-xs text-zinc-500">分类</label>
+              <label class="text-xs text-zinc-500">{{ t('kb.categories') }}</label>
               <select v-model="form.category_id" class="w-full border rounded px-2 py-1.5 text-sm">
-                <option :value="0" disabled>请选择分类</option>
+                <option :value="0" disabled>{{ t('common.pleaseSelect') }}</option>
                 <optgroup v-for="l1 in categoryTree" :key="l1.id" :label="l1.name">
                   <option :value="l1.id">{{ l1.name }}</option>
                   <template v-for="l2 in l1.children" :key="l2.id">
@@ -449,7 +451,7 @@ onMounted(async () => {
               </select>
             </div>
             <div class="flex-1">
-              <label class="text-xs text-zinc-500">状态</label>
+              <label class="text-xs text-zinc-500">{{ t('common.status') }}</label>
               <select v-model="form.status" class="w-full border rounded px-2 py-1.5 text-sm">
                 <option value="draft">草稿</option>
                 <option value="published">已发布</option>
@@ -475,7 +477,7 @@ onMounted(async () => {
                 placeholder="输入标签后回车"
                 class="flex-1 border rounded px-2 py-1 text-xs"
               />
-              <button @click="addTag" class="px-3 py-1 bg-zinc-100 rounded text-xs hover:bg-zinc-200">添加</button>
+              <button @click="addTag" class="px-3 py-1 bg-zinc-100 rounded text-xs hover:bg-zinc-200">{{ t('common.add') }}</button>
             </div>
           </div>
           <div>
@@ -489,8 +491,8 @@ onMounted(async () => {
           </div>
         </div>
         <div class="p-4 border-t flex justify-end gap-2">
-          <button @click="editorVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
-          <button @click="save" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">保存</button>
+          <button @click="editorVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
+          <button @click="save" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">{{ t('common.save') }}</button>
         </div>
       </div>
     </div>
@@ -499,16 +501,16 @@ onMounted(async () => {
     <div v-if="catDialogVisible" class="fixed inset-0 bg-black/40 flex items-start justify-center z-50 pt-20">
       <div class="bg-white rounded-lg w-96">
         <div class="p-4 border-b flex items-center justify-between">
-          <h3 class="font-bold text-sm">{{ catDialogMode === 'create' ? '新增子分类' : '编辑分类' }}</h3>
+          <h3 class="font-bold text-sm">{{ catDialogMode === 'create' ? t('kb.addCategory') : t('kb.editCategory') }}</h3>
           <button @click="catDialogVisible = false" class="text-zinc-400 hover:text-zinc-600">&times;</button>
         </div>
         <div class="p-4 space-y-3">
           <div>
-            <label class="text-xs text-zinc-500">父分类</label>
+            <label class="text-xs text-zinc-500">{{ t('kb.parentCategory') }}</label>
             <div class="text-sm text-zinc-700 mt-1">{{ findCatName(catForm.parent_id) || '根目录' }}</div>
           </div>
           <div>
-            <label class="text-xs text-zinc-500">分类名称</label>
+            <label class="text-xs text-zinc-500">{{ t('kb.categoryName') }}</label>
             <input
               v-model="catForm.name"
               @keydown.enter="saveCat"
@@ -518,8 +520,8 @@ onMounted(async () => {
           </div>
         </div>
         <div class="p-4 border-t flex justify-end gap-2">
-          <button @click="catDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">取消</button>
-          <button @click="saveCat" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">保存</button>
+          <button @click="catDialogVisible = false" class="px-4 py-1.5 border rounded text-sm">{{ t('common.cancel') }}</button>
+          <button @click="saveCat" class="px-4 py-1.5 bg-blue-600 text-white rounded text-sm">{{ t('common.save') }}</button>
         </div>
       </div>
     </div>

@@ -6,7 +6,9 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import { listCompanies, createCompany } from '@/api'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const companies = ref<any[]>([])
 const loading = ref(false)
 const showAddDialog = ref(false)
@@ -84,11 +86,11 @@ onMounted(load)
           <InputText v-model="newCompany.name" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">简称</label>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">{{ t('system.companyShortName') }}</label>
           <InputText v-model="newCompany.short_name" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">行业</label>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">{{ t('system.industry') }}</label>
           <Dropdown
             v-model="newCompany.industry"
             :options="[
@@ -103,13 +105,13 @@ onMounted(load)
           />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">内控模式</label>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">{{ t('system.internalControlMode') }}</label>
           <Dropdown
             v-model="newCompany.internal_control_mode"
             :options="[
-              { label: '简化模式', value: 'simplified' },
-              { label: '标准模式', value: 'standard' },
-              { label: '严格模式', value: 'strict' },
+              { label: t('system.simplified'), value: 'simplified' },
+              { label: t('system.standard'), value: 'standard' },
+              { label: t('system.strict'), value: 'strict' },
             ]"
             option-label="label"
             option-value="value"

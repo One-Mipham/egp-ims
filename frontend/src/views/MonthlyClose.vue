@@ -5,7 +5,9 @@ import Tag from 'primevue/tag'
 import Dialog from 'primevue/dialog'
 import { listPeriods, closePeriod, unclosePeriod, getCloseChecks } from '@/api'
 import Textarea from 'primevue/textarea'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const year = ref(new Date().getFullYear())
 const periods = ref<any[]>([])
@@ -80,7 +82,7 @@ onMounted(load)
 <template>
   <div>
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-bold text-zinc-700">月度结账</h2>
+      <h2 class="text-lg font-bold text-zinc-700">{{ t('accounting.periods_page.closePeriod') }}</h2>
       <div class="flex gap-2 items-center">
         <Button
           icon="pi pi-chevron-left"
@@ -124,7 +126,7 @@ onMounted(load)
           />
           <Button
             v-if="getStatus(m) === 'closed'"
-            label="反结账"
+            :label="t('accounting.periods_page.unclosePeriod')"
             text
             size="small"
             severity="danger"
@@ -137,7 +139,7 @@ onMounted(load)
 
     <Dialog
       v-model:visible="showChecks"
-      :header="`结账检查 - ${checkPeriod}`"
+      :header="`${t('accounting.periods_page.closeChecks')} - ${checkPeriod}`"
       :style="{ width: '500px' }"
       :modal="true"
     >
@@ -159,7 +161,7 @@ onMounted(load)
         <p class="text-sm" :class="checks.can_close ? 'text-green-600' : 'text-red-600'">{{ checks.message }}</p>
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showChecks = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showChecks = false" />
         <Button
           label="执行关账"
           icon="pi pi-lock"
@@ -170,14 +172,14 @@ onMounted(load)
       </template>
     </Dialog>
 
-    <Dialog v-model:visible="showUnclose" header="反结账" :style="{ width: '450px' }" :modal="true">
+    <Dialog v-model:visible="showUnclose" :header="t('accounting.periods_page.unclosePeriod')" :style="{ width: '450px' }" :modal="true">
       <div class="flex flex-col gap-4 py-4">
-        <p class="text-sm text-zinc-600">期间：{{ uncloseTarget }}</p>
+        <p class="text-sm text-zinc-600">{{ t('accounting.periods_page.period') }}：{{ uncloseTarget }}</p>
         <label class="block text-xs text-zinc-500 mb-1">原因（必填）</label>
         <Textarea v-model="uncloseReason" rows="3" class="w-full" />
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showUnclose = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showUnclose = false" />
         <Button
           label="确认反结账"
           icon="pi pi-exclamation-triangle"

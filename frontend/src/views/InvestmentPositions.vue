@@ -17,8 +17,10 @@ import {
   updatePosition,
   deletePosition,
 } from '@/api'
+import { useI18n } from '@/i18n'
 
 const portfolios = ref<any[]>([])
+const { t } = useI18n()
 const accounts = ref<any[]>([])
 const counterparties = ref<any[]>([])
 const positions = ref<any[]>([])
@@ -105,7 +107,7 @@ async function handleSave() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -117,7 +119,7 @@ async function handleDelete(id: number) {
     await deletePosition(id)
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '删除失败')
+    alert(e.response?.data?.detail || t('common.deleteFailed'))
   }
 }
 
@@ -132,7 +134,7 @@ onMounted(load)
   <div>
     <div class="flex justify-between items-center mb-4">
       <div class="flex gap-2 items-center">
-        <h2 class="text-lg font-semibold text-zinc-700">投资持仓</h2>
+        <h2 class="text-lg font-semibold text-zinc-700">{{ t('investments.positions') }}</h2>
         <Dropdown
           v-model="filterPortfolio"
           :options="portfolios"
@@ -148,16 +150,16 @@ onMounted(load)
     </div>
 
     <DataTable :value="positions" :loading="loading" stripedRows size="small" paginator :rows="10">
-      <Column field="security_name" header="标的名称" sortable />
-      <Column field="security_code" header="代码" sortable style="width: 100px" />
+      <Column field="security_name" :header="t('investments.securityName')" sortable />
+      <Column field="security_code" :header="t('common.code')" sortable style="width: 100px" />
       <Column field="account_code" header="科目" sortable style="width: 100px" />
-      <Column field="quantity" header="数量" sortable style="width: 100px">
+      <Column field="quantity" :header="t('investments.positionQty')" sortable style="width: 100px">
         <template #body="{ data }">{{ data.quantity.toLocaleString() }}</template>
       </Column>
-      <Column field="cost_amount" header="成本" sortable style="width: 120px">
+      <Column field="cost_amount" :header="t('investments.costBasis')" sortable style="width: 120px">
         <template #body="{ data }">{{ data.cost_amount.toLocaleString() }}</template>
       </Column>
-      <Column field="fair_value" header="公允价值" sortable style="width: 120px">
+      <Column field="fair_value" :header="t('investments.fairValue')" sortable style="width: 120px">
         <template #body="{ data }">{{ data.fair_value.toLocaleString() }}</template>
       </Column>
       <Column header="未实现损益" style="width: 120px">
@@ -167,7 +169,7 @@ onMounted(load)
           </span>
         </template>
       </Column>
-      <Column field="status" header="状态" sortable style="width: 80px">
+      <Column field="status" :header="t('common.status')" sortable style="width: 80px">
         <template #body="{ data }">
           <Tag
             :value="STATUS_LABELS[data.status] || data.status"
@@ -175,7 +177,7 @@ onMounted(load)
           />
         </template>
       </Column>
-      <Column header="操作" style="width: 140px">
+      <Column :header="t('common.actions')" style="width: 140px">
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button icon="pi pi-pencil" text size="small" @click="openEdit(data)" />
@@ -212,16 +214,16 @@ onMounted(load)
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-sm mb-1">标的名称 *</label
+            <label class="block text-sm mb-1">{{ t('investments.securityName') }} *</label
             ><InputText v-model="form.security_name" class="w-full" />
           </div>
           <div>
-            <label class="block text-sm mb-1">代码</label><InputText v-model="form.security_code" class="w-full" />
+            <label class="block text-sm mb-1">{{ t('common.code') }}</label><InputText v-model="form.security_code" class="w-full" />
           </div>
         </div>
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label class="block text-sm mb-1">数量</label><InputNumber v-model="form.quantity" class="w-full" />
+            <label class="block text-sm mb-1">{{ t('investments.positionQty') }}</label><InputNumber v-model="form.quantity" class="w-full" />
           </div>
           <div>
             <label class="block text-sm mb-1">单位成本</label><InputNumber v-model="form.unit_cost" class="w-full" />
@@ -232,10 +234,10 @@ onMounted(load)
         </div>
         <div class="grid grid-cols-3 gap-3">
           <div>
-            <label class="block text-sm mb-1">公允价值</label><InputNumber v-model="form.fair_value" class="w-full" />
+            <label class="block text-sm mb-1">{{ t('investments.fairValue') }}</label><InputNumber v-model="form.fair_value" class="w-full" />
           </div>
           <div>
-            <label class="block text-sm mb-1">估值日期</label
+            <label class="block text-sm mb-1">{{ t('investments.valuationDate') }}</label
             ><InputText v-model="form.fair_value_date" class="w-full" />
           </div>
           <div>
@@ -267,8 +269,8 @@ onMounted(load)
         </div>
       </div>
       <template #footer>
-        <Button label="取消" text @click="showDialog = false" />
-        <Button label="保存" :loading="saving" @click="handleSave" />
+        <Button :label="t('common.cancel')" text @click="showDialog = false" />
+        <Button :label="t('common.save')" :loading="saving" @click="handleSave" />
       </template>
     </Dialog>
   </div>

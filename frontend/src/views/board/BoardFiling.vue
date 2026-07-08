@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
@@ -21,6 +22,7 @@ import {
 } from '@/api/board'
 
 const route = useRoute()
+const { t } = useI18n()
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 // Determine doc_type from route
@@ -259,7 +261,7 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e?.response?.data?.detail || '保存失败')
+    alert(e?.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -294,7 +296,7 @@ onMounted(load)
   <div class="space-y-6">
     <div class="page-header flex items-center justify-between">
       <h2>{{ pageConfig.title }}</h2>
-      <Button label="新增" icon="pi pi-plus" size="small" @click="openAdd" />
+      <Button :label="t('common.add')" icon="pi pi-plus" size="small" @click="openAdd" />
     </div>
 
     <div class="form-card overflow-x-auto">
@@ -311,10 +313,10 @@ onMounted(load)
         <Column field="target_org" header="目标机构" style="width: 120px">
           <template #body="{ data: row }">{{ row.target_org || '—' }}</template>
         </Column>
-        <Column field="deadline" header="截止日期" style="width: 100px">
+        <Column field="deadline" :header="t('board.deadline')" style="width: 100px">
           <template #body="{ data: row }">{{ row.deadline || '—' }}</template>
         </Column>
-        <Column header="状态" style="width: 90px">
+        <Column :header="t('common.status')" style="width: 90px">
           <template #body="{ data: row }">
             <Tag :value="row.status" :severity="statusSeverity(row.status)" />
           </template>
@@ -338,10 +340,10 @@ onMounted(load)
             </div>
           </template>
         </Column>
-        <Column header="操作" style="width: 110px">
+        <Column :header="t('common.actions')" style="width: 110px">
           <template #body="{ data: row }">
-            <Button label="编辑" text size="small" @click="openEdit(row)" />
-            <Button label="删除" text severity="danger" size="small" @click="handleDelete(row.id)" />
+            <Button :label="t('common.edit')" text size="small" @click="openEdit(row)" />
+            <Button :label="t('common.delete')" text severity="danger" size="small" @click="handleDelete(row.id)" />
           </template>
         </Column>
       </DataTable>
@@ -362,14 +364,14 @@ onMounted(load)
 
         <!-- Subtype dropdown (except for contact type) -->
         <div v-if="pageConfig.subtypes.length > 0">
-          <label class="text-xs text-zinc-500 mb-1 block">类型</label>
+          <label class="text-xs text-zinc-500 mb-1 block">{{ t('common.type') }}</label>
           <Dropdown
             v-model="form.doc_subtype"
             :options="pageConfig.subtypes"
             option-label="label"
             option-value="value"
             class="w-full"
-            placeholder="选择类型"
+            :placeholder="t('common.pleaseSelect')"
           />
         </div>
 
@@ -428,7 +430,7 @@ onMounted(load)
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-zinc-500 mb-1 block">截止日期</label>
+            <label class="text-xs text-zinc-500 mb-1 block">{{ t('board.deadline') }}</label>
             <DatePicker v-model="form.deadline" date-format="yy-mm-dd" class="w-full" />
           </div>
           <div>
@@ -439,7 +441,7 @@ onMounted(load)
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs text-zinc-500 mb-1 block">状态</label>
+            <label class="text-xs text-zinc-500 mb-1 block">{{ t('common.status') }}</label>
             <Dropdown
               v-model="form.status"
               :options="pageConfig.statuses"
@@ -469,7 +471,7 @@ onMounted(load)
           <InputText v-model="form.file_path" class="w-full" placeholder="文件路径或链接" />
         </div>
 
-        <Button label="保存" icon="pi pi-check" :loading="saving" @click="save" />
+        <Button :label="t('common.save')" icon="pi pi-check" :loading="saving" @click="save" />
       </div>
     </Dialog>
   </div>

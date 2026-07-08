@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConfirm } from 'primevue/useconfirm'
+import { useI18n } from '@/i18n'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
@@ -26,6 +27,7 @@ import api from '../../api'
 
 const route = useRoute()
 const confirm = useConfirm()
+const { t } = useI18n()
 
 // ── 模式检测：根据路由决定 target_type ──
 const routeTargetType = computed(() => {
@@ -242,7 +244,7 @@ onMounted(() => {
             class="w-36"
             showClear
           />
-          <Dropdown v-model="fStatus" :options="statusOptions" placeholder="状态" class="w-32" showClear />
+          <Dropdown v-model="fStatus" :options="statusOptions" :placeholder="t('common.status')" class="w-32" showClear />
           <InputText v-model="fSearch" placeholder="搜索标题/事由" class="w-48" @keyup.enter="load" />
           <Button icon="pi pi-search" label="查询" @click="load" />
         </div>
@@ -271,12 +273,12 @@ onMounted(() => {
       <Column field="resolution" header="处理结果" style="min-width: 150px">
         <template #body="{ data }">{{ (data.resolution || '').slice(0, 40) || '-' }}</template>
       </Column>
-      <Column field="status" header="状态" style="min-width: 90px">
+      <Column field="status" :header="t('common.status')" style="min-width: 90px">
         <template #body="{ data }">
           <Tag :value="statusLabels[data.status]" :severity="statusSeverity[data.status]" />
         </template>
       </Column>
-      <Column header="操作" style="min-width: 280px">
+      <Column :header="t('common.actions')" style="min-width: 280px">
         <template #body="{ data }">
           <div class="flex gap-1 flex-wrap">
             <Button icon="pi pi-pencil" size="small" severity="info" @click="openEdit(data)" v-tooltip.top="'编辑'" />
@@ -286,7 +288,7 @@ onMounted(() => {
               size="small"
               severity="warn"
               @click="doReview(data.id)"
-              v-tooltip.top="'审核'"
+              v-tooltip.top="t('bids.reviewProject')"
             />
             <Button
               v-if="isPrivileged && data.status === 'reviewed'"
@@ -312,7 +314,7 @@ onMounted(() => {
               @click="openBypassException(data.id)"
               v-tooltip.top="'强制跳过'"
             />
-            <Button icon="pi pi-trash" size="small" severity="danger" @click="remove(data.id)" v-tooltip.top="'删除'" />
+            <Button icon="pi pi-trash" size="small" severity="danger" @click="remove(data.id)" v-tooltip.top="t('common.delete')" />
           </div>
         </template>
       </Column>
@@ -350,7 +352,7 @@ onMounted(() => {
 
         <div class="col-span-2 font-bold text-lg border-b pb-1 mb-1">审批与管理</div>
         <div>
-          <label class="block text-sm font-medium mb-1">状态</label>
+          <label class="block text-sm font-medium mb-1">{{ t('common.status') }}</label>
           <Dropdown v-model="form.status" :options="statusOptions" />
         </div>
         <div>
@@ -358,13 +360,13 @@ onMounted(() => {
           <Dropdown v-model="form.department_id" :options="departments" showClear placeholder="选择部门" />
         </div>
         <div class="col-span-2">
-          <label class="block text-sm font-medium mb-1">备注</label>
+          <label class="block text-sm font-medium mb-1">{{ t('common.remark') }}</label>
           <Textarea v-model="form.notes" rows="2" />
         </div>
       </div>
       <template #footer>
-        <Button label="取消" icon="pi pi-times" severity="secondary" @click="showDialog = false" />
-        <Button label="保存" icon="pi pi-check" :loading="submitting" @click="save" />
+        <Button :label="t('common.cancel')" icon="pi pi-times" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.save')" icon="pi pi-check" :loading="submitting" @click="save" />
       </template>
     </Dialog>
 
@@ -376,7 +378,7 @@ onMounted(() => {
         <Textarea v-model="bypassReason" class="w-full" rows="3" placeholder="请填写强制跳过原因" />
       </div>
       <template #footer>
-        <Button label="取消" severity="secondary" @click="bypassDialog = false" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="bypassDialog = false" />
         <Button label="确认跳过" severity="warn" :disabled="!bypassReason.trim()" @click="doBypassException" />
       </template>
     </Dialog>

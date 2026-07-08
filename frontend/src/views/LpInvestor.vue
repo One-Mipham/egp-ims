@@ -4,7 +4,10 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
 import Card from 'primevue/card'
+import { useI18n } from '@/i18n'
 import api from '@/api/index'
+
+const { t } = useI18n()
 
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 const investors = ref<any[]>([])
@@ -35,7 +38,7 @@ onMounted(load)
 
 <template>
   <div class="p-4">
-    <h2 class="text-lg font-semibold text-zinc-700 mb-4">LP 投资人管理</h2>
+    <h2 class="text-lg font-semibold text-zinc-700 mb-4">{{ t('investments.lpInvestors') }}</h2>
 
     <DataTable :value="investors" :loading="loading" stripedRows size="small" paginator :rows="10">
       <Column header="投资人">

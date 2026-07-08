@@ -9,7 +9,10 @@ import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
 import InputNumber from 'primevue/inputnumber'
 import Textarea from 'primevue/textarea'
+import { useI18n } from '@/i18n'
 import { listHrEvaluations, createHrEvaluation, updateHrEvaluation, deleteHrEvaluation, listHrEmployees } from '@/api'
+
+const { t } = useI18n()
 
 const evaluations = ref<any[]>([])
 const employees = ref<any[]>([])
@@ -58,7 +61,7 @@ async function save() {
     showDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   }
 }
 async function handleDelete(id: number) {
@@ -102,11 +105,11 @@ onMounted(load)
             " /></template
       ></Column>
       <Column field="evaluator" header="评委" style="width: 100px" />
-      <Column field="notes" header="备注" />
-      <Column header="操作" style="width: 120px"
+      <Column :header="t('common.remark')" field="notes" />
+      <Column :header="t('common.actions')" style="width: 120px"
         ><template #body="{ data }"
           ><Button label="编辑" text size="small" @click="openEdit(data)" /><Button
-            label="删除"
+            :label="t('common.delete')"
             text
             severity="danger"
             size="small"
@@ -150,10 +153,10 @@ onMounted(load)
           ><InputText v-model="form.evaluator" class="w-full" />
         </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">备注</label
+          <label class="block text-xs text-zinc-500 mb-1">{{ t('common.remark') }}</label
           ><Textarea v-model="form.notes" rows="2" class="w-full" />
         </div>
-        <Button label="保存" icon="pi pi-check" @click="save" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="save" />
       </div>
     </Dialog>
   </div>

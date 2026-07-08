@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from '@/i18n'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import Checkbox from 'primevue/checkbox'
 import { getAuditReport, saveAuditReport, uploadAuditReportFile, downloadAuditReportFile } from '@/api'
 
+const { t } = useI18n()
 const year = ref(new Date().getFullYear() - 1)
 const loading = ref(false)
 const saving = ref(false)
@@ -64,9 +66,9 @@ async function handleSave() {
     const cid = parseInt(localStorage.getItem('companyId') || '1')
     await saveAuditReport(cid, year.value, form.value)
     found.value = true
-    alert('保存成功')
+    alert(t('common.saveSuccess'))
   } catch (err: any) {
-    alert(err.response?.data?.detail || '保存失败')
+    alert(err.response?.data?.detail || t('common.saveFailed'))
   } finally {
     saving.value = false
   }
@@ -80,9 +82,9 @@ async function handleFileUpload(e: Event) {
     const cid = parseInt(localStorage.getItem('companyId') || '1')
     await uploadAuditReportFile(cid, year.value, file)
     form.value.report_file_name = file.name
-    alert('上传成功')
+    alert(t('common.success'))
   } catch (err: any) {
-    alert(err.response?.data?.detail || '上传失败')
+    alert(err.response?.data?.detail || t('common.error'))
   } finally {
     uploading.value = false
   }
@@ -93,7 +95,7 @@ async function handleDownload() {
     const cid = parseInt(localStorage.getItem('companyId') || '1')
     await downloadAuditReportFile(cid, year.value)
   } catch (err: any) {
-    alert(err.response?.data?.detail || '下载失败')
+    alert(err.response?.data?.detail || t('common.error'))
   }
 }
 
@@ -102,7 +104,7 @@ onMounted(load)
 
 <template>
   <div class="max-w-3xl">
-    <h2 class="text-lg font-bold mb-1">年度审计报告</h2>
+    <h2 class="text-lg font-bold mb-1">{{ t('audit.auditReports') }}</h2>
     <p class="text-xs text-zinc-400 mb-4">管理各年度的审计机构信息、审计报告文件及三张审定财务报表状态</p>
 
     <!-- Year selector -->
@@ -110,15 +112,15 @@ onMounted(load)
       <select v-model.number="year" class="border rounded px-2 py-1.5 text-sm" @change="load">
         <option v-for="y in YEARS" :key="y" :value="y">{{ y }} 年</option>
       </select>
-      <Button label="查询" icon="pi pi-search" size="small" text @click="load" />
-      <span v-if="loading" class="text-xs text-zinc-400">加载中...</span>
+      <Button :label="t('common.search')" icon="pi pi-search" size="small" text @click="load" />
+      <span v-if="loading" class="text-xs text-zinc-400">{{ t('common.loading') }}</span>
     </div>
 
     <div v-if="!loading" class="bg-white border rounded p-5 space-y-4">
       <!-- 审计机构信息 -->
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="text-xs text-zinc-500 block mb-1">审计机构名称</label>
+          <label class="text-xs text-zinc-500 block mb-1">{{ t('audit.auditFirm') }}</label>
           <InputText v-model="form.firm_name" class="w-full" placeholder="例如：XX会计师事务所" />
         </div>
         <div>
@@ -145,7 +147,7 @@ onMounted(load)
           </label>
           <span v-if="form.report_file_name" class="text-sm text-green-700 flex gap-2 items-center">
             {{ form.report_file_name }}
-            <Button label="下载" icon="pi pi-download" size="small" text severity="info" @click="handleDownload" />
+            <Button :label="t('common.download')" icon="pi pi-download" size="small" text severity="info" @click="handleDownload" />
           </span>
           <span v-else class="text-xs text-zinc-400">尚未上传</span>
         </div>
@@ -158,28 +160,28 @@ onMounted(load)
         <div class="flex gap-6">
           <label class="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox v-model="form.balance_sheet_ok" :binary="true" />
-            资产负债表
+            {{ t('audit.balanceSheetOK') }}
           </label>
           <label class="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox v-model="form.income_statement_ok" :binary="true" />
-            利润表
+            {{ t('audit.incomeStatementOK') }}
           </label>
           <label class="flex items-center gap-2 text-sm cursor-pointer">
             <Checkbox v-model="form.cashflow_statement_ok" :binary="true" />
-            现金流量表
+            {{ t('audit.cashflowStatementOK') }}
           </label>
         </div>
       </div>
 
       <!-- 备注 -->
       <div class="border-t pt-4">
-        <label class="text-xs text-zinc-500 block mb-1">备注</label>
+        <label class="text-xs text-zinc-500 block mb-1">{{ t('common.remark') }}</label>
         <Textarea v-model="form.notes" rows="3" class="w-full" placeholder="审计意见摘要、调整事项等..." />
       </div>
 
       <!-- Save -->
       <div class="border-t pt-4 flex gap-2">
-        <Button label="保存" icon="pi pi-check" :loading="saving" @click="handleSave" />
+        <Button :label="t('common.save')" icon="pi pi-check" :loading="saving" @click="handleSave" />
         <span class="text-xs text-zinc-400 self-center">{{ found ? '已保存 · 修改后请再次保存' : '尚未保存' }}</span>
       </div>
     </div>

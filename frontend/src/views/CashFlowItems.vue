@@ -15,7 +15,9 @@ import {
   deleteCashFlowItem,
   seedDefaultCashFlowItems,
 } from '@/api'
+import { useI18n } from '@/i18n'
 
+const { t } = useI18n()
 const toast = useToast()
 const items = ref<any[]>([])
 const loading = ref(false)
@@ -114,26 +116,26 @@ async function handleSave() {
     const cid = Number(JSON.parse(localStorage.getItem('user') || '{}').company_id || 1)
     if (isEdit.value && editId.value) {
       await updateCashFlowItem(editId.value, form.value)
-      toast.add({ severity: 'success', summary: '已更新', life: 2000 })
+      toast.add({ severity: 'success', summary: t('common.updateSuccess'), life: 2000 })
     } else {
       await createCashFlowItem({ ...form.value, company_id: cid })
-      toast.add({ severity: 'success', summary: '已创建', life: 2000 })
+      toast.add({ severity: 'success', summary: t('common.addSuccess'), life: 2000 })
     }
     showDialog.value = false
     await loadItems()
   } catch (e: any) {
-    toast.add({ severity: 'error', summary: '保存失败', detail: e?.response?.data?.detail || String(e), life: 4000 })
+    toast.add({ severity: 'error', summary: t('common.saveFailed'), detail: e?.response?.data?.detail || String(e), life: 4000 })
   }
 }
 
 async function handleDelete(item: any) {
-  if (!confirm(`确认删除 "${item.name}"？`)) return
+  if (!confirm(`${t('common.deleteConfirm').replace('？', '')} "${item.name}"？`)) return
   try {
     await deleteCashFlowItem(item.id)
-    toast.add({ severity: 'success', summary: '已删除', life: 2000 })
+    toast.add({ severity: 'success', summary: t('common.deleteSuccess'), life: 2000 })
     await loadItems()
   } catch (e) {
-    toast.add({ severity: 'error', summary: '删除失败', detail: String(e), life: 4000 })
+    toast.add({ severity: 'error', summary: t('common.deleteFailed'), detail: String(e), life: 4000 })
   }
 }
 
@@ -145,7 +147,7 @@ async function handleSeedDefaults() {
     toast.add({ severity: 'success', summary: '已补齐国标预设', life: 2000 })
     await loadItems()
   } catch (e) {
-    toast.add({ severity: 'error', summary: '操作失败', detail: String(e), life: 4000 })
+    toast.add({ severity: 'error', summary: t('common.error'), detail: String(e), life: 4000 })
   }
 }
 
@@ -155,30 +157,30 @@ onMounted(() => loadItems())
 <template>
   <div>
     <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-zinc-800">现金流量表项目映射</h2>
+      <h2 class="text-lg font-semibold text-zinc-800">{{ t('accounting.cashflow_items_page.title') }}</h2>
       <div class="flex gap-2">
         <Button
-          label="补齐国标预设"
+          :label="t('accounting.cashflow_items_page.seedDefaults')"
           icon="pi pi-refresh"
           severity="secondary"
           size="small"
           @click="handleSeedDefaults"
         />
-        <Button label="新增项目" icon="pi pi-plus" size="small" @click="openAdd" />
+        <Button :label="t('common.add')" icon="pi pi-plus" size="small" @click="openAdd" />
       </div>
     </div>
 
     <div class="bg-white rounded-sm border border-zinc-200 shadow-sm">
       <DataTable :value="items" :loading="loading" stripedRows size="small" tableStyle="min-width: auto">
-        <Column field="code" header="编码" style="width: 80px" />
-        <Column field="name" header="项目名称" style="width: 260px" />
-        <Column header="报表位置" style="width: 150px">
+        <Column field="code" :header="t('accounting.cashflow_items_page.code')" style="width: 80px" />
+        <Column field="name" :header="t('accounting.cashflow_items_page.name')" style="width: 260px" />
+        <Column :header="t('accounting.cashflow_items_page.category')" style="width: 150px">
           <template #body="{ data }">{{ getCategoryLabel(data.category_code) }}</template>
         </Column>
-        <Column header="方向" style="width: 70px">
+        <Column :header="t('accounting.cashflow_items_page.direction')" style="width: 70px">
           <template #body="{ data }">
             <span :class="data.direction === 'inflow' ? 'text-green-600' : 'text-red-600'">
-              {{ data.direction === 'inflow' ? '流入' : '流出' }}
+              {{ data.direction === 'inflow' ? t('accounting.cashflow_items_page.inflow') : t('accounting.cashflow_items_page.outflow') }}
             </span>
           </template>
         </Column>
@@ -192,12 +194,12 @@ onMounted(() => loadItems())
             <code class="text-xs bg-zinc-100 px-1 rounded">{{ data.credit_accounts || '-' }}</code>
           </template>
         </Column>
-        <Column header="启用" style="width: 60px">
+        <Column :header="t('common.enable')" style="width: 60px">
           <template #body="{ data }">
             <i :class="data.is_active ? 'pi pi-check text-green-500' : 'pi pi-times text-red-400'" />
           </template>
         </Column>
-        <Column header="操作" style="width: 120px">
+        <Column :header="t('common.actions')" style="width: 120px">
           <template #body="{ data }">
             <Button icon="pi pi-pencil" severity="secondary" text size="small" @click="openEdit(data)" />
             <Button icon="pi pi-trash" severity="danger" text size="small" @click="handleDelete(data)" />
@@ -272,8 +274,8 @@ onMounted(() => loadItems())
       </div>
 
       <template #footer>
-        <Button label="取消" severity="secondary" @click="showDialog = false" />
-        <Button label="保存" @click="handleSave" />
+        <Button :label="t('common.cancel')" severity="secondary" @click="showDialog = false" />
+        <Button :label="t('common.save')" @click="handleSave" />
       </template>
     </Dialog>
   </div>

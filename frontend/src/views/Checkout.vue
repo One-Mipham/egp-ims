@@ -74,8 +74,8 @@ const displayPrice = computed(() => {
 const billingCycleLabel = computed(() => {
   if (!selectedPlan.value) return ''
   const bc = selectedPlan.value.billing_cycle
-  if (bc === 'monthly') return locale.value === 'en-US' ? 'Monthly' : '月付'
-  if (bc === 'annual') return locale.value === 'en-US' ? 'Annual' : '年付'
+  if (bc === 'monthly') return t('subscription.monthly')
+  if (bc === 'annual') return t('subscription.annual')
   return locale.value === 'en-US' ? 'One-Time' : '一次性'
 })
 

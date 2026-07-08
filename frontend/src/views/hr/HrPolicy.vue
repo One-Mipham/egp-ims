@@ -9,6 +9,7 @@ import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
 import Textarea from 'primevue/textarea'
+import { useI18n } from '@/i18n'
 import {
   listHrPositions,
   createHrPosition,
@@ -17,6 +18,8 @@ import {
   listHrPolicies,
   upsertHrPolicy,
 } from '@/api'
+
+const { t } = useI18n()
 
 const positions = ref<any[]>([])
 const loading = ref(false)
@@ -83,7 +86,7 @@ async function savePos() {
     showPosDialog.value = false
     await load()
   } catch (e: any) {
-    alert(e.response?.data?.detail || '保存失败')
+    alert(e.response?.data?.detail || t('common.saveFailed'))
   }
 }
 async function handleDeletePos(id: number) {
@@ -126,17 +129,17 @@ onMounted(load)
         </Column>
         <Column field="name" header="职位名称" />
         <Column field="sort_order" header="排序" style="width: 80px" />
-        <Column header="状态" style="width: 80px">
+        <Column :header="t('common.status')" style="width: 80px">
           <template #body="{ data }">
-            <Tag :value="data.is_active ? '启用' : '停用'" :severity="data.is_active ? 'success' : 'danger'" />
+            <Tag :value="data.is_active ? t('common.enable') : t('common.disable')" :severity="data.is_active ? 'success' : 'danger'" />
           </template>
         </Column>
-        <Column header="操作" style="width: 120px">
+        <Column :header="t('common.actions')" style="width: 120px">
           <template #body="{ data }">
             <Button label="编辑" text size="small" @click="openEditPos(data)" />
             <Button
               v-if="data.is_active"
-              label="停用"
+              :label="t('common.disable')"
               text
               severity="danger"
               size="small"
@@ -167,7 +170,7 @@ onMounted(load)
           <label class="block text-xs text-zinc-500 mb-1">排序号</label
           ><InputNumber v-model="posForm.sort_order" class="w-full" />
         </div>
-        <Button label="保存" icon="pi pi-check" @click="savePos" />
+        <Button :label="t('common.save')" icon="pi pi-check" @click="savePos" />
       </div>
     </Dialog>
   </div>
