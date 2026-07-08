@@ -55,7 +55,7 @@ export const updateCompany = (companyId: number, data: Record<string, any>) => a
 
 // Departments
 export const listDepartments = (companyId: number) => api.get('/departments/', { params: { company_id: companyId } })
-export const createDepartment = (data: { company_id: number; name: string; code: string; manager?: string }) =>
+export const createDepartment = (data: { company_id: number; name: string; code: string; manager?: string; parent_id?: number }) =>
   api.post('/departments/', data)
 export const updateDepartment = (deptId: number, data: Record<string, any>) =>
   api.put(`/departments/${deptId}`, data)
