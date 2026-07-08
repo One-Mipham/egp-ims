@@ -7,13 +7,13 @@ from sqlalchemy import func
 
 from app.database import get_db
 from app.auth import get_current_user
-from app.models import TenderProject, BidSubmission, BidExceptionEvent, Department, User, AuditLog
+from app.models import TenderProject, BidSubmission, BidExceptionEvent, User, AuditLog
 from app.schemas import BypassAction
 from app.permissions import check_approval_bypass
 from app.schemas.bids import (
     TENDER_TYPES, PROCUREMENT_CATEGORIES, EVALUATION_METHODS, TENDER_STATUSES,
     BID_TYPES, BOND_STATUSES, BID_STATUSES,
-    EXCEPTION_TYPES, TENDER_EXCEPTION_TYPES, BID_EXCEPTION_TYPES,
+    TENDER_EXCEPTION_TYPES, BID_EXCEPTION_TYPES,
     EXCEPTION_STATUSES, TARGET_TYPES,
     TenderProjectCreate, TenderProjectUpdate, TenderProjectResponse,
     BidSubmissionCreate, BidSubmissionUpdate, BidSubmissionResponse,

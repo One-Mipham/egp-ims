@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.auth import get_current_user, require_role
+from app.auth import get_current_user
 from app.models import (
     User, AuditLog,
     ApprovalRecord, AdminDocument,
@@ -390,21 +390,30 @@ def list_vehicle_suppliers(company_id: int = Query(...), db: Session = Depends(g
 @router.post("/vehicles/suppliers", response_model=VehicleSupplierResponse)
 def create_vehicle_supplier(data: VehicleSupplierCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     s = VehicleSupplier(**data.model_dump())
-    db.add(s); db.commit(); db.refresh(s)
+    db.add(s)
+    db.commit()
+    db.refresh(s)
     return s
 
 @router.put("/vehicles/suppliers/{sid}", response_model=VehicleSupplierResponse)
 def update_vehicle_supplier(sid: int, data: VehicleSupplierUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     s = db.query(VehicleSupplier).filter(VehicleSupplier.id == sid).first()
-    if not s: raise HTTPException(status_code=404, detail="供应商不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(s, k, v)
-    db.commit(); db.refresh(s); return s
+    if not s:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(s, k, v)
+    db.commit()
+    db.refresh(s)
+    return s
 
 @router.delete("/vehicles/suppliers/{sid}")
 def delete_vehicle_supplier(sid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     s = db.query(VehicleSupplier).filter(VehicleSupplier.id == sid).first()
-    if not s: raise HTTPException(status_code=404, detail="供应商不存在")
-    db.delete(s); db.commit(); return {"ok": True}
+    if not s:
+        raise HTTPException(status_code=404, detail="供应商不存在")
+    db.delete(s)
+    db.commit()
+    return {"ok": True}
 
 
 # ── Vehicle Purchases ──
@@ -416,32 +425,45 @@ def list_vehicle_purchases(company_id: int = Query(...), db: Session = Depends(g
 @router.post("/vehicles/purchases", response_model=VehiclePurchaseResponse)
 def create_vehicle_purchase(data: VehiclePurchaseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     vp = VehiclePurchase(**data.model_dump())
-    db.add(vp); db.commit(); db.refresh(vp)
+    db.add(vp)
+    db.commit()
+    db.refresh(vp)
     _write_audit(db, data.company_id, user, "create", "vehicle_purchase", vp.id)
     return vp
 
 @router.put("/vehicles/purchases/{pid}", response_model=VehiclePurchaseResponse)
 def update_vehicle_purchase(pid: int, data: VehiclePurchaseUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     vp = db.query(VehiclePurchase).filter(VehiclePurchase.id == pid).first()
-    if not vp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(vp, k, v)
-    db.commit(); db.refresh(vp); return vp
+    if not vp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(vp, k, v)
+    db.commit()
+    db.refresh(vp)
+    return vp
 
 @router.delete("/vehicles/purchases/{pid}")
 def delete_vehicle_purchase(pid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     vp = db.query(VehiclePurchase).filter(VehiclePurchase.id == pid).first()
-    if not vp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    if vp.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = vp.company_id; db.delete(vp); db.commit()
+    if not vp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    if vp.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = vp.company_id
+    db.delete(vp)
+    db.commit()
     _write_audit(db, cid, user, "delete", "vehicle_purchase", pid)
     return {"ok": True}
 
 @router.post("/vehicles/purchases/{pid}/submit")
 def submit_vehicle_purchase(pid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     vp = db.query(VehiclePurchase).filter(VehiclePurchase.id == pid).first()
-    if not vp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    if vp.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not vp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    if vp.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, vp.company_id, "vehicle_purchase", pid, body.approver_ids, user)
     return {"ok": True}
 
@@ -451,30 +473,39 @@ def submit_vehicle_purchase(pid: int, body: SubmitApprovalRequest, db: Session =
 @router.get("/vehicles", response_model=list[VehicleResponse])
 def list_vehicles(company_id: int = Query(...), status: str | None = Query(None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     q = db.query(Vehicle).filter(Vehicle.company_id == company_id)
-    if status: q = q.filter(Vehicle.status == status)
+    if status:
+        q = q.filter(Vehicle.status == status)
     return q.order_by(Vehicle.license_plate).all()
 
 @router.post("/vehicles", response_model=VehicleResponse)
 def create_vehicle(data: VehicleCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     v = Vehicle(**data.model_dump())
-    db.add(v); db.commit(); db.refresh(v)
+    db.add(v)
+    db.commit()
+    db.refresh(v)
     _write_audit(db, data.company_id, user, "create", "vehicle", v.id)
     return v
 
 @router.put("/vehicles/{vid}", response_model=VehicleResponse)
 def update_vehicle(vid: int, data: VehicleUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     v = db.query(Vehicle).filter(Vehicle.id == vid).first()
-    if not v: raise HTTPException(status_code=404, detail="车辆不存在")
-    for k, val in data.model_dump(exclude_unset=True).items(): setattr(v, k, val)
-    db.commit(); db.refresh(v)
+    if not v:
+        raise HTTPException(status_code=404, detail="车辆不存在")
+    for k, val in data.model_dump(exclude_unset=True).items():
+        setattr(v, k, val)
+    db.commit()
+    db.refresh(v)
     _write_audit(db, v.company_id, user, "update", "vehicle", v.id)
     return v
 
 @router.delete("/vehicles/{vid}")
 def delete_vehicle(vid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     v = db.query(Vehicle).filter(Vehicle.id == vid).first()
-    if not v: raise HTTPException(status_code=404, detail="车辆不存在")
-    cid = v.company_id; db.delete(v); db.commit()
+    if not v:
+        raise HTTPException(status_code=404, detail="车辆不存在")
+    cid = v.company_id
+    db.delete(v)
+    db.commit()
     _write_audit(db, cid, user, "delete", "vehicle", vid)
     return {"ok": True}
 
@@ -488,32 +519,45 @@ def list_vehicle_maintenance(company_id: int = Query(...), db: Session = Depends
 @router.post("/vehicles/maintenance", response_model=VehicleMaintenanceResponse)
 def create_vehicle_maintenance(data: VehicleMaintenanceCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     vm = VehicleMaintenance(**data.model_dump())
-    db.add(vm); db.commit(); db.refresh(vm)
+    db.add(vm)
+    db.commit()
+    db.refresh(vm)
     _write_audit(db, data.company_id, user, "create", "vehicle_maintenance", vm.id)
     return vm
 
 @router.put("/vehicles/maintenance/{mid}", response_model=VehicleMaintenanceResponse)
 def update_vehicle_maintenance(mid: int, data: VehicleMaintenanceUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     vm = db.query(VehicleMaintenance).filter(VehicleMaintenance.id == mid).first()
-    if not vm: raise HTTPException(status_code=404, detail="维保申请不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(vm, k, v)
-    db.commit(); db.refresh(vm); return vm
+    if not vm:
+        raise HTTPException(status_code=404, detail="维保申请不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(vm, k, v)
+    db.commit()
+    db.refresh(vm)
+    return vm
 
 @router.delete("/vehicles/maintenance/{mid}")
 def delete_vehicle_maintenance(mid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     vm = db.query(VehicleMaintenance).filter(VehicleMaintenance.id == mid).first()
-    if not vm: raise HTTPException(status_code=404, detail="维保申请不存在")
-    if vm.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = vm.company_id; db.delete(vm); db.commit()
+    if not vm:
+        raise HTTPException(status_code=404, detail="维保申请不存在")
+    if vm.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = vm.company_id
+    db.delete(vm)
+    db.commit()
     _write_audit(db, cid, user, "delete", "vehicle_maintenance", mid)
     return {"ok": True}
 
 @router.post("/vehicles/maintenance/{mid}/submit")
 def submit_vehicle_maintenance(mid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     vm = db.query(VehicleMaintenance).filter(VehicleMaintenance.id == mid).first()
-    if not vm: raise HTTPException(status_code=404, detail="维保申请不存在")
-    if vm.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not vm:
+        raise HTTPException(status_code=404, detail="维保申请不存在")
+    if vm.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, vm.company_id, "vehicle_maintenance", mid, body.approver_ids, user)
     return {"ok": True}
 
@@ -523,44 +567,58 @@ def submit_vehicle_maintenance(mid: int, body: SubmitApprovalRequest, db: Sessio
 @router.get("/insurance", response_model=list[InsurancePolicyResponse])
 def list_insurance(company_id: int = Query(...), status: str | None = Query(None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     q = db.query(InsurancePolicy).filter(InsurancePolicy.company_id == company_id)
-    if status: q = q.filter(InsurancePolicy.status == status)
+    if status:
+        q = q.filter(InsurancePolicy.status == status)
     return q.order_by(InsurancePolicy.created_at.desc()).all()
 
 @router.post("/insurance", response_model=InsurancePolicyResponse)
 def create_insurance(data: InsurancePolicyCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     ip = InsurancePolicy(**data.model_dump())
-    db.add(ip); db.commit(); db.refresh(ip)
+    db.add(ip)
+    db.commit()
+    db.refresh(ip)
     _write_audit(db, data.company_id, user, "create", "insurance_policy", ip.id)
     return ip
 
 @router.put("/insurance/{iid}", response_model=InsurancePolicyResponse)
 def update_insurance(iid: int, data: InsurancePolicyUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     ip = db.query(InsurancePolicy).filter(InsurancePolicy.id == iid).first()
-    if not ip: raise HTTPException(status_code=404, detail="保单不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(ip, k, v)
-    db.commit(); db.refresh(ip); return ip
+    if not ip:
+        raise HTTPException(status_code=404, detail="保单不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(ip, k, v)
+    db.commit()
+    db.refresh(ip)
+    return ip
 
 @router.delete("/insurance/{iid}")
 def delete_insurance(iid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     ip = db.query(InsurancePolicy).filter(InsurancePolicy.id == iid).first()
-    if not ip: raise HTTPException(status_code=404, detail="保单不存在")
-    if ip.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = ip.company_id; db.delete(ip); db.commit()
+    if not ip:
+        raise HTTPException(status_code=404, detail="保单不存在")
+    if ip.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = ip.company_id
+    db.delete(ip)
+    db.commit()
     _write_audit(db, cid, user, "delete", "insurance_policy", iid)
     return {"ok": True}
 
 @router.post("/insurance/{iid}/submit")
 def submit_insurance(iid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     ip = db.query(InsurancePolicy).filter(InsurancePolicy.id == iid).first()
-    if not ip: raise HTTPException(status_code=404, detail="保单不存在")
-    if ip.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not ip:
+        raise HTTPException(status_code=404, detail="保单不存在")
+    if ip.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, ip.company_id, "insurance_policy", iid, body.approver_ids, user)
     return {"ok": True}
 
 @router.get("/insurance/expiring", response_model=list[InsurancePolicyResponse])
 def list_expiring_insurance(company_id: int = Query(...), days: int = Query(30), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    today_str = date.today().isoformat()
+    date.today().isoformat()
     all_active = db.query(InsurancePolicy).filter(
         InsurancePolicy.company_id == company_id,
         InsurancePolicy.status == "active",
@@ -574,25 +632,35 @@ def list_expiring_insurance(company_id: int = Query(...), days: int = Query(30),
 
 @router.get("/stock/categories", response_model=list[StockCategoryResponse])
 def list_stock_categories(company_id: int = Query(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(StockCategory).filter(StockCategory.company_id == company_id, StockCategory.is_active == True).order_by(StockCategory.code).all()
+    return db.query(StockCategory).filter(StockCategory.company_id == company_id, StockCategory.is_active).order_by(StockCategory.code).all()
 
 @router.post("/stock/categories", response_model=StockCategoryResponse)
 def create_stock_category(data: StockCategoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     c = StockCategory(**data.model_dump())
-    db.add(c); db.commit(); db.refresh(c); return c
+    db.add(c)
+    db.commit()
+    db.refresh(c)
+    return c
 
 @router.put("/stock/categories/{cid}", response_model=StockCategoryResponse)
 def update_stock_category(cid: int, data: StockCategoryUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     c = db.query(StockCategory).filter(StockCategory.id == cid).first()
-    if not c: raise HTTPException(status_code=404, detail="类别不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(c, k, v)
-    db.commit(); db.refresh(c); return c
+    if not c:
+        raise HTTPException(status_code=404, detail="类别不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(c, k, v)
+    db.commit()
+    db.refresh(c)
+    return c
 
 @router.delete("/stock/categories/{cid}")
 def delete_stock_category(cid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     c = db.query(StockCategory).filter(StockCategory.id == cid).first()
-    if not c: raise HTTPException(status_code=404, detail="类别不存在")
-    c.is_active = False; db.commit(); return {"ok": True}
+    if not c:
+        raise HTTPException(status_code=404, detail="类别不存在")
+    c.is_active = False
+    db.commit()
+    return {"ok": True}
 
 
 # ── Stock Assets ──
@@ -600,29 +668,40 @@ def delete_stock_category(cid: int, db: Session = Depends(get_db), user: User = 
 @router.get("/stock/assets", response_model=list[StockAssetResponse])
 def list_stock_assets(company_id: int = Query(...), status: str | None = Query(None), category_id: int | None = Query(None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     q = db.query(StockAsset).filter(StockAsset.company_id == company_id)
-    if status: q = q.filter(StockAsset.status == status)
-    if category_id is not None: q = q.filter(StockAsset.category_id == category_id)
+    if status:
+        q = q.filter(StockAsset.status == status)
+    if category_id is not None:
+        q = q.filter(StockAsset.category_id == category_id)
     return q.order_by(StockAsset.asset_code).all()
 
 @router.post("/stock/assets", response_model=StockAssetResponse)
 def create_stock_asset(data: StockAssetCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     a = StockAsset(**data.model_dump())
-    db.add(a); db.commit(); db.refresh(a)
+    db.add(a)
+    db.commit()
+    db.refresh(a)
     _write_audit(db, data.company_id, user, "create", "stock_asset", a.id)
     return a
 
 @router.put("/stock/assets/{aid}", response_model=StockAssetResponse)
 def update_stock_asset(aid: int, data: StockAssetUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     a = db.query(StockAsset).filter(StockAsset.id == aid).first()
-    if not a: raise HTTPException(status_code=404, detail="资产不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(a, k, v)
-    db.commit(); db.refresh(a); return a
+    if not a:
+        raise HTTPException(status_code=404, detail="资产不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(a, k, v)
+    db.commit()
+    db.refresh(a)
+    return a
 
 @router.delete("/stock/assets/{aid}")
 def delete_stock_asset(aid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     a = db.query(StockAsset).filter(StockAsset.id == aid).first()
-    if not a: raise HTTPException(status_code=404, detail="资产不存在")
-    cid = a.company_id; db.delete(a); db.commit()
+    if not a:
+        raise HTTPException(status_code=404, detail="资产不存在")
+    cid = a.company_id
+    db.delete(a)
+    db.commit()
     _write_audit(db, cid, user, "delete", "stock_asset", aid)
     return {"ok": True}
 
@@ -636,32 +715,45 @@ def list_stock_purchases(company_id: int = Query(...), db: Session = Depends(get
 @router.post("/stock/assets/purchases", response_model=StockPurchaseResponse)
 def create_stock_purchase(data: StockPurchaseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sp = StockPurchase(**data.model_dump())
-    db.add(sp); db.commit(); db.refresh(sp)
+    db.add(sp)
+    db.commit()
+    db.refresh(sp)
     _write_audit(db, data.company_id, user, "create", "stock_purchase", sp.id)
     return sp
 
 @router.put("/stock/assets/purchases/{pid}", response_model=StockPurchaseResponse)
 def update_stock_purchase(pid: int, data: StockPurchaseUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sp = db.query(StockPurchase).filter(StockPurchase.id == pid).first()
-    if not sp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(sp, k, v)
-    db.commit(); db.refresh(sp); return sp
+    if not sp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(sp, k, v)
+    db.commit()
+    db.refresh(sp)
+    return sp
 
 @router.delete("/stock/assets/purchases/{pid}")
 def delete_stock_purchase(pid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sp = db.query(StockPurchase).filter(StockPurchase.id == pid).first()
-    if not sp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    if sp.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = sp.company_id; db.delete(sp); db.commit()
+    if not sp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    if sp.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = sp.company_id
+    db.delete(sp)
+    db.commit()
     _write_audit(db, cid, user, "delete", "stock_purchase", pid)
     return {"ok": True}
 
 @router.post("/stock/assets/purchases/{pid}/submit")
 def submit_stock_purchase(pid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sp = db.query(StockPurchase).filter(StockPurchase.id == pid).first()
-    if not sp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    if sp.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not sp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    if sp.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, sp.company_id, "stock_purchase", pid, body.approver_ids, user)
     return {"ok": True}
 
@@ -675,32 +767,45 @@ def list_stock_requisitions(company_id: int = Query(...), db: Session = Depends(
 @router.post("/stock/assets/requisitions", response_model=StockRequisitionResponse)
 def create_stock_requisition(data: StockRequisitionCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sr = StockRequisition(**data.model_dump())
-    db.add(sr); db.commit(); db.refresh(sr)
+    db.add(sr)
+    db.commit()
+    db.refresh(sr)
     _write_audit(db, data.company_id, user, "create", "stock_requisition", sr.id)
     return sr
 
 @router.put("/stock/assets/requisitions/{rid}", response_model=StockRequisitionResponse)
 def update_stock_requisition(rid: int, data: StockRequisitionUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sr = db.query(StockRequisition).filter(StockRequisition.id == rid).first()
-    if not sr: raise HTTPException(status_code=404, detail="领用申请不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(sr, k, v)
-    db.commit(); db.refresh(sr); return sr
+    if not sr:
+        raise HTTPException(status_code=404, detail="领用申请不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(sr, k, v)
+    db.commit()
+    db.refresh(sr)
+    return sr
 
 @router.delete("/stock/assets/requisitions/{rid}")
 def delete_stock_requisition(rid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sr = db.query(StockRequisition).filter(StockRequisition.id == rid).first()
-    if not sr: raise HTTPException(status_code=404, detail="领用申请不存在")
-    if sr.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = sr.company_id; db.delete(sr); db.commit()
+    if not sr:
+        raise HTTPException(status_code=404, detail="领用申请不存在")
+    if sr.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = sr.company_id
+    db.delete(sr)
+    db.commit()
     _write_audit(db, cid, user, "delete", "stock_requisition", rid)
     return {"ok": True}
 
 @router.post("/stock/assets/requisitions/{rid}/submit")
 def submit_stock_requisition(rid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sr = db.query(StockRequisition).filter(StockRequisition.id == rid).first()
-    if not sr: raise HTTPException(status_code=404, detail="领用申请不存在")
-    if sr.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not sr:
+        raise HTTPException(status_code=404, detail="领用申请不存在")
+    if sr.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, sr.company_id, "stock_requisition", rid, body.approver_ids, user)
     return {"ok": True}
 
@@ -714,32 +819,45 @@ def list_stock_inbound(company_id: int = Query(...), db: Session = Depends(get_d
 @router.post("/stock/assets/inbound", response_model=StockInboundResponse)
 def create_stock_inbound(data: StockInboundCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     si = StockInbound(**data.model_dump())
-    db.add(si); db.commit(); db.refresh(si)
+    db.add(si)
+    db.commit()
+    db.refresh(si)
     _write_audit(db, data.company_id, user, "create", "stock_inbound", si.id)
     return si
 
 @router.put("/stock/assets/inbound/{iid}", response_model=StockInboundResponse)
 def update_stock_inbound(iid: int, data: StockInboundUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     si = db.query(StockInbound).filter(StockInbound.id == iid).first()
-    if not si: raise HTTPException(status_code=404, detail="入库记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(si, k, v)
-    db.commit(); db.refresh(si); return si
+    if not si:
+        raise HTTPException(status_code=404, detail="入库记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(si, k, v)
+    db.commit()
+    db.refresh(si)
+    return si
 
 @router.delete("/stock/assets/inbound/{iid}")
 def delete_stock_inbound(iid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     si = db.query(StockInbound).filter(StockInbound.id == iid).first()
-    if not si: raise HTTPException(status_code=404, detail="入库记录不存在")
-    if si.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = si.company_id; db.delete(si); db.commit()
+    if not si:
+        raise HTTPException(status_code=404, detail="入库记录不存在")
+    if si.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = si.company_id
+    db.delete(si)
+    db.commit()
     _write_audit(db, cid, user, "delete", "stock_inbound", iid)
     return {"ok": True}
 
 @router.post("/stock/assets/inbound/{iid}/submit")
 def submit_stock_inbound(iid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     si = db.query(StockInbound).filter(StockInbound.id == iid).first()
-    if not si: raise HTTPException(status_code=404, detail="入库记录不存在")
-    if si.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not si:
+        raise HTTPException(status_code=404, detail="入库记录不存在")
+    if si.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, si.company_id, "stock_inbound", iid, body.approver_ids, user)
     return {"ok": True}
 
@@ -753,32 +871,45 @@ def list_stock_outbound(company_id: int = Query(...), db: Session = Depends(get_
 @router.post("/stock/assets/outbound", response_model=StockOutboundResponse)
 def create_stock_outbound(data: StockOutboundCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     so = StockOutbound(**data.model_dump())
-    db.add(so); db.commit(); db.refresh(so)
+    db.add(so)
+    db.commit()
+    db.refresh(so)
     _write_audit(db, data.company_id, user, "create", "stock_outbound", so.id)
     return so
 
 @router.put("/stock/assets/outbound/{oid}", response_model=StockOutboundResponse)
 def update_stock_outbound(oid: int, data: StockOutboundUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     so = db.query(StockOutbound).filter(StockOutbound.id == oid).first()
-    if not so: raise HTTPException(status_code=404, detail="出库记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(so, k, v)
-    db.commit(); db.refresh(so); return so
+    if not so:
+        raise HTTPException(status_code=404, detail="出库记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(so, k, v)
+    db.commit()
+    db.refresh(so)
+    return so
 
 @router.delete("/stock/assets/outbound/{oid}")
 def delete_stock_outbound(oid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     so = db.query(StockOutbound).filter(StockOutbound.id == oid).first()
-    if not so: raise HTTPException(status_code=404, detail="出库记录不存在")
-    if so.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = so.company_id; db.delete(so); db.commit()
+    if not so:
+        raise HTTPException(status_code=404, detail="出库记录不存在")
+    if so.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = so.company_id
+    db.delete(so)
+    db.commit()
     _write_audit(db, cid, user, "delete", "stock_outbound", oid)
     return {"ok": True}
 
 @router.post("/stock/assets/outbound/{oid}/submit")
 def submit_stock_outbound(oid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     so = db.query(StockOutbound).filter(StockOutbound.id == oid).first()
-    if not so: raise HTTPException(status_code=404, detail="出库记录不存在")
-    if so.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not so:
+        raise HTTPException(status_code=404, detail="出库记录不存在")
+    if so.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, so.company_id, "stock_outbound", oid, body.approver_ids, user)
     return {"ok": True}
 
@@ -792,22 +923,31 @@ def list_stock_counts(company_id: int = Query(...), db: Session = Depends(get_db
 @router.post("/stock/assets/counts", response_model=StockCountResponse)
 def create_stock_count(data: StockCountCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sc = StockCount(**data.model_dump())
-    db.add(sc); db.commit(); db.refresh(sc)
+    db.add(sc)
+    db.commit()
+    db.refresh(sc)
     _write_audit(db, data.company_id, user, "create", "stock_count", sc.id)
     return sc
 
 @router.put("/stock/assets/counts/{cid}", response_model=StockCountResponse)
 def update_stock_count(cid: int, data: StockCountUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sc = db.query(StockCount).filter(StockCount.id == cid).first()
-    if not sc: raise HTTPException(status_code=404, detail="盘库记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(sc, k, v)
-    db.commit(); db.refresh(sc); return sc
+    if not sc:
+        raise HTTPException(status_code=404, detail="盘库记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(sc, k, v)
+    db.commit()
+    db.refresh(sc)
+    return sc
 
 @router.delete("/stock/assets/counts/{cid}")
 def delete_stock_count(cid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     sc = db.query(StockCount).filter(StockCount.id == cid).first()
-    if not sc: raise HTTPException(status_code=404, detail="盘库记录不存在")
-    cid_val = sc.company_id; db.delete(sc); db.commit()
+    if not sc:
+        raise HTTPException(status_code=404, detail="盘库记录不存在")
+    cid_val = sc.company_id
+    db.delete(sc)
+    db.commit()
     _write_audit(db, cid_val, user, "delete", "stock_count", cid)
     return {"ok": True}
 
@@ -816,25 +956,35 @@ def delete_stock_count(cid: int, db: Session = Depends(get_db), user: User = Dep
 
 @router.get("/stock/gifts/categories", response_model=list[GiftCategoryResponse])
 def list_gift_categories(company_id: int = Query(...), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(GiftCategory).filter(GiftCategory.company_id == company_id, GiftCategory.is_active == True).order_by(GiftCategory.name).all()
+    return db.query(GiftCategory).filter(GiftCategory.company_id == company_id, GiftCategory.is_active).order_by(GiftCategory.name).all()
 
 @router.post("/stock/gifts/categories", response_model=GiftCategoryResponse)
 def create_gift_category(data: GiftCategoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     c = GiftCategory(**data.model_dump())
-    db.add(c); db.commit(); db.refresh(c); return c
+    db.add(c)
+    db.commit()
+    db.refresh(c)
+    return c
 
 @router.put("/stock/gifts/categories/{cid}", response_model=GiftCategoryResponse)
 def update_gift_category(cid: int, data: GiftCategoryUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     c = db.query(GiftCategory).filter(GiftCategory.id == cid).first()
-    if not c: raise HTTPException(status_code=404, detail="类别不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(c, k, v)
-    db.commit(); db.refresh(c); return c
+    if not c:
+        raise HTTPException(status_code=404, detail="类别不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(c, k, v)
+    db.commit()
+    db.refresh(c)
+    return c
 
 @router.delete("/stock/gifts/categories/{cid}")
 def delete_gift_category(cid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     c = db.query(GiftCategory).filter(GiftCategory.id == cid).first()
-    if not c: raise HTTPException(status_code=404, detail="类别不存在")
-    c.is_active = False; db.commit(); return {"ok": True}
+    if not c:
+        raise HTTPException(status_code=404, detail="类别不存在")
+    c.is_active = False
+    db.commit()
+    return {"ok": True}
 
 
 # ── Stock Gifts ──
@@ -842,28 +992,38 @@ def delete_gift_category(cid: int, db: Session = Depends(get_db), user: User = D
 @router.get("/stock/gifts", response_model=list[StockGiftResponse])
 def list_stock_gifts(company_id: int = Query(...), category_id: int | None = Query(None), db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     q = db.query(StockGift).filter(StockGift.company_id == company_id)
-    if category_id is not None: q = q.filter(StockGift.category_id == category_id)
+    if category_id is not None:
+        q = q.filter(StockGift.category_id == category_id)
     return q.order_by(StockGift.name).all()
 
 @router.post("/stock/gifts", response_model=StockGiftResponse)
 def create_stock_gift(data: StockGiftCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     g = StockGift(**data.model_dump())
-    db.add(g); db.commit(); db.refresh(g)
+    db.add(g)
+    db.commit()
+    db.refresh(g)
     _write_audit(db, data.company_id, user, "create", "stock_gift", g.id)
     return g
 
 @router.put("/stock/gifts/{gid}", response_model=StockGiftResponse)
 def update_stock_gift(gid: int, data: StockGiftUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     g = db.query(StockGift).filter(StockGift.id == gid).first()
-    if not g: raise HTTPException(status_code=404, detail="礼品不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(g, k, v)
-    db.commit(); db.refresh(g); return g
+    if not g:
+        raise HTTPException(status_code=404, detail="礼品不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(g, k, v)
+    db.commit()
+    db.refresh(g)
+    return g
 
 @router.delete("/stock/gifts/{gid}")
 def delete_stock_gift(gid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     g = db.query(StockGift).filter(StockGift.id == gid).first()
-    if not g: raise HTTPException(status_code=404, detail="礼品不存在")
-    cid = g.company_id; db.delete(g); db.commit()
+    if not g:
+        raise HTTPException(status_code=404, detail="礼品不存在")
+    cid = g.company_id
+    db.delete(g)
+    db.commit()
     _write_audit(db, cid, user, "delete", "stock_gift", gid)
     return {"ok": True}
 
@@ -877,32 +1037,45 @@ def list_gift_purchases(company_id: int = Query(...), db: Session = Depends(get_
 @router.post("/stock/gifts/purchases", response_model=StockGiftPurchaseResponse)
 def create_gift_purchase(data: StockGiftPurchaseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gp = StockGiftPurchase(**data.model_dump())
-    db.add(gp); db.commit(); db.refresh(gp)
+    db.add(gp)
+    db.commit()
+    db.refresh(gp)
     _write_audit(db, data.company_id, user, "create", "gift_purchase", gp.id)
     return gp
 
 @router.put("/stock/gifts/purchases/{pid}", response_model=StockGiftPurchaseResponse)
 def update_gift_purchase(pid: int, data: StockGiftPurchaseUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gp = db.query(StockGiftPurchase).filter(StockGiftPurchase.id == pid).first()
-    if not gp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(gp, k, v)
-    db.commit(); db.refresh(gp); return gp
+    if not gp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(gp, k, v)
+    db.commit()
+    db.refresh(gp)
+    return gp
 
 @router.delete("/stock/gifts/purchases/{pid}")
 def delete_gift_purchase(pid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gp = db.query(StockGiftPurchase).filter(StockGiftPurchase.id == pid).first()
-    if not gp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    if gp.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = gp.company_id; db.delete(gp); db.commit()
+    if not gp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    if gp.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = gp.company_id
+    db.delete(gp)
+    db.commit()
     _write_audit(db, cid, user, "delete", "gift_purchase", pid)
     return {"ok": True}
 
 @router.post("/stock/gifts/purchases/{pid}/submit")
 def submit_gift_purchase(pid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gp = db.query(StockGiftPurchase).filter(StockGiftPurchase.id == pid).first()
-    if not gp: raise HTTPException(status_code=404, detail="采购申请不存在")
-    if gp.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not gp:
+        raise HTTPException(status_code=404, detail="采购申请不存在")
+    if gp.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, gp.company_id, "gift_purchase", pid, body.approver_ids, user)
     return {"ok": True}
 
@@ -916,32 +1089,45 @@ def list_gift_requisitions(company_id: int = Query(...), db: Session = Depends(g
 @router.post("/stock/gifts/requisitions", response_model=StockGiftRequisitionResponse)
 def create_gift_requisition(data: StockGiftRequisitionCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gr = StockGiftRequisition(**data.model_dump())
-    db.add(gr); db.commit(); db.refresh(gr)
+    db.add(gr)
+    db.commit()
+    db.refresh(gr)
     _write_audit(db, data.company_id, user, "create", "gift_requisition", gr.id)
     return gr
 
 @router.put("/stock/gifts/requisitions/{rid}", response_model=StockGiftRequisitionResponse)
 def update_gift_requisition(rid: int, data: StockGiftRequisitionUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gr = db.query(StockGiftRequisition).filter(StockGiftRequisition.id == rid).first()
-    if not gr: raise HTTPException(status_code=404, detail="领用申请不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(gr, k, v)
-    db.commit(); db.refresh(gr); return gr
+    if not gr:
+        raise HTTPException(status_code=404, detail="领用申请不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(gr, k, v)
+    db.commit()
+    db.refresh(gr)
+    return gr
 
 @router.delete("/stock/gifts/requisitions/{rid}")
 def delete_gift_requisition(rid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gr = db.query(StockGiftRequisition).filter(StockGiftRequisition.id == rid).first()
-    if not gr: raise HTTPException(status_code=404, detail="领用申请不存在")
-    if gr.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = gr.company_id; db.delete(gr); db.commit()
+    if not gr:
+        raise HTTPException(status_code=404, detail="领用申请不存在")
+    if gr.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = gr.company_id
+    db.delete(gr)
+    db.commit()
     _write_audit(db, cid, user, "delete", "gift_requisition", rid)
     return {"ok": True}
 
 @router.post("/stock/gifts/requisitions/{rid}/submit")
 def submit_gift_requisition(rid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gr = db.query(StockGiftRequisition).filter(StockGiftRequisition.id == rid).first()
-    if not gr: raise HTTPException(status_code=404, detail="领用申请不存在")
-    if gr.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not gr:
+        raise HTTPException(status_code=404, detail="领用申请不存在")
+    if gr.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, gr.company_id, "gift_requisition", rid, body.approver_ids, user)
     return {"ok": True}
 
@@ -955,32 +1141,45 @@ def list_gift_inbound(company_id: int = Query(...), db: Session = Depends(get_db
 @router.post("/stock/gifts/inbound", response_model=StockGiftInboundResponse)
 def create_gift_inbound(data: StockGiftInboundCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gi = StockGiftInbound(**data.model_dump())
-    db.add(gi); db.commit(); db.refresh(gi)
+    db.add(gi)
+    db.commit()
+    db.refresh(gi)
     _write_audit(db, data.company_id, user, "create", "gift_inbound", gi.id)
     return gi
 
 @router.put("/stock/gifts/inbound/{iid}", response_model=StockGiftInboundResponse)
 def update_gift_inbound(iid: int, data: StockGiftInboundUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gi = db.query(StockGiftInbound).filter(StockGiftInbound.id == iid).first()
-    if not gi: raise HTTPException(status_code=404, detail="入库记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(gi, k, v)
-    db.commit(); db.refresh(gi); return gi
+    if not gi:
+        raise HTTPException(status_code=404, detail="入库记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(gi, k, v)
+    db.commit()
+    db.refresh(gi)
+    return gi
 
 @router.delete("/stock/gifts/inbound/{iid}")
 def delete_gift_inbound(iid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gi = db.query(StockGiftInbound).filter(StockGiftInbound.id == iid).first()
-    if not gi: raise HTTPException(status_code=404, detail="入库记录不存在")
-    if gi.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = gi.company_id; db.delete(gi); db.commit()
+    if not gi:
+        raise HTTPException(status_code=404, detail="入库记录不存在")
+    if gi.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = gi.company_id
+    db.delete(gi)
+    db.commit()
     _write_audit(db, cid, user, "delete", "gift_inbound", iid)
     return {"ok": True}
 
 @router.post("/stock/gifts/inbound/{iid}/submit")
 def submit_gift_inbound(iid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     gi = db.query(StockGiftInbound).filter(StockGiftInbound.id == iid).first()
-    if not gi: raise HTTPException(status_code=404, detail="入库记录不存在")
-    if gi.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not gi:
+        raise HTTPException(status_code=404, detail="入库记录不存在")
+    if gi.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, gi.company_id, "gift_inbound", iid, body.approver_ids, user)
     return {"ok": True}
 
@@ -994,31 +1193,44 @@ def list_gift_outbound(company_id: int = Query(...), db: Session = Depends(get_d
 @router.post("/stock/gifts/outbound", response_model=StockGiftOutboundResponse)
 def create_gift_outbound(data: StockGiftOutboundCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     go = StockGiftOutbound(**data.model_dump())
-    db.add(go); db.commit(); db.refresh(go)
+    db.add(go)
+    db.commit()
+    db.refresh(go)
     _write_audit(db, data.company_id, user, "create", "gift_outbound", go.id)
     return go
 
 @router.put("/stock/gifts/outbound/{oid}", response_model=StockGiftOutboundResponse)
 def update_gift_outbound(oid: int, data: StockGiftOutboundUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     go = db.query(StockGiftOutbound).filter(StockGiftOutbound.id == oid).first()
-    if not go: raise HTTPException(status_code=404, detail="出库记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(go, k, v)
-    db.commit(); db.refresh(go); return go
+    if not go:
+        raise HTTPException(status_code=404, detail="出库记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(go, k, v)
+    db.commit()
+    db.refresh(go)
+    return go
 
 @router.delete("/stock/gifts/outbound/{oid}")
 def delete_gift_outbound(oid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     go = db.query(StockGiftOutbound).filter(StockGiftOutbound.id == oid).first()
-    if not go: raise HTTPException(status_code=404, detail="出库记录不存在")
-    if go.status != "draft": raise HTTPException(status_code=400, detail="只能删除草稿状态")
-    cid = go.company_id; db.delete(go); db.commit()
+    if not go:
+        raise HTTPException(status_code=404, detail="出库记录不存在")
+    if go.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态")
+    cid = go.company_id
+    db.delete(go)
+    db.commit()
     _write_audit(db, cid, user, "delete", "gift_outbound", oid)
     return {"ok": True}
 
 @router.post("/stock/gifts/outbound/{oid}/submit")
 def submit_gift_outbound(oid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     go = db.query(StockGiftOutbound).filter(StockGiftOutbound.id == oid).first()
-    if not go: raise HTTPException(status_code=404, detail="出库记录不存在")
-    if go.status != "draft": raise HTTPException(status_code=400, detail="只能提交草稿状态")
-    if not body.approver_ids: raise HTTPException(status_code=400, detail="至少指定一位审批人")
+    if not go:
+        raise HTTPException(status_code=404, detail="出库记录不存在")
+    if go.status != "draft":
+        raise HTTPException(status_code=400, detail="只能提交草稿状态")
+    if not body.approver_ids:
+        raise HTTPException(status_code=400, detail="至少指定一位审批人")
     _submit_for_approval(db, go.company_id, "gift_outbound", oid, body.approver_ids, user)
     return {"ok": True}

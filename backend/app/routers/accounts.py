@@ -1,13 +1,13 @@
 """科目管理路由。"""
 from pydantic import BaseModel
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Account, VoucherEntry, Voucher, Company
 from app.schemas import AccountCreate, AccountResponse
 from app.auth import get_current_user
-from app.permissions import check_account_manage, check_account_level
+from app.permissions import check_account_level
 
 router = APIRouter()
 

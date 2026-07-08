@@ -7,7 +7,6 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
-import Textarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
 import {
   listInsurance,
@@ -74,7 +73,7 @@ async function remove(id: number) {
   try {
     await deleteInsurance(id)
     await load()
-  } catch (e: any) {
+  } catch (_e: any) {
     alert('删除失败')
   }
 }
@@ -84,7 +83,7 @@ async function doSubmit(id: number) {
   try {
     await submitInsurance(id, ids.split(',').map(Number))
     await load()
-  } catch (e: any) {
+  } catch (_e: any) {
     alert('提交失败')
   }
 }

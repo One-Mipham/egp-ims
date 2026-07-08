@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, Person
+from app.models import Person
 from app.schemas import PersonResponse
 from app.auth import get_current_user
 
@@ -12,7 +12,7 @@ router = APIRouter()
 
 @router.get("/", response_model=list[PersonResponse])
 def list_persons(company_id: int, department_code: str = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
-    q = db.query(Person).filter(Person.company_id == company_id, Person.is_active == True)
+    q = db.query(Person).filter(Person.company_id == company_id, Person.is_active)
     if department_code:
         q = q.filter(Person.department_code == department_code)
     return q.order_by(Person.code).all()

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = withDefaults(
+const _props = withDefaults(
   defineProps<{
     cat: any
     selectedId: number | null

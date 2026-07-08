@@ -7,7 +7,6 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
-import Textarea from 'primevue/textarea'
 import Tag from 'primevue/tag'
 import api from '@/api/index'
 

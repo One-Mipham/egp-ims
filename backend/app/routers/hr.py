@@ -153,16 +153,21 @@ def create_training(data: HrTrainingCreate, db: Session = Depends(get_db), user=
 @router.put("/trainings/{t_id}", response_model=HrTrainingResponse)
 def update_training(t_id: int, data: HrTrainingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     t = db.query(HrTraining).filter(HrTraining.id == t_id).first()
-    if not t: raise HTTPException(status_code=404, detail="培训记录不存在")
+    if not t:
+        raise HTTPException(status_code=404, detail="培训记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(t, k, v)
-    db.commit(); db.refresh(t); return t
+    db.commit()
+    db.refresh(t)
+    return t
 
 @router.delete("/trainings/{t_id}")
 def delete_training(t_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     t = db.query(HrTraining).filter(HrTraining.id == t_id).first()
-    if not t: raise HTTPException(status_code=404, detail="培训记录不存在")
-    db.delete(t); db.commit()
+    if not t:
+        raise HTTPException(status_code=404, detail="培训记录不存在")
+    db.delete(t)
+    db.commit()
     return {"ok": True}
 
 
@@ -171,25 +176,37 @@ def delete_training(t_id: int, db: Session = Depends(get_db), user=Depends(get_c
 @router.get("/evaluations", response_model=list[HrEvaluationResponse])
 def list_evaluations(company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
     q = db.query(HrEvaluation).filter(HrEvaluation.company_id == company_id)
-    if employee_id: q = q.filter(HrEvaluation.employee_id == employee_id)
+    if employee_id:
+        q = q.filter(HrEvaluation.employee_id == employee_id)
     return q.order_by(HrEvaluation.period.desc()).all()
 
 @router.post("/evaluations", response_model=HrEvaluationResponse)
 def create_evaluation(data: HrEvaluationCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    e = HrEvaluation(**data.model_dump()); db.add(e); db.commit(); db.refresh(e); return e
+    e = HrEvaluation(**data.model_dump())
+    db.add(e)
+    db.commit()
+    db.refresh(e)
+    return e
 
 @router.put("/evaluations/{e_id}", response_model=HrEvaluationResponse)
 def update_evaluation(e_id: int, data: HrEvaluationCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     e = db.query(HrEvaluation).filter(HrEvaluation.id == e_id).first()
-    if not e: raise HTTPException(status_code=404, detail="考核记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(e, k, v)
-    db.commit(); db.refresh(e); return e
+    if not e:
+        raise HTTPException(status_code=404, detail="考核记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(e, k, v)
+    db.commit()
+    db.refresh(e)
+    return e
 
 @router.delete("/evaluations/{e_id}")
 def delete_evaluation(e_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     e = db.query(HrEvaluation).filter(HrEvaluation.id == e_id).first()
-    if not e: raise HTTPException(status_code=404, detail="考核记录不存在")
-    db.delete(e); db.commit(); return {"ok": True}
+    if not e:
+        raise HTTPException(status_code=404, detail="考核记录不存在")
+    db.delete(e)
+    db.commit()
+    return {"ok": True}
 
 
 # ═══════════ 薪酬管理 ═══════════
@@ -197,26 +214,39 @@ def delete_evaluation(e_id: int, db: Session = Depends(get_db), user=Depends(get
 @router.get("/salaries", response_model=list[HrSalaryResponse])
 def list_salaries(company_id: int, employee_id: int = Query(None), year_month: str = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
     q = db.query(HrSalary).filter(HrSalary.company_id == company_id)
-    if employee_id: q = q.filter(HrSalary.employee_id == employee_id)
-    if year_month: q = q.filter(HrSalary.year_month == year_month)
+    if employee_id:
+        q = q.filter(HrSalary.employee_id == employee_id)
+    if year_month:
+        q = q.filter(HrSalary.year_month == year_month)
     return q.order_by(HrSalary.year_month.desc()).all()
 
 @router.post("/salaries", response_model=HrSalaryResponse)
 def create_salary(data: HrSalaryCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    s = HrSalary(**data.model_dump()); db.add(s); db.commit(); db.refresh(s); return s
+    s = HrSalary(**data.model_dump())
+    db.add(s)
+    db.commit()
+    db.refresh(s)
+    return s
 
 @router.put("/salaries/{s_id}", response_model=HrSalaryResponse)
 def update_salary(s_id: int, data: HrSalaryCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     s = db.query(HrSalary).filter(HrSalary.id == s_id).first()
-    if not s: raise HTTPException(status_code=404, detail="薪酬记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(s, k, v)
-    db.commit(); db.refresh(s); return s
+    if not s:
+        raise HTTPException(status_code=404, detail="薪酬记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(s, k, v)
+    db.commit()
+    db.refresh(s)
+    return s
 
 @router.delete("/salaries/{s_id}")
 def delete_salary(s_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     s = db.query(HrSalary).filter(HrSalary.id == s_id).first()
-    if not s: raise HTTPException(status_code=404, detail="薪酬记录不存在")
-    db.delete(s); db.commit(); return {"ok": True}
+    if not s:
+        raise HTTPException(status_code=404, detail="薪酬记录不存在")
+    db.delete(s)
+    db.commit()
+    return {"ok": True}
 
 
 # ═══════════ 员工奖惩 ═══════════
@@ -224,25 +254,37 @@ def delete_salary(s_id: int, db: Session = Depends(get_db), user=Depends(get_cur
 @router.get("/rewards", response_model=list[HrRewardPunishmentResponse])
 def list_rewards(company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
     q = db.query(HrRewardPunishment).filter(HrRewardPunishment.company_id == company_id)
-    if employee_id: q = q.filter(HrRewardPunishment.employee_id == employee_id)
+    if employee_id:
+        q = q.filter(HrRewardPunishment.employee_id == employee_id)
     return q.order_by(HrRewardPunishment.date.desc()).all()
 
 @router.post("/rewards", response_model=HrRewardPunishmentResponse)
 def create_reward(data: HrRewardPunishmentCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    r = HrRewardPunishment(**data.model_dump()); db.add(r); db.commit(); db.refresh(r); return r
+    r = HrRewardPunishment(**data.model_dump())
+    db.add(r)
+    db.commit()
+    db.refresh(r)
+    return r
 
 @router.put("/rewards/{r_id}", response_model=HrRewardPunishmentResponse)
 def update_reward(r_id: int, data: HrRewardPunishmentCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     r = db.query(HrRewardPunishment).filter(HrRewardPunishment.id == r_id).first()
-    if not r: raise HTTPException(status_code=404, detail="记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(r, k, v)
-    db.commit(); db.refresh(r); return r
+    if not r:
+        raise HTTPException(status_code=404, detail="记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(r, k, v)
+    db.commit()
+    db.refresh(r)
+    return r
 
 @router.delete("/rewards/{r_id}")
 def delete_reward(r_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     r = db.query(HrRewardPunishment).filter(HrRewardPunishment.id == r_id).first()
-    if not r: raise HTTPException(status_code=404, detail="记录不存在")
-    db.delete(r); db.commit(); return {"ok": True}
+    if not r:
+        raise HTTPException(status_code=404, detail="记录不存在")
+    db.delete(r)
+    db.commit()
+    return {"ok": True}
 
 
 # ═══════════ 员工离职 ═══════════
@@ -250,28 +292,41 @@ def delete_reward(r_id: int, db: Session = Depends(get_db), user=Depends(get_cur
 @router.get("/offboarding", response_model=list[HrOffboardingResponse])
 def list_offboarding(company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
     q = db.query(HrOffboarding).filter(HrOffboarding.company_id == company_id)
-    if employee_id: q = q.filter(HrOffboarding.employee_id == employee_id)
+    if employee_id:
+        q = q.filter(HrOffboarding.employee_id == employee_id)
     return q.order_by(HrOffboarding.apply_date.desc()).all()
 
 @router.post("/offboarding", response_model=HrOffboardingResponse)
 def create_offboarding(data: HrOffboardingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    o = HrOffboarding(**data.model_dump()); db.add(o); db.commit(); db.refresh(o); return o
+    o = HrOffboarding(**data.model_dump())
+    db.add(o)
+    db.commit()
+    db.refresh(o)
+    return o
 
 @router.put("/offboarding/{o_id}", response_model=HrOffboardingResponse)
 def update_offboarding(o_id: int, data: HrOffboardingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     o = db.query(HrOffboarding).filter(HrOffboarding.id == o_id).first()
-    if not o: raise HTTPException(status_code=404, detail="记录不存在")
-    for k, v in data.model_dump(exclude_unset=True).items(): setattr(o, k, v)
+    if not o:
+        raise HTTPException(status_code=404, detail="记录不存在")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(o, k, v)
     if o.status == "已离职":
         emp = db.query(HrEmployee).filter(HrEmployee.id == o.employee_id).first()
-        if emp: emp.status = "离职"
-    db.commit(); db.refresh(o); return o
+        if emp:
+            emp.status = "离职"
+    db.commit()
+    db.refresh(o)
+    return o
 
 @router.delete("/offboarding/{o_id}")
 def delete_offboarding(o_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     o = db.query(HrOffboarding).filter(HrOffboarding.id == o_id).first()
-    if not o: raise HTTPException(status_code=404, detail="记录不存在")
-    db.delete(o); db.commit(); return {"ok": True}
+    if not o:
+        raise HTTPException(status_code=404, detail="记录不存在")
+    db.delete(o)
+    db.commit()
+    return {"ok": True}
 
 
 # ═══════════ 人力资源预算 ═══════════
@@ -279,7 +334,8 @@ def delete_offboarding(o_id: int, db: Session = Depends(get_db), user=Depends(ge
 @router.get("/budgets", response_model=list[HrBudgetResponse])
 def list_budgets(company_id: int, year: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
     q = db.query(HrBudget).filter(HrBudget.company_id == company_id)
-    if year: q = q.filter(HrBudget.year == year)
+    if year:
+        q = q.filter(HrBudget.year == year)
     return q.order_by(HrBudget.year.desc(), HrBudget.department_id).all()
 
 @router.post("/budgets", response_model=HrBudgetResponse)
@@ -295,10 +351,15 @@ def upsert_budget(data: HrBudgetCreate, db: Session = Depends(get_db), user=Depe
     else:
         existing = HrBudget(**data.model_dump())
         db.add(existing)
-    db.commit(); db.refresh(existing); return existing
+    db.commit()
+    db.refresh(existing)
+    return existing
 
 @router.delete("/budgets/{b_id}")
 def delete_budget(b_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     b = db.query(HrBudget).filter(HrBudget.id == b_id).first()
-    if not b: raise HTTPException(status_code=404, detail="预算记录不存在")
-    db.delete(b); db.commit(); return {"ok": True}
+    if not b:
+        raise HTTPException(status_code=404, detail="预算记录不存在")
+    db.delete(b)
+    db.commit()
+    return {"ok": True}

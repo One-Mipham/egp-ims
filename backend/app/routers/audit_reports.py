@@ -1,6 +1,5 @@
 """年度审计报告路由。"""
 import os
-import shutil
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, Company, Department, Account, Voucher, VoucherEntry, AccountingPeriod, Counterparty, Person, Project
+from app.models import User, Company, Department, Account, Voucher, VoucherEntry, Counterparty, Person, Project
 from app.auth import get_current_user
 from app.routers.reports import (
     _period_end_date, _year_start, _prev_year_period, _prev_year_end,
@@ -66,7 +66,7 @@ def print_subjects(
     user: User = Depends(get_current_user),
 ):
     _get_company(db, company_id)
-    q = db.query(Account).filter(Account.company_id == company_id, Account.is_active == True)
+    q = db.query(Account).filter(Account.company_id == company_id, Account.is_active)
     if level is not None:
         q = q.filter(Account.level == level)
     accts = q.order_by(Account.code).all()
@@ -95,11 +95,11 @@ def print_subject_balance(
 ):
     _get_company(db, company_id)
     end_date = _period_end_date(period)
-    prev_period_end = _period_end_date(f"{int(period[:4])}-{int(period[5:7]) - 1:02d}" if int(period[5:7]) > 1 else f"{int(period[:4]) - 1}-12")
+    _period_end_date(f"{int(period[:4])}-{int(period[5:7]) - 1:02d}" if int(period[5:7]) > 1 else f"{int(period[:4]) - 1}-12")
 
     accts = db.query(Account).filter(
         Account.company_id == company_id,
-        Account.is_active == True,
+        Account.is_active,
     ).order_by(Account.code).all()
 
     rows = []
@@ -135,7 +135,7 @@ def print_general_ledger(
     accts = db.query(Account).filter(
         Account.company_id == company_id,
         Account.level == 1,
-        Account.is_active == True,
+        Account.is_active,
     ).order_by(Account.code).all()
 
     rows = []
@@ -257,7 +257,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
     end_date = _period_end_date(period)
     ys = _year_start(period)
     py_end = _period_end_date(_prev_year_period(period))
-    py_ys = _year_start(_prev_year_period(period))
+    _year_start(_prev_year_period(period))
 
     # For quarterly/yearly, the "current period" spans multiple months
     curr_start, prev_curr_start = _period_range(period, rtype)
@@ -435,7 +435,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
         from app.models import CashFlowItem
 
         cf_items = {cfi.code: cfi for cfi in db.query(CashFlowItem).filter(
-            CashFlowItem.company_id == company_id, CashFlowItem.is_active == True
+            CashFlowItem.company_id == company_id, CashFlowItem.is_active
         ).all()}
 
         curr_items = _compute_cash_flows(db, company_id, curr_start, end_date)  # 本期(月度/季度/年度)
@@ -489,9 +489,15 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
         end_p = _cash_balance(py_end)
 
         def _net(inc, outc): return round(inc - outc, 2)
-        net_op_c = _net(op_in_c, op_out_c); net_op_y = _net(op_in_y, op_out_y); net_op_p = _net(op_in_p, op_out_p)
-        net_inv_c = _net(inv_in_c, inv_out_c); net_inv_y = _net(inv_in_y, inv_out_y); net_inv_p = _net(inv_in_p, inv_out_p)
-        net_fin_c = _net(fin_in_c, fin_out_c); net_fin_y = _net(fin_in_y, fin_out_y); net_fin_p = _net(fin_in_p, fin_out_p)
+        net_op_c = _net(op_in_c, op_out_c)
+        net_op_y = _net(op_in_y, op_out_y)
+        net_op_p = _net(op_in_p, op_out_p)
+        net_inv_c = _net(inv_in_c, inv_out_c)
+        net_inv_y = _net(inv_in_y, inv_out_y)
+        net_inv_p = _net(inv_in_p, inv_out_p)
+        net_fin_c = _net(fin_in_c, fin_out_c)
+        net_fin_y = _net(fin_in_y, fin_out_y)
+        net_fin_p = _net(fin_in_p, fin_out_p)
         # 净变动 = 期末 - 期初（倒挤，保证与资产负债表对齐）
         net_chg_c = round(end_c - beg_c, 2)
         net_chg_y = round(end_y - beg_y, 2)
@@ -604,7 +610,10 @@ def export_periodic(
         headers = ["资产", "期末余额", "年初余额", "负债及所有者权益", "期末余额", "年初余额"]
         for ci, h in enumerate(headers, 1):
             c = ws.cell(row=row, column=ci, value=h)
-            c.font = header_font; c.alignment = center_align; c.border = thin_border; c.fill = header_fill
+            c.font = header_font
+            c.alignment = center_align
+            c.border = thin_border
+            c.fill = header_fill
         row += 1
 
         # 数据行
@@ -652,7 +661,10 @@ def export_periodic(
         headers = ["项目", "本期金额", "本年累计", "上年同期"]
         for ci, h in enumerate(headers, 1):
             c = ws.cell(row=row, column=ci, value=h)
-            c.font = header_font; c.alignment = center_align; c.border = thin_border; c.fill = header_fill
+            c.font = header_font
+            c.alignment = center_align
+            c.border = thin_border
+            c.fill = header_fill
         row += 1
 
         for item in data["items"]:
@@ -687,7 +699,10 @@ def export_periodic(
         headers = ["项目", "本期金额", "本年累计", "上年同期"]
         for ci, h in enumerate(headers, 1):
             c = ws.cell(row=row, column=ci, value=h)
-            c.font = header_font; c.alignment = center_align; c.border = thin_border; c.fill = header_fill
+            c.font = header_font
+            c.alignment = center_align
+            c.border = thin_border
+            c.fill = header_fill
         row += 1
 
         for r in data["rows"]:

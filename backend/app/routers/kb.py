@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth import get_current_user
 from app.models import KbArticle, KbCategory, AuditLog, User
-from app.schemas import KbArticleCreate, KbArticleUpdate, KbArticleResponse, KbCategoryCreate, KbCategoryUpdate, KbCategoryResponse, KbCategoryTreeNode
+from app.schemas import KbArticleCreate, KbArticleUpdate, KbCategoryCreate, KbCategoryUpdate, KbCategoryResponse
 from sqlalchemy import func
 
 router = APIRouter()
@@ -70,7 +70,7 @@ def list_articles(
     q = db.query(KbArticle).filter(KbArticle.company_id == company_id)
     if category_id:
         all_cats = db.query(KbCategory).filter(
-            KbCategory.company_id == company_id, KbCategory.is_active == True
+            KbCategory.company_id == company_id, KbCategory.is_active
         ).all()
         ids = _get_descendant_ids(all_cats, category_id)
         q = q.filter(KbArticle.category_id.in_(ids))
@@ -209,7 +209,7 @@ def list_categories(
 ):
     cats = db.query(KbCategory).filter(
         KbCategory.company_id == company_id,
-        KbCategory.is_active == True,
+        KbCategory.is_active,
     ).order_by(KbCategory.sort_order, KbCategory.id).all()
 
     article_counts = dict(

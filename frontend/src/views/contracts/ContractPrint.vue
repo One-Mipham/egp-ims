@@ -12,7 +12,7 @@ const toast = useToast()
 const contract = ref<any>(null)
 const loading = ref(true)
 
-const typeLabels: Record<string, string> = {
+const _typeLabels: Record<string, string> = {
   supplier: '供应商合同',
   customer: '客户合同',
   labor: '劳动合同',

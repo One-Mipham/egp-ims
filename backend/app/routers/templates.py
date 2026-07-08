@@ -15,7 +15,7 @@ def list_templates(company_id: int = None, db: Session = Depends(get_db), user: 
     if company_id:
         q = q.filter(VoucherTemplate.company_id == company_id).filter(VoucherTemplate.type == "user_defined")
     # 始终包含内置模板
-    q = q.filter((VoucherTemplate.company_id == company_id) | (VoucherTemplate.company_id == None))
+    q = q.filter((VoucherTemplate.company_id == company_id) | (VoucherTemplate.company_id is None))
     return q.all()
 
 

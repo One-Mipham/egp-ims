@@ -8,6 +8,11 @@
 所有检查函数返回 None 表示允许，返回字符串表示拒绝原因。
 """
 
+from fastapi import Depends, HTTPException, Request
+from app.auth import get_current_user
+from app.database import get_db
+from sqlalchemy.orm import Session
+
 
 def check_voucher_create(user, company) -> str | None:
     """是否允许创建凭证。"""
@@ -205,12 +210,6 @@ def check_module_access(user, module: str) -> str | None:
     return f"您的角色 ({user.role}) 无权访问此模块"
 
 
-from fastapi import Depends, HTTPException, Request
-from app.auth import get_current_user
-from app.database import get_db
-from sqlalchemy.orm import Session
-
-
 def check_module_enabled(company, module: str) -> str | None:
     """验证公司是否购买了指定模块。试用期(trialing)全模块可用。返回 None 表示允许。"""
     if company.subscription_status == "trialing":
@@ -219,7 +218,7 @@ def check_module_enabled(company, module: str) -> str | None:
         return None
     enabled = company.enabled_modules or []
     if not enabled:
-        return f"公司尚未购买任何模块"
+        return "公司尚未购买任何模块"
     if module in enabled:
         return None
     return f"模块 {module} 未在您的套餐中，请升级订阅"

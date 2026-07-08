@@ -2,12 +2,12 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, Voucher, VoucherEntry, BankSettlement, AccountingPeriod, AuditLog, Company, VoucherSequence
-from app.schemas import VoucherCreate, VoucherUpdate, VoucherResponse, VoucherEntryResponse, ReverseVoucherRequest
+from app.schemas import VoucherCreate, VoucherUpdate, VoucherResponse, ReverseVoucherRequest
 from app.auth import get_current_user
 from app.permissions import (
     check_voucher_create, check_voucher_update, check_voucher_approve,
@@ -23,7 +23,7 @@ def _check_period_open(db: Session, company_id: int, date_str: str):
     closed = db.query(AccountingPeriod).filter(
         AccountingPeriod.company_id == company_id,
         AccountingPeriod.period == period_str,
-        AccountingPeriod.is_closed == True,
+        AccountingPeriod.is_closed,
     ).first()
     if closed:
         raise HTTPException(
@@ -264,7 +264,7 @@ def reverse_voucher(voucher_id: int, req: ReverseVoucherRequest, db: Session = D
     period = db.query(AccountingPeriod).filter(
         AccountingPeriod.company_id == voucher.company_id,
         AccountingPeriod.period == period_str,
-        AccountingPeriod.is_closed == True,
+        AccountingPeriod.is_closed,
     ).first()
     if period:
         raise HTTPException(status_code=400, detail="该期间已结账，需先反结账")
@@ -292,7 +292,7 @@ def batch_import_vouchers(
     if not data:
         raise HTTPException(status_code=400, detail="导入数据为空")
 
-    company_id = data[0].company_id
+    data[0].company_id
     imported = 0
     for item in data:
         voucher = Voucher(

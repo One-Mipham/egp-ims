@@ -76,12 +76,12 @@
           </div>
           <DataTable :value="form.entries" size="small">
             <Column header="科目代码" style="width: 8rem">
-              <template #body="{ data, index }">
+              <template #body="{ data, _index }">
                 <InputText v-model="data.account_code" size="small" class="w-full" />
               </template>
             </Column>
             <Column header="方向" style="width: 5rem">
-              <template #body="{ data, index }">
+              <template #body="{ data, _index }">
                 <Dropdown v-model="data.direction" :options="['debit', 'credit']" size="small">
                   <template #value="slotProps">{{ slotProps.value === 'debit' ? '借' : '贷' }}</template>
                   <template #option="slotProps">{{ slotProps.option === 'debit' ? '借方' : '贷方' }}</template>
@@ -89,7 +89,7 @@
               </template>
             </Column>
             <Column header="公式" style="width: 7rem">
-              <template #body="{ data, index }">
+              <template #body="{ data, _index }">
                 <InputText
                   v-model="data.formula"
                   size="small"
@@ -99,7 +99,7 @@
               </template>
             </Column>
             <Column header="摘要">
-              <template #body="{ data, index }">
+              <template #body="{ data, _index }">
                 <InputText v-model="data.summary" size="small" class="w-full" />
               </template>
             </Column>

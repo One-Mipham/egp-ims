@@ -119,7 +119,7 @@ async function loadRefs() {
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
     categories.value = catRes.data
     legalBasisOptions.value = legalRes.data
-  } catch (_) {}
+  } catch (_e) {}
 }
 
 async function load() {

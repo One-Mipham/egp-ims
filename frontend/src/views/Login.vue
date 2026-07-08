@@ -128,7 +128,7 @@ async function handleLogin() {
       localStorage.setItem('enabledModules', JSON.stringify(subRes.data.enabled_modules || []))
       localStorage.setItem('subscriptionStatus', subRes.data.subscription_status || 'trialing')
       localStorage.setItem('moduleSet', subRes.data.module_set || 'trial')
-    } catch (_) {
+    } catch (_e) {
       localStorage.setItem('subscriptionStatus', 'trialing')
       localStorage.setItem('enabledModules', '[]')
     }

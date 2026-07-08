@@ -93,7 +93,7 @@ def require_company_scope(requested_cid: int, jwt_cid: int = Depends(get_current
     if requested_cid != jwt_cid:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"无权访问其他公司的数据"
+            detail="无权访问其他公司的数据"
         )
 
 

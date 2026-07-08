@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import Button from 'primevue/button'
 import { listAllPermissions, setUserPermissions } from '@/api'
 
 const users = ref<any[]>([])

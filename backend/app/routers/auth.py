@@ -1,16 +1,14 @@
 """认证路由：注册、登录。"""
 import re
 from datetime import datetime, timezone
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, Company
-from app.schemas import UserCreate, UserResponse, Token, LoginRequest
+from app.schemas import UserResponse, LoginRequest
 from app.auth import hash_password, verify_password, create_access_token, get_current_user
 from app.seed import seed_level1_accounts, seed_level2_accounts, seed_tax_accounts, seed_cashflow_items
 

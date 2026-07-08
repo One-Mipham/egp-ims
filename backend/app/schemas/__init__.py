@@ -569,10 +569,17 @@ class InvestmentFundUpdate(BaseModel):
     status: Optional[str] = None
 
 class InvestmentFundResponse(BaseModel):
-    id: int; company_id: int; fund_name: str; fund_type: str
-    management_company: Optional[str] = None; inception_date: Optional[str] = None
-    currency: str; total_commitment: float; portfolio_id: Optional[int] = None
-    status: str; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    fund_name: str
+    fund_type: str
+    management_company: Optional[str] = None
+    inception_date: Optional[str] = None
+    currency: str
+    total_commitment: float
+    portfolio_id: Optional[int] = None
+    status: str
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class CapitalAccountCreate(BaseModel):
@@ -588,36 +595,64 @@ class CapitalAccountUpdate(BaseModel):
     ownership_pct: Optional[float] = None
 
 class CapitalAccountResponse(BaseModel):
-    id: int; company_id: int; fund_id: int; investor_id: int
-    committed_capital: float; called_capital: float; ownership_pct: float
+    id: int
+    company_id: int
+    fund_id: int
+    investor_id: int
+    committed_capital: float
+    called_capital: float
+    ownership_pct: float
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class CapitalCallCreate(BaseModel):
-    call_date: str; call_amount: float = 0.0; due_date: Optional[str] = None; notes: Optional[str] = None
+    call_date: str
+    call_amount: float = 0.0
+    due_date: Optional[str] = None
+    notes: Optional[str] = None
 
 class CapitalCallUpdate(BaseModel):
-    call_date: Optional[str] = None; call_amount: Optional[float] = None
-    due_date: Optional[str] = None; status: Optional[str] = None; notes: Optional[str] = None
+    call_date: Optional[str] = None
+    call_amount: Optional[float] = None
+    due_date: Optional[str] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
 
 class CapitalCallResponse(BaseModel):
-    id: int; company_id: int; fund_id: int; call_date: str; call_amount: float
-    due_date: Optional[str] = None; status: str; notes: Optional[str] = None
-    voucher_id: Optional[int] = None; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    fund_id: int
+    call_date: str
+    call_amount: float
+    due_date: Optional[str] = None
+    status: str
+    notes: Optional[str] = None
+    voucher_id: Optional[int] = None
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class FundDistributionCreate(BaseModel):
-    distribution_date: str; amount: float = 0.0
-    distribution_type: str = "income"; notes: Optional[str] = None
+    distribution_date: str
+    amount: float = 0.0
+    distribution_type: str = "income"
+    notes: Optional[str] = None
 
 class FundDistributionUpdate(BaseModel):
-    distribution_date: Optional[str] = None; amount: Optional[float] = None
-    distribution_type: Optional[str] = None; notes: Optional[str] = None
+    distribution_date: Optional[str] = None
+    amount: Optional[float] = None
+    distribution_type: Optional[str] = None
+    notes: Optional[str] = None
 
 class FundDistributionResponse(BaseModel):
-    id: int; company_id: int; fund_id: int; distribution_date: str; amount: float
-    distribution_type: str; notes: Optional[str] = None
-    voucher_id: Optional[int] = None; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    fund_id: int
+    distribution_date: str
+    amount: float
+    distribution_type: str
+    notes: Optional[str] = None
+    voucher_id: Optional[int] = None
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
@@ -634,8 +669,11 @@ class WaterfallConfigUpdate(BaseModel):
     tiers: Optional[list] = None
 
 class WaterfallConfigResponse(BaseModel):
-    id: int; company_id: int; name: str
-    portfolio_id: Optional[int] = None; tiers: list
+    id: int
+    company_id: int
+    name: str
+    portfolio_id: Optional[int] = None
+    tiers: list
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
@@ -647,102 +685,186 @@ class WaterfallCalculateRequest(BaseModel):
 # ═══════════ 房地产资产 ═══════════
 
 class RealEstateAssetCreate(BaseModel):
-    property_name: str; property_type: str = "commercial"; location: Optional[str] = None
-    acquisition_date: Optional[str] = None; acquisition_cost: float = 0.0
-    current_value: float = 0.0; valuation_date: Optional[str] = None
-    area_sqm: float = 0.0; occupancy_pct: float = 0.0; annual_rental_income: float = 0.0
+    property_name: str
+    property_type: str = "commercial"
+    location: Optional[str] = None
+    acquisition_date: Optional[str] = None
+    acquisition_cost: float = 0.0
+    current_value: float = 0.0
+    valuation_date: Optional[str] = None
+    area_sqm: float = 0.0
+    occupancy_pct: float = 0.0
+    annual_rental_income: float = 0.0
     portfolio_id: Optional[int] = None
 
 class RealEstateAssetUpdate(BaseModel):
-    property_name: Optional[str] = None; property_type: Optional[str] = None
-    location: Optional[str] = None; acquisition_date: Optional[str] = None
-    acquisition_cost: Optional[float] = None; current_value: Optional[float] = None
-    valuation_date: Optional[str] = None; area_sqm: Optional[float] = None
-    occupancy_pct: Optional[float] = None; annual_rental_income: Optional[float] = None
-    portfolio_id: Optional[int] = None; status: Optional[str] = None
+    property_name: Optional[str] = None
+    property_type: Optional[str] = None
+    location: Optional[str] = None
+    acquisition_date: Optional[str] = None
+    acquisition_cost: Optional[float] = None
+    current_value: Optional[float] = None
+    valuation_date: Optional[str] = None
+    area_sqm: Optional[float] = None
+    occupancy_pct: Optional[float] = None
+    annual_rental_income: Optional[float] = None
+    portfolio_id: Optional[int] = None
+    status: Optional[str] = None
 
 class RealEstateAssetResponse(BaseModel):
-    id: int; company_id: int; property_name: str; property_type: str
-    location: Optional[str] = None; acquisition_date: Optional[str] = None
-    acquisition_cost: float; current_value: float; valuation_date: Optional[str] = None
-    area_sqm: float; occupancy_pct: float; annual_rental_income: float
-    portfolio_id: Optional[int] = None; status: str; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    property_name: str
+    property_type: str
+    location: Optional[str] = None
+    acquisition_date: Optional[str] = None
+    acquisition_cost: float
+    current_value: float
+    valuation_date: Optional[str] = None
+    area_sqm: float
+    occupancy_pct: float
+    annual_rental_income: float
+    portfolio_id: Optional[int] = None
+    status: str
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class RealEstateValuationCreate(BaseModel):
-    valuation_date: str; value: float = 0.0
-    valuation_method: str = "comparable"; appraiser: Optional[str] = None; notes: Optional[str] = None
+    valuation_date: str
+    value: float = 0.0
+    valuation_method: str = "comparable"
+    appraiser: Optional[str] = None
+    notes: Optional[str] = None
 
 class RealEstateValuationUpdate(BaseModel):
-    valuation_date: Optional[str] = None; value: Optional[float] = None
-    valuation_method: Optional[str] = None; appraiser: Optional[str] = None; notes: Optional[str] = None
+    valuation_date: Optional[str] = None
+    value: Optional[float] = None
+    valuation_method: Optional[str] = None
+    appraiser: Optional[str] = None
+    notes: Optional[str] = None
 
 class RealEstateValuationResponse(BaseModel):
-    id: int; company_id: int; asset_id: int; valuation_date: str; value: float
-    valuation_method: str; appraiser: Optional[str] = None; notes: Optional[str] = None
+    id: int
+    company_id: int
+    asset_id: int
+    valuation_date: str
+    value: float
+    valuation_method: str
+    appraiser: Optional[str] = None
+    notes: Optional[str] = None
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 # ═══════════ 基础设施资产 ═══════════
 
 class InfraAssetCreate(BaseModel):
-    project_name: str; asset_type: str = "energy"; location: Optional[str] = None
-    investment_date: Optional[str] = None; investment_amount: float = 0.0
-    current_value: float = 0.0; valuation_date: Optional[str] = None
-    annual_revenue: float = 0.0; concession_expiry: Optional[str] = None
+    project_name: str
+    asset_type: str = "energy"
+    location: Optional[str] = None
+    investment_date: Optional[str] = None
+    investment_amount: float = 0.0
+    current_value: float = 0.0
+    valuation_date: Optional[str] = None
+    annual_revenue: float = 0.0
+    concession_expiry: Optional[str] = None
     portfolio_id: Optional[int] = None
 
 class InfraAssetUpdate(BaseModel):
-    project_name: Optional[str] = None; asset_type: Optional[str] = None
-    location: Optional[str] = None; investment_date: Optional[str] = None
-    investment_amount: Optional[float] = None; current_value: Optional[float] = None
-    valuation_date: Optional[str] = None; annual_revenue: Optional[float] = None
-    concession_expiry: Optional[str] = None; portfolio_id: Optional[int] = None; status: Optional[str] = None
+    project_name: Optional[str] = None
+    asset_type: Optional[str] = None
+    location: Optional[str] = None
+    investment_date: Optional[str] = None
+    investment_amount: Optional[float] = None
+    current_value: Optional[float] = None
+    valuation_date: Optional[str] = None
+    annual_revenue: Optional[float] = None
+    concession_expiry: Optional[str] = None
+    portfolio_id: Optional[int] = None
+    status: Optional[str] = None
 
 class InfraAssetResponse(BaseModel):
-    id: int; company_id: int; project_name: str; asset_type: str
-    location: Optional[str] = None; investment_date: Optional[str] = None
-    investment_amount: float; current_value: float; valuation_date: Optional[str] = None
-    annual_revenue: float; concession_expiry: Optional[str] = None
-    portfolio_id: Optional[int] = None; status: str; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    project_name: str
+    asset_type: str
+    location: Optional[str] = None
+    investment_date: Optional[str] = None
+    investment_amount: float
+    current_value: float
+    valuation_date: Optional[str] = None
+    annual_revenue: float
+    concession_expiry: Optional[str] = None
+    portfolio_id: Optional[int] = None
+    status: str
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 # ═══════════ 私募信贷资产 ═══════════
 
 class PrivateCreditCreate(BaseModel):
-    borrower_name: str; instrument_type: str = "senior_secured"
-    principal_amount: float = 0.0; interest_rate: float = 0.0
-    origination_date: Optional[str] = None; maturity_date: Optional[str] = None
-    outstanding_principal: float = 0.0; accrued_interest: float = 0.0
-    credit_rating: Optional[str] = None; collateral: Optional[str] = None
+    borrower_name: str
+    instrument_type: str = "senior_secured"
+    principal_amount: float = 0.0
+    interest_rate: float = 0.0
+    origination_date: Optional[str] = None
+    maturity_date: Optional[str] = None
+    outstanding_principal: float = 0.0
+    accrued_interest: float = 0.0
+    credit_rating: Optional[str] = None
+    collateral: Optional[str] = None
     counterparty_id: Optional[int] = None
 
 class PrivateCreditUpdate(BaseModel):
-    borrower_name: Optional[str] = None; instrument_type: Optional[str] = None
-    principal_amount: Optional[float] = None; interest_rate: Optional[float] = None
-    origination_date: Optional[str] = None; maturity_date: Optional[str] = None
-    outstanding_principal: Optional[float] = None; accrued_interest: Optional[float] = None
-    credit_rating: Optional[str] = None; collateral: Optional[str] = None
-    counterparty_id: Optional[int] = None; status: Optional[str] = None
+    borrower_name: Optional[str] = None
+    instrument_type: Optional[str] = None
+    principal_amount: Optional[float] = None
+    interest_rate: Optional[float] = None
+    origination_date: Optional[str] = None
+    maturity_date: Optional[str] = None
+    outstanding_principal: Optional[float] = None
+    accrued_interest: Optional[float] = None
+    credit_rating: Optional[str] = None
+    collateral: Optional[str] = None
+    counterparty_id: Optional[int] = None
+    status: Optional[str] = None
 
 class PrivateCreditResponse(BaseModel):
-    id: int; company_id: int; borrower_name: str; instrument_type: str
-    principal_amount: float; interest_rate: float
-    origination_date: Optional[str] = None; maturity_date: Optional[str] = None
-    outstanding_principal: float; accrued_interest: float
-    credit_rating: Optional[str] = None; collateral: Optional[str] = None
-    counterparty_id: Optional[int] = None; status: str; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    borrower_name: str
+    instrument_type: str
+    principal_amount: float
+    interest_rate: float
+    origination_date: Optional[str] = None
+    maturity_date: Optional[str] = None
+    outstanding_principal: float
+    accrued_interest: float
+    credit_rating: Optional[str] = None
+    collateral: Optional[str] = None
+    counterparty_id: Optional[int] = None
+    status: str
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class CreditPaymentCreate(BaseModel):
-    payment_date: str; payment_type: str = "interest"; amount: float = 0.0
+    payment_date: str
+    payment_type: str = "interest"
+    amount: float = 0.0
 
 class CreditPaymentUpdate(BaseModel):
-    payment_date: Optional[str] = None; payment_type: Optional[str] = None; amount: Optional[float] = None
+    payment_date: Optional[str] = None
+    payment_type: Optional[str] = None
+    amount: Optional[float] = None
 
 class CreditPaymentResponse(BaseModel):
-    id: int; company_id: int; credit_id: int; payment_date: str; payment_type: str
-    amount: float; voucher_id: Optional[int] = None; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    credit_id: int
+    payment_date: str
+    payment_type: str
+    amount: float
+    voucher_id: Optional[int] = None
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
@@ -756,7 +878,10 @@ class HrPolicyCreate(BaseModel):
     content: Optional[str] = None
 
 class HrPolicyResponse(BaseModel):
-    id: int; company_id: int; title: str; content: Optional[str] = None
+    id: int
+    company_id: int
+    title: str
+    content: Optional[str] = None
     updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
@@ -767,123 +892,207 @@ class HrPositionCreate(BaseModel):
     sort_order: Optional[int] = None
 
 class HrPositionResponse(BaseModel):
-    id: int; company_id: int; name: str; level: int
-    sort_order: Optional[int] = None; is_active: bool = True
+    id: int
+    company_id: int
+    name: str
+    level: int
+    sort_order: Optional[int] = None
+    is_active: bool = True
     model_config = {"from_attributes": True}
 
 class HrEmployeeCreate(BaseModel):
     company_id: int
-    employee_code: str; name: str
-    gender: Optional[str] = None; birth_date: Optional[str] = None
-    id_card: Optional[str] = None; passport: Optional[str] = None
-    native_place: Optional[str] = None; graduate_school: Optional[str] = None
-    graduate_date: Optional[str] = None; major: Optional[str] = None
-    career_history: Optional[str] = None; expertise: Optional[str] = None
-    mobile: Optional[str] = None; personal_email: Optional[str] = None
-    company_email: Optional[str] = None; emergency_contact: Optional[str] = None
+    employee_code: str
+    name: str
+    gender: Optional[str] = None
+    birth_date: Optional[str] = None
+    id_card: Optional[str] = None
+    passport: Optional[str] = None
+    native_place: Optional[str] = None
+    graduate_school: Optional[str] = None
+    graduate_date: Optional[str] = None
+    major: Optional[str] = None
+    career_history: Optional[str] = None
+    expertise: Optional[str] = None
+    mobile: Optional[str] = None
+    personal_email: Optional[str] = None
+    company_email: Optional[str] = None
+    emergency_contact: Optional[str] = None
     home_address: Optional[str] = None
-    nationality: Optional[str] = None; political_party: Optional[str] = None
-    religion: Optional[str] = None; professional_associations: Optional[str] = None
+    nationality: Optional[str] = None
+    political_party: Optional[str] = None
+    religion: Optional[str] = None
+    professional_associations: Optional[str] = None
     certifications: Optional[str] = None
-    position_id: Optional[int] = None; department_id: Optional[int] = None
-    status: Optional[str] = "在职"; hire_date: Optional[str] = None
+    position_id: Optional[int] = None
+    department_id: Optional[int] = None
+    status: Optional[str] = "在职"
+    hire_date: Optional[str] = None
 
 class HrEmployeeResponse(BaseModel):
-    id: int; company_id: int; employee_code: str; name: str
-    gender: Optional[str] = None; birth_date: Optional[str] = None
-    id_card: Optional[str] = None; passport: Optional[str] = None
-    native_place: Optional[str] = None; graduate_school: Optional[str] = None
-    graduate_date: Optional[str] = None; major: Optional[str] = None
-    career_history: Optional[str] = None; expertise: Optional[str] = None
-    mobile: Optional[str] = None; personal_email: Optional[str] = None
-    company_email: Optional[str] = None; emergency_contact: Optional[str] = None
+    id: int
+    company_id: int
+    employee_code: str
+    name: str
+    gender: Optional[str] = None
+    birth_date: Optional[str] = None
+    id_card: Optional[str] = None
+    passport: Optional[str] = None
+    native_place: Optional[str] = None
+    graduate_school: Optional[str] = None
+    graduate_date: Optional[str] = None
+    major: Optional[str] = None
+    career_history: Optional[str] = None
+    expertise: Optional[str] = None
+    mobile: Optional[str] = None
+    personal_email: Optional[str] = None
+    company_email: Optional[str] = None
+    emergency_contact: Optional[str] = None
     home_address: Optional[str] = None
-    nationality: Optional[str] = None; political_party: Optional[str] = None
-    religion: Optional[str] = None; professional_associations: Optional[str] = None
+    nationality: Optional[str] = None
+    political_party: Optional[str] = None
+    religion: Optional[str] = None
+    professional_associations: Optional[str] = None
     certifications: Optional[str] = None
-    position_id: Optional[int] = None; department_id: Optional[int] = None
-    status: str = "在职"; hire_date: Optional[str] = None
+    position_id: Optional[int] = None
+    department_id: Optional[int] = None
+    status: str = "在职"
+    hire_date: Optional[str] = None
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class HrTrainingCreate(BaseModel):
-    company_id: int; employee_id: int; training_name: str
-    training_date: Optional[str] = None; provider: Optional[str] = None
-    cost: Optional[float] = None; status: Optional[str] = "计划中"
+    company_id: int
+    employee_id: int
+    training_name: str
+    training_date: Optional[str] = None
+    provider: Optional[str] = None
+    cost: Optional[float] = None
+    status: Optional[str] = "计划中"
     notes: Optional[str] = None
 
 class HrTrainingResponse(BaseModel):
-    id: int; company_id: int; employee_id: int; training_name: str
-    training_date: Optional[str] = None; provider: Optional[str] = None
-    cost: Optional[float] = None; status: str = "计划中"
+    id: int
+    company_id: int
+    employee_id: int
+    training_name: str
+    training_date: Optional[str] = None
+    provider: Optional[str] = None
+    cost: Optional[float] = None
+    status: str = "计划中"
     notes: Optional[str] = None
     model_config = {"from_attributes": True}
 
 class HrEvaluationCreate(BaseModel):
-    company_id: int; employee_id: int
-    period: Optional[str] = None; score: Optional[float] = None
-    grade: Optional[str] = None; evaluator: Optional[str] = None
+    company_id: int
+    employee_id: int
+    period: Optional[str] = None
+    score: Optional[float] = None
+    grade: Optional[str] = None
+    evaluator: Optional[str] = None
     notes: Optional[str] = None
 
 class HrEvaluationResponse(BaseModel):
-    id: int; company_id: int; employee_id: int
-    period: Optional[str] = None; score: Optional[float] = None
-    grade: Optional[str] = None; evaluator: Optional[str] = None
+    id: int
+    company_id: int
+    employee_id: int
+    period: Optional[str] = None
+    score: Optional[float] = None
+    grade: Optional[str] = None
+    evaluator: Optional[str] = None
     notes: Optional[str] = None
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class HrSalaryCreate(BaseModel):
-    company_id: int; employee_id: int; year_month: str
-    base_salary: Optional[float] = 0; bonus: Optional[float] = 0
-    allowance: Optional[float] = 0; deduction: Optional[float] = 0
-    net_salary: Optional[float] = 0; notes: Optional[str] = None
+    company_id: int
+    employee_id: int
+    year_month: str
+    base_salary: Optional[float] = 0
+    bonus: Optional[float] = 0
+    allowance: Optional[float] = 0
+    deduction: Optional[float] = 0
+    net_salary: Optional[float] = 0
+    notes: Optional[str] = None
 
 class HrSalaryResponse(BaseModel):
-    id: int; company_id: int; employee_id: int; year_month: str
-    base_salary: float = 0; bonus: float = 0; allowance: float = 0
-    deduction: float = 0; net_salary: float = 0
+    id: int
+    company_id: int
+    employee_id: int
+    year_month: str
+    base_salary: float = 0
+    bonus: float = 0
+    allowance: float = 0
+    deduction: float = 0
+    net_salary: float = 0
     notes: Optional[str] = None
     model_config = {"from_attributes": True}
 
 class HrRewardPunishmentCreate(BaseModel):
-    company_id: int; employee_id: int; type: str
-    date: Optional[str] = None; description: Optional[str] = None
-    amount: Optional[float] = None; approved_by: Optional[str] = None
+    company_id: int
+    employee_id: int
+    type: str
+    date: Optional[str] = None
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    approved_by: Optional[str] = None
 
 class HrRewardPunishmentResponse(BaseModel):
-    id: int; company_id: int; employee_id: int; type: str
-    date: Optional[str] = None; description: Optional[str] = None
-    amount: Optional[float] = None; approved_by: Optional[str] = None
+    id: int
+    company_id: int
+    employee_id: int
+    type: str
+    date: Optional[str] = None
+    description: Optional[str] = None
+    amount: Optional[float] = None
+    approved_by: Optional[str] = None
     model_config = {"from_attributes": True}
 
 class HrOffboardingCreate(BaseModel):
-    company_id: int; employee_id: int
-    apply_date: Optional[str] = None; last_day: Optional[str] = None
-    reason: Optional[str] = None; handover_to: Optional[str] = None
-    status: Optional[str] = "申请"; notes: Optional[str] = None
+    company_id: int
+    employee_id: int
+    apply_date: Optional[str] = None
+    last_day: Optional[str] = None
+    reason: Optional[str] = None
+    handover_to: Optional[str] = None
+    status: Optional[str] = "申请"
+    notes: Optional[str] = None
 
 class HrOffboardingResponse(BaseModel):
-    id: int; company_id: int; employee_id: int
-    apply_date: Optional[str] = None; last_day: Optional[str] = None
-    reason: Optional[str] = None; handover_to: Optional[str] = None
-    status: str = "申请"; notes: Optional[str] = None
+    id: int
+    company_id: int
+    employee_id: int
+    apply_date: Optional[str] = None
+    last_day: Optional[str] = None
+    reason: Optional[str] = None
+    handover_to: Optional[str] = None
+    status: str = "申请"
+    notes: Optional[str] = None
     model_config = {"from_attributes": True}
 
 class HrBudgetCreate(BaseModel):
-    company_id: int; year: int
+    company_id: int
+    year: int
     department_id: Optional[int] = None
-    headcount_planned: Optional[int] = 0; headcount_actual: Optional[int] = 0
-    salary_budget: Optional[float] = 0; training_budget: Optional[float] = 0
-    recruitment_budget: Optional[float] = 0; total_budget: Optional[float] = 0
+    headcount_planned: Optional[int] = 0
+    headcount_actual: Optional[int] = 0
+    salary_budget: Optional[float] = 0
+    training_budget: Optional[float] = 0
+    recruitment_budget: Optional[float] = 0
+    total_budget: Optional[float] = 0
     notes: Optional[str] = None
 
 class HrBudgetResponse(BaseModel):
-    id: int; company_id: int; year: int
+    id: int
+    company_id: int
+    year: int
     department_id: Optional[int] = None
-    headcount_planned: int = 0; headcount_actual: int = 0
-    salary_budget: float = 0; training_budget: float = 0
-    recruitment_budget: float = 0; total_budget: float = 0
+    headcount_planned: int = 0
+    headcount_actual: int = 0
+    salary_budget: float = 0
+    training_budget: float = 0
+    recruitment_budget: float = 0
+    total_budget: float = 0
     notes: Optional[str] = None
     model_config = {"from_attributes": True}
 
@@ -907,18 +1116,29 @@ class FixedAssetCreate(BaseModel):
     notes: Optional[str] = None
 
 class FixedAssetResponse(BaseModel):
-    id: int; company_id: int; asset_code: str; name: str; category: str
+    id: int
+    company_id: int
+    asset_code: str
+    name: str
+    category: str
     acquisition_date: Optional[str] = None
-    original_value: float; residual_value: float; useful_life: int
-    depreciation_method: str; monthly_depreciation: float
-    accumulated_depreciation: float; net_value: float; status: str
-    location: Optional[str] = None; department_id: Optional[int] = None
+    original_value: float
+    residual_value: float
+    useful_life: int
+    depreciation_method: str
+    monthly_depreciation: float
+    accumulated_depreciation: float
+    net_value: float
+    status: str
+    location: Optional[str] = None
+    department_id: Optional[int] = None
     disposal_date: Optional[str] = None
     disposal_proceeds: Optional[float] = None
     disposal_gain_loss: Optional[float] = None
     disposal_reason: Optional[str] = None
     notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class FixedAssetUpdate(BaseModel):
@@ -948,183 +1168,331 @@ class BatchDepreciationRequest(BaseModel):
     asset_ids: Optional[list[int]] = None
 
 class FixedAssetDepreciationCreate(BaseModel):
-    company_id: int; fixed_asset_id: int; period: str
+    company_id: int
+    fixed_asset_id: int
+    period: str
     depreciation_amount: float = 0
 
 class FixedAssetDepreciationResponse(BaseModel):
-    id: int; company_id: int; fixed_asset_id: int; period: str
-    depreciation_amount: float; accumulated_before: float; accumulated_after: float
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    fixed_asset_id: int
+    period: str
+    depreciation_amount: float
+    accumulated_before: float
+    accumulated_after: float
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
 # ═══════════ 应收账款管理 ═══════════
 
 class ReceivableCreate(BaseModel):
-    company_id: int; customer_name: str; invoice_no: str
-    invoice_date: Optional[str] = None; amount: float = 0
-    due_date: Optional[str] = None; notes: Optional[str] = None
+    company_id: int
+    customer_name: str
+    invoice_no: str
+    invoice_date: Optional[str] = None
+    amount: float = 0
+    due_date: Optional[str] = None
+    notes: Optional[str] = None
 
 class ReceivableResponse(BaseModel):
-    id: int; company_id: int; customer_name: str; invoice_no: str
-    invoice_date: Optional[str] = None; amount: float; received_amount: float
-    balance: float; due_date: Optional[str] = None; aging_days: int; status: str
+    id: int
+    company_id: int
+    customer_name: str
+    invoice_no: str
+    invoice_date: Optional[str] = None
+    amount: float
+    received_amount: float
+    balance: float
+    due_date: Optional[str] = None
+    aging_days: int
+    status: str
     notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class ReceivablePaymentCreate(BaseModel):
-    company_id: int; receivable_id: int; payment_date: str
-    amount: float = 0; payment_method: Optional[str] = None
+    company_id: int
+    receivable_id: int
+    payment_date: str
+    amount: float = 0
+    payment_method: Optional[str] = None
     notes: Optional[str] = None
 
 class ReceivablePaymentResponse(BaseModel):
-    id: int; company_id: int; receivable_id: int; payment_date: str
-    amount: float; payment_method: Optional[str] = None
-    notes: Optional[str] = None; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    receivable_id: int
+    payment_date: str
+    amount: float
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
 # ═══════════ 应付账款管理 ═══════════
 
 class PayableCreate(BaseModel):
-    company_id: int; supplier_name: str; invoice_no: str
-    invoice_date: Optional[str] = None; amount: float = 0
-    due_date: Optional[str] = None; notes: Optional[str] = None
+    company_id: int
+    supplier_name: str
+    invoice_no: str
+    invoice_date: Optional[str] = None
+    amount: float = 0
+    due_date: Optional[str] = None
+    notes: Optional[str] = None
 
 class PayableResponse(BaseModel):
-    id: int; company_id: int; supplier_name: str; invoice_no: str
-    invoice_date: Optional[str] = None; amount: float; paid_amount: float
-    balance: float; due_date: Optional[str] = None; aging_days: int; status: str
+    id: int
+    company_id: int
+    supplier_name: str
+    invoice_no: str
+    invoice_date: Optional[str] = None
+    amount: float
+    paid_amount: float
+    balance: float
+    due_date: Optional[str] = None
+    aging_days: int
+    status: str
     notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class PayablePaymentCreate(BaseModel):
-    company_id: int; payable_id: int; payment_date: str
-    amount: float = 0; payment_method: Optional[str] = None
+    company_id: int
+    payable_id: int
+    payment_date: str
+    amount: float = 0
+    payment_method: Optional[str] = None
     notes: Optional[str] = None
 
 class PayablePaymentResponse(BaseModel):
-    id: int; company_id: int; payable_id: int; payment_date: str
-    amount: float; payment_method: Optional[str] = None
-    notes: Optional[str] = None; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    payable_id: int
+    payment_date: str
+    amount: float
+    payment_method: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
 # ═══════════ 进销存管理 ═══════════
 
 class InvPurchaseCreate(BaseModel):
-    company_id: int; order_no: str; supplier_name: str
-    order_date: Optional[str] = None; product_name: str
-    quantity: float = 0; unit: str = "个"; unit_price: float = 0
-    total_amount: float = 0; status: str = "待入库"
+    company_id: int
+    order_no: str
+    supplier_name: str
+    order_date: Optional[str] = None
+    product_name: str
+    quantity: float = 0
+    unit: str = "个"
+    unit_price: float = 0
+    total_amount: float = 0
+    status: str = "待入库"
     notes: Optional[str] = None
 
 class InvPurchaseResponse(BaseModel):
-    id: int; company_id: int; order_no: str; supplier_name: str
-    order_date: Optional[str] = None; product_name: str
-    quantity: float; unit: str; unit_price: float; total_amount: float
-    status: str; notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    order_no: str
+    supplier_name: str
+    order_date: Optional[str] = None
+    product_name: str
+    quantity: float
+    unit: str
+    unit_price: float
+    total_amount: float
+    status: str
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class InvSaleCreate(BaseModel):
-    company_id: int; order_no: str; customer_name: str
-    order_date: Optional[str] = None; product_name: str
-    quantity: float = 0; unit: str = "个"; unit_price: float = 0
-    total_amount: float = 0; cost_amount: float = 0
-    status: str = "待出库"; notes: Optional[str] = None
+    company_id: int
+    order_no: str
+    customer_name: str
+    order_date: Optional[str] = None
+    product_name: str
+    quantity: float = 0
+    unit: str = "个"
+    unit_price: float = 0
+    total_amount: float = 0
+    cost_amount: float = 0
+    status: str = "待出库"
+    notes: Optional[str] = None
 
 class InvSaleResponse(BaseModel):
-    id: int; company_id: int; order_no: str; customer_name: str
-    order_date: Optional[str] = None; product_name: str
-    quantity: float; unit: str; unit_price: float; total_amount: float
-    cost_amount: float; profit: float; status: str
+    id: int
+    company_id: int
+    order_no: str
+    customer_name: str
+    order_date: Optional[str] = None
+    product_name: str
+    quantity: float
+    unit: str
+    unit_price: float
+    total_amount: float
+    cost_amount: float
+    profit: float
+    status: str
     notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class InvStockCreate(BaseModel):
-    company_id: int; product_code: str; product_name: str
-    category: Optional[str] = None; quantity: float = 0
-    unit: str = "个"; unit_cost: float = 0; total_cost: float = 0
-    warehouse: Optional[str] = None; min_stock: float = 0; max_stock: float = 0
+    company_id: int
+    product_code: str
+    product_name: str
+    category: Optional[str] = None
+    quantity: float = 0
+    unit: str = "个"
+    unit_cost: float = 0
+    total_cost: float = 0
+    warehouse: Optional[str] = None
+    min_stock: float = 0
+    max_stock: float = 0
     notes: Optional[str] = None
 
 class InvStockResponse(BaseModel):
-    id: int; company_id: int; product_code: str; product_name: str
-    category: Optional[str] = None; quantity: float; unit: str
-    unit_cost: float; total_cost: float; warehouse: Optional[str] = None
-    min_stock: float; max_stock: float; notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    product_code: str
+    product_name: str
+    category: Optional[str] = None
+    quantity: float
+    unit: str
+    unit_cost: float
+    total_cost: float
+    warehouse: Optional[str] = None
+    min_stock: float
+    max_stock: float
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
 # ═══════════ 进销存主数据 ═══════════
 
 class WarehouseCreate(BaseModel):
-    company_id: int; code: str; name: str
-    manager_code: Optional[str] = None; manager_name: Optional[str] = None
-    address: Optional[str] = None; notes: Optional[str] = None
+    company_id: int
+    code: str
+    name: str
+    manager_code: Optional[str] = None
+    manager_name: Optional[str] = None
+    address: Optional[str] = None
+    notes: Optional[str] = None
 
 class WarehouseResponse(BaseModel):
-    id: int; company_id: int; code: str; name: str
-    manager_code: Optional[str] = None; manager_name: Optional[str] = None
-    address: Optional[str] = None; notes: Optional[str] = None
+    id: int
+    company_id: int
+    code: str
+    name: str
+    manager_code: Optional[str] = None
+    manager_name: Optional[str] = None
+    address: Optional[str] = None
+    notes: Optional[str] = None
     is_active: bool
     model_config = {"from_attributes": True}
 
 class InventoryCreate(BaseModel):
-    company_id: int; code: str; name: str
-    category_code: Optional[str] = None; specs: Optional[str] = None
-    unit: Optional[str] = None; unit_group: Optional[str] = None
+    company_id: int
+    code: str
+    name: str
+    category_code: Optional[str] = None
+    specs: Optional[str] = None
+    unit: Optional[str] = None
+    unit_group: Optional[str] = None
     tax_rate: float = 0.0
 
 class InventoryResponse(BaseModel):
-    id: int; company_id: int; code: str; name: str
-    category_code: Optional[str] = None; specs: Optional[str] = None
-    unit: Optional[str] = None; unit_group: Optional[str] = None
-    tax_rate: float; is_active: bool
+    id: int
+    company_id: int
+    code: str
+    name: str
+    category_code: Optional[str] = None
+    specs: Optional[str] = None
+    unit: Optional[str] = None
+    unit_group: Optional[str] = None
+    tax_rate: float
+    is_active: bool
     model_config = {"from_attributes": True}
 
 class InventoryCategoryCreate(BaseModel):
-    company_id: int; code: str; name: str
-    parent_code: Optional[str] = None; auto_create_project: bool = False
+    company_id: int
+    code: str
+    name: str
+    parent_code: Optional[str] = None
+    auto_create_project: bool = False
 
 class InventoryCategoryResponse(BaseModel):
-    id: int; company_id: int; code: str; name: str
-    parent_code: Optional[str] = None; auto_create_project: bool
+    id: int
+    company_id: int
+    code: str
+    name: str
+    parent_code: Optional[str] = None
+    auto_create_project: bool
     model_config = {"from_attributes": True}
 
 class UnitOfMeasureCreate(BaseModel):
-    company_id: int; group_name: str; unit_name: str
-    is_primary: bool = False; conversion_type: Optional[str] = None
-    conversion_rate: Optional[float] = None; notes: Optional[str] = None
+    company_id: int
+    group_name: str
+    unit_name: str
+    is_primary: bool = False
+    conversion_type: Optional[str] = None
+    conversion_rate: Optional[float] = None
+    notes: Optional[str] = None
 
 class UnitOfMeasureResponse(BaseModel):
-    id: int; company_id: int; group_name: str; unit_name: str
-    is_primary: bool; conversion_type: Optional[str] = None
-    conversion_rate: Optional[float] = None; notes: Optional[str] = None
+    id: int
+    company_id: int
+    group_name: str
+    unit_name: str
+    is_primary: bool
+    conversion_type: Optional[str] = None
+    conversion_rate: Optional[float] = None
+    notes: Optional[str] = None
     model_config = {"from_attributes": True}
 
 
 # ── 行政综合管理系统 Schemas ──
 
 class ApprovalRecordCreate(BaseModel):
-    company_id: int; target_type: str; target_id: int; step: int
-    approver_id: Optional[int] = None; approver_name: Optional[str] = None
-    status: str = "pending"; comment: Optional[str] = None
+    company_id: int
+    target_type: str
+    target_id: int
+    step: int
+    approver_id: Optional[int] = None
+    approver_name: Optional[str] = None
+    status: str = "pending"
+    comment: Optional[str] = None
 
 class ApprovalRecordUpdate(BaseModel):
-    approver_id: Optional[int] = None; approver_name: Optional[str] = None
-    status: Optional[str] = None; comment: Optional[str] = None
+    approver_id: Optional[int] = None
+    approver_name: Optional[str] = None
+    status: Optional[str] = None
+    comment: Optional[str] = None
 
 class ApprovalRecordResponse(BaseModel):
-    id: int; company_id: int; target_type: str; target_id: int; step: int
-    approver_id: Optional[int] = None; approver_name: Optional[str] = None
-    status: str; comment: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    target_type: str
+    target_id: int
+    step: int
+    approver_id: Optional[int] = None
+    approver_name: Optional[str] = None
+    status: str
+    comment: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class SubmitApprovalRequest(BaseModel):
@@ -1137,354 +1505,651 @@ class BypassAction(BaseModel):
     reason: str  # 必填，强制跳过原因
 
 class AdminDocumentCreate(BaseModel):
-    company_id: int; title: str; document_number: str
-    issuing_department: str; recipient_departments: Optional[str] = None
-    priority: str = "普通"; content: Optional[str] = None
-    attachment_path: Optional[str] = None; issuance_date: Optional[str] = None
-    applicant_id: int; applicant_name: str
+    company_id: int
+    title: str
+    document_number: str
+    issuing_department: str
+    recipient_departments: Optional[str] = None
+    priority: str = "普通"
+    content: Optional[str] = None
+    attachment_path: Optional[str] = None
+    issuance_date: Optional[str] = None
+    applicant_id: int
+    applicant_name: str
 
 class AdminDocumentUpdate(BaseModel):
-    title: Optional[str] = None; document_number: Optional[str] = None
-    issuing_department: Optional[str] = None; recipient_departments: Optional[str] = None
-    priority: Optional[str] = None; content: Optional[str] = None
-    attachment_path: Optional[str] = None; issuance_date: Optional[str] = None
+    title: Optional[str] = None
+    document_number: Optional[str] = None
+    issuing_department: Optional[str] = None
+    recipient_departments: Optional[str] = None
+    priority: Optional[str] = None
+    content: Optional[str] = None
+    attachment_path: Optional[str] = None
+    issuance_date: Optional[str] = None
 
 class AdminDocumentResponse(BaseModel):
-    id: int; company_id: int; title: str; document_number: str
-    issuing_department: str; recipient_departments: Optional[str] = None
-    priority: str; content: Optional[str] = None
-    attachment_path: Optional[str] = None; issuance_date: Optional[str] = None
-    applicant_id: int; applicant_name: str; status: str
+    id: int
+    company_id: int
+    title: str
+    document_number: str
+    issuing_department: str
+    recipient_departments: Optional[str] = None
+    priority: str
+    content: Optional[str] = None
+    attachment_path: Optional[str] = None
+    issuance_date: Optional[str] = None
+    applicant_id: int
+    applicant_name: str
+    status: str
     submit_date: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class VehicleSupplierCreate(BaseModel):
-    company_id: int; name: str; contact_person: Optional[str] = None
-    contact_phone: Optional[str] = None; brands_carried: Optional[str] = None
+    company_id: int
+    name: str
+    contact_person: Optional[str] = None
+    contact_phone: Optional[str] = None
+    brands_carried: Optional[str] = None
     notes: Optional[str] = None
 
 class VehicleSupplierUpdate(BaseModel):
-    name: Optional[str] = None; contact_person: Optional[str] = None
-    contact_phone: Optional[str] = None; brands_carried: Optional[str] = None
+    name: Optional[str] = None
+    contact_person: Optional[str] = None
+    contact_phone: Optional[str] = None
+    brands_carried: Optional[str] = None
     notes: Optional[str] = None
 
 class VehicleSupplierResponse(BaseModel):
-    id: int; company_id: int; name: str; contact_person: Optional[str] = None
-    contact_phone: Optional[str] = None; brands_carried: Optional[str] = None
-    notes: Optional[str] = None; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    name: str
+    contact_person: Optional[str] = None
+    contact_phone: Optional[str] = None
+    brands_carried: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class VehiclePurchaseCreate(BaseModel):
-    company_id: int; applicant: str; department: str
-    vehicle_brand: str; vehicle_model: str; configuration: Optional[str] = None
-    estimated_price: float = 0; supplier_name: Optional[str] = None
-    supplier_contact: Optional[str] = None; reason: Optional[str] = None
+    company_id: int
+    applicant: str
+    department: str
+    vehicle_brand: str
+    vehicle_model: str
+    configuration: Optional[str] = None
+    estimated_price: float = 0
+    supplier_name: Optional[str] = None
+    supplier_contact: Optional[str] = None
+    reason: Optional[str] = None
 
 class VehiclePurchaseUpdate(BaseModel):
-    applicant: Optional[str] = None; department: Optional[str] = None
-    vehicle_brand: Optional[str] = None; vehicle_model: Optional[str] = None
-    configuration: Optional[str] = None; estimated_price: Optional[float] = None
-    supplier_name: Optional[str] = None; supplier_contact: Optional[str] = None
+    applicant: Optional[str] = None
+    department: Optional[str] = None
+    vehicle_brand: Optional[str] = None
+    vehicle_model: Optional[str] = None
+    configuration: Optional[str] = None
+    estimated_price: Optional[float] = None
+    supplier_name: Optional[str] = None
+    supplier_contact: Optional[str] = None
     reason: Optional[str] = None
 
 class VehiclePurchaseResponse(BaseModel):
-    id: int; company_id: int; applicant: str; department: str
-    vehicle_brand: str; vehicle_model: str; configuration: Optional[str] = None
-    estimated_price: float; supplier_name: Optional[str] = None
-    supplier_contact: Optional[str] = None; reason: Optional[str] = None
-    status: str; submit_date: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    applicant: str
+    department: str
+    vehicle_brand: str
+    vehicle_model: str
+    configuration: Optional[str] = None
+    estimated_price: float
+    supplier_name: Optional[str] = None
+    supplier_contact: Optional[str] = None
+    reason: Optional[str] = None
+    status: str
+    submit_date: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class VehicleCreate(BaseModel):
-    company_id: int; license_plate: str; engine_number: Optional[str] = None
-    vin: Optional[str] = None; brand: Optional[str] = None; model: Optional[str] = None
-    insurance_provider: Optional[str] = None; insurance_policy_no: Optional[str] = None
-    insurance_expiry: Optional[str] = None; insurance_doc_path: Optional[str] = None
-    purchase_date: Optional[str] = None; purchase_price: float = 0
-    status: str = "使用中"; department: Optional[str] = None; notes: Optional[str] = None
+    company_id: int
+    license_plate: str
+    engine_number: Optional[str] = None
+    vin: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    insurance_provider: Optional[str] = None
+    insurance_policy_no: Optional[str] = None
+    insurance_expiry: Optional[str] = None
+    insurance_doc_path: Optional[str] = None
+    purchase_date: Optional[str] = None
+    purchase_price: float = 0
+    status: str = "使用中"
+    department: Optional[str] = None
+    notes: Optional[str] = None
 
 class VehicleUpdate(BaseModel):
-    license_plate: Optional[str] = None; engine_number: Optional[str] = None
-    vin: Optional[str] = None; brand: Optional[str] = None; model: Optional[str] = None
-    insurance_provider: Optional[str] = None; insurance_policy_no: Optional[str] = None
-    insurance_expiry: Optional[str] = None; insurance_doc_path: Optional[str] = None
-    purchase_date: Optional[str] = None; purchase_price: Optional[float] = None
-    status: Optional[str] = None; department: Optional[str] = None; notes: Optional[str] = None
+    license_plate: Optional[str] = None
+    engine_number: Optional[str] = None
+    vin: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    insurance_provider: Optional[str] = None
+    insurance_policy_no: Optional[str] = None
+    insurance_expiry: Optional[str] = None
+    insurance_doc_path: Optional[str] = None
+    purchase_date: Optional[str] = None
+    purchase_price: Optional[float] = None
+    status: Optional[str] = None
+    department: Optional[str] = None
+    notes: Optional[str] = None
 
 class VehicleResponse(BaseModel):
-    id: int; company_id: int; license_plate: str
-    engine_number: Optional[str] = None; vin: Optional[str] = None
-    brand: Optional[str] = None; model: Optional[str] = None
-    insurance_provider: Optional[str] = None; insurance_policy_no: Optional[str] = None
-    insurance_expiry: Optional[str] = None; insurance_doc_path: Optional[str] = None
-    purchase_date: Optional[str] = None; purchase_price: float
-    status: str; department: Optional[str] = None; notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    license_plate: str
+    engine_number: Optional[str] = None
+    vin: Optional[str] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    insurance_provider: Optional[str] = None
+    insurance_policy_no: Optional[str] = None
+    insurance_expiry: Optional[str] = None
+    insurance_doc_path: Optional[str] = None
+    purchase_date: Optional[str] = None
+    purchase_price: float
+    status: str
+    department: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class VehicleMaintenanceCreate(BaseModel):
-    company_id: int; vehicle_id: int; maintenance_type: str
-    vendor: str; estimated_cost: float = 0; actual_cost: Optional[float] = None
+    company_id: int
+    vehicle_id: int
+    maintenance_type: str
+    vendor: str
+    estimated_cost: float = 0
+    actual_cost: Optional[float] = None
     description: Optional[str] = None
 
 class VehicleMaintenanceUpdate(BaseModel):
-    vehicle_id: Optional[int] = None; maintenance_type: Optional[str] = None
-    vendor: Optional[str] = None; estimated_cost: Optional[float] = None
-    actual_cost: Optional[float] = None; description: Optional[str] = None
+    vehicle_id: Optional[int] = None
+    maintenance_type: Optional[str] = None
+    vendor: Optional[str] = None
+    estimated_cost: Optional[float] = None
+    actual_cost: Optional[float] = None
+    description: Optional[str] = None
 
 class VehicleMaintenanceResponse(BaseModel):
-    id: int; company_id: int; vehicle_id: int; maintenance_type: str
-    vendor: str; estimated_cost: float; actual_cost: Optional[float] = None
-    description: Optional[str] = None; status: str; submit_date: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    vehicle_id: int
+    maintenance_type: str
+    vendor: str
+    estimated_cost: float
+    actual_cost: Optional[float] = None
+    description: Optional[str] = None
+    status: str
+    submit_date: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class InsurancePolicyCreate(BaseModel):
-    company_id: int; policy_type: str; insured_assets: str
-    insurance_company: str; coverage_amount: float = 0; premium: float = 0
-    start_date: str; end_date: str
+    company_id: int
+    policy_type: str
+    insured_assets: str
+    insurance_company: str
+    coverage_amount: float = 0
+    premium: float = 0
+    start_date: str
+    end_date: str
 
 class InsurancePolicyUpdate(BaseModel):
-    policy_type: Optional[str] = None; insured_assets: Optional[str] = None
-    insurance_company: Optional[str] = None; coverage_amount: Optional[float] = None
-    premium: Optional[float] = None; start_date: Optional[str] = None
+    policy_type: Optional[str] = None
+    insured_assets: Optional[str] = None
+    insurance_company: Optional[str] = None
+    coverage_amount: Optional[float] = None
+    premium: Optional[float] = None
+    start_date: Optional[str] = None
     end_date: Optional[str] = None
 
 class InsurancePolicyResponse(BaseModel):
-    id: int; company_id: int; policy_type: str; insured_assets: str
-    insurance_company: str; coverage_amount: float; premium: float
-    start_date: str; end_date: str; status: str; submit_date: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    policy_type: str
+    insured_assets: str
+    insurance_company: str
+    coverage_amount: float
+    premium: float
+    start_date: str
+    end_date: str
+    status: str
+    submit_date: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockCategoryCreate(BaseModel):
-    company_id: int; name: str; code: str
+    company_id: int
+    name: str
+    code: str
 
 class StockCategoryUpdate(BaseModel):
-    name: Optional[str] = None; code: Optional[str] = None; is_active: Optional[bool] = None
+    name: Optional[str] = None
+    code: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class StockCategoryResponse(BaseModel):
-    id: int; company_id: int; name: str; code: str; is_active: bool
+    id: int
+    company_id: int
+    name: str
+    code: str
+    is_active: bool
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockAssetCreate(BaseModel):
-    company_id: int; asset_code: str; name: str
-    category_id: Optional[int] = None; brand: Optional[str] = None
-    model: Optional[str] = None; department: Optional[str] = None
-    custodian: Optional[str] = None; location: Optional[str] = None
-    purchase_date: Optional[str] = None; purchase_price: float = 0
-    status: str = "使用中"; quantity: int = 1; notes: Optional[str] = None
+    company_id: int
+    asset_code: str
+    name: str
+    category_id: Optional[int] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    department: Optional[str] = None
+    custodian: Optional[str] = None
+    location: Optional[str] = None
+    purchase_date: Optional[str] = None
+    purchase_price: float = 0
+    status: str = "使用中"
+    quantity: int = 1
+    notes: Optional[str] = None
 
 class StockAssetUpdate(BaseModel):
-    asset_code: Optional[str] = None; name: Optional[str] = None
-    category_id: Optional[int] = None; brand: Optional[str] = None
-    model: Optional[str] = None; department: Optional[str] = None
-    custodian: Optional[str] = None; location: Optional[str] = None
-    purchase_date: Optional[str] = None; purchase_price: Optional[float] = None
-    status: Optional[str] = None; quantity: Optional[int] = None; notes: Optional[str] = None
+    asset_code: Optional[str] = None
+    name: Optional[str] = None
+    category_id: Optional[int] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    department: Optional[str] = None
+    custodian: Optional[str] = None
+    location: Optional[str] = None
+    purchase_date: Optional[str] = None
+    purchase_price: Optional[float] = None
+    status: Optional[str] = None
+    quantity: Optional[int] = None
+    notes: Optional[str] = None
 
 class StockAssetResponse(BaseModel):
-    id: int; company_id: int; asset_code: str; name: str
-    category_id: Optional[int] = None; brand: Optional[str] = None
-    model: Optional[str] = None; department: Optional[str] = None
-    custodian: Optional[str] = None; location: Optional[str] = None
-    purchase_date: Optional[str] = None; purchase_price: float
-    status: str; quantity: int; notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    asset_code: str
+    name: str
+    category_id: Optional[int] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    department: Optional[str] = None
+    custodian: Optional[str] = None
+    location: Optional[str] = None
+    purchase_date: Optional[str] = None
+    purchase_price: float
+    status: str
+    quantity: int
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockPurchaseCreate(BaseModel):
-    company_id: int; applicant: str; department: str
-    asset_name: str; category: Optional[str] = None; quantity: int = 1
-    estimated_price: float = 0; reason: Optional[str] = None
+    company_id: int
+    applicant: str
+    department: str
+    asset_name: str
+    category: Optional[str] = None
+    quantity: int = 1
+    estimated_price: float = 0
+    reason: Optional[str] = None
 
 class StockPurchaseUpdate(BaseModel):
-    applicant: Optional[str] = None; department: Optional[str] = None
-    asset_name: Optional[str] = None; category: Optional[str] = None
-    quantity: Optional[int] = None; estimated_price: Optional[float] = None
+    applicant: Optional[str] = None
+    department: Optional[str] = None
+    asset_name: Optional[str] = None
+    category: Optional[str] = None
+    quantity: Optional[int] = None
+    estimated_price: Optional[float] = None
     reason: Optional[str] = None
 
 class StockPurchaseResponse(BaseModel):
-    id: int; company_id: int; applicant: str; department: str
-    asset_name: str; category: Optional[str] = None; quantity: int
-    estimated_price: float; reason: Optional[str] = None
-    status: str; submit_date: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    applicant: str
+    department: str
+    asset_name: str
+    category: Optional[str] = None
+    quantity: int
+    estimated_price: float
+    reason: Optional[str] = None
+    status: str
+    submit_date: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockRequisitionCreate(BaseModel):
-    company_id: int; asset_id: Optional[int] = None
-    applicant: str; department: str; quantity: int = 1; reason: Optional[str] = None
+    company_id: int
+    asset_id: Optional[int] = None
+    applicant: str
+    department: str
+    quantity: int = 1
+    reason: Optional[str] = None
 
 class StockRequisitionUpdate(BaseModel):
-    asset_id: Optional[int] = None; applicant: Optional[str] = None
-    department: Optional[str] = None; quantity: Optional[int] = None
+    asset_id: Optional[int] = None
+    applicant: Optional[str] = None
+    department: Optional[str] = None
+    quantity: Optional[int] = None
     reason: Optional[str] = None
 
 class StockRequisitionResponse(BaseModel):
-    id: int; company_id: int; asset_id: Optional[int] = None
-    applicant: str; department: str; quantity: int
-    reason: Optional[str] = None; status: str; submit_date: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    asset_id: Optional[int] = None
+    applicant: str
+    department: str
+    quantity: int
+    reason: Optional[str] = None
+    status: str
+    submit_date: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockInboundCreate(BaseModel):
-    company_id: int; asset_id: Optional[int] = None
-    inbound_type: str = "采购入库"; quantity: int = 1
-    receiver: str; inbound_date: str; notes: Optional[str] = None
+    company_id: int
+    asset_id: Optional[int] = None
+    inbound_type: str = "采购入库"
+    quantity: int = 1
+    receiver: str
+    inbound_date: str
+    notes: Optional[str] = None
 
 class StockInboundUpdate(BaseModel):
-    asset_id: Optional[int] = None; inbound_type: Optional[str] = None
-    quantity: Optional[int] = None; receiver: Optional[str] = None
-    inbound_date: Optional[str] = None; notes: Optional[str] = None
+    asset_id: Optional[int] = None
+    inbound_type: Optional[str] = None
+    quantity: Optional[int] = None
+    receiver: Optional[str] = None
+    inbound_date: Optional[str] = None
+    notes: Optional[str] = None
 
 class StockInboundResponse(BaseModel):
-    id: int; company_id: int; asset_id: Optional[int] = None
-    inbound_type: str; quantity: int; receiver: str; inbound_date: str
-    status: str; notes: Optional[str] = None; submit_date: Optional[str] = None
+    id: int
+    company_id: int
+    asset_id: Optional[int] = None
+    inbound_type: str
+    quantity: int
+    receiver: str
+    inbound_date: str
+    status: str
+    notes: Optional[str] = None
+    submit_date: Optional[str] = None
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockOutboundCreate(BaseModel):
-    company_id: int; asset_id: int; outbound_type: str = "领用"
-    quantity: int = 1; recipient: str; outbound_date: str; notes: Optional[str] = None
+    company_id: int
+    asset_id: int
+    outbound_type: str = "领用"
+    quantity: int = 1
+    recipient: str
+    outbound_date: str
+    notes: Optional[str] = None
 
 class StockOutboundUpdate(BaseModel):
-    asset_id: Optional[int] = None; outbound_type: Optional[str] = None
-    quantity: Optional[int] = None; recipient: Optional[str] = None
-    outbound_date: Optional[str] = None; notes: Optional[str] = None
+    asset_id: Optional[int] = None
+    outbound_type: Optional[str] = None
+    quantity: Optional[int] = None
+    recipient: Optional[str] = None
+    outbound_date: Optional[str] = None
+    notes: Optional[str] = None
 
 class StockOutboundResponse(BaseModel):
-    id: int; company_id: int; asset_id: int; outbound_type: str
-    quantity: int; recipient: str; outbound_date: str
-    status: str; notes: Optional[str] = None; submit_date: Optional[str] = None
+    id: int
+    company_id: int
+    asset_id: int
+    outbound_type: str
+    quantity: int
+    recipient: str
+    outbound_date: str
+    status: str
+    notes: Optional[str] = None
+    submit_date: Optional[str] = None
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockCountCreate(BaseModel):
-    company_id: int; count_date: str; asset_id: int
-    book_quantity: int = 0; actual_quantity: int = 0
-    discrepancy: int = 0; reason: Optional[str] = None; counter: Optional[str] = None
+    company_id: int
+    count_date: str
+    asset_id: int
+    book_quantity: int = 0
+    actual_quantity: int = 0
+    discrepancy: int = 0
+    reason: Optional[str] = None
+    counter: Optional[str] = None
 
 class StockCountUpdate(BaseModel):
-    count_date: Optional[str] = None; asset_id: Optional[int] = None
-    book_quantity: Optional[int] = None; actual_quantity: Optional[int] = None
-    discrepancy: Optional[int] = None; reason: Optional[str] = None
+    count_date: Optional[str] = None
+    asset_id: Optional[int] = None
+    book_quantity: Optional[int] = None
+    actual_quantity: Optional[int] = None
+    discrepancy: Optional[int] = None
+    reason: Optional[str] = None
     counter: Optional[str] = None
 
 class StockCountResponse(BaseModel):
-    id: int; company_id: int; count_date: str; asset_id: int
-    book_quantity: int; actual_quantity: int; discrepancy: int
-    reason: Optional[str] = None; counter: Optional[str] = None
+    id: int
+    company_id: int
+    count_date: str
+    asset_id: int
+    book_quantity: int
+    actual_quantity: int
+    discrepancy: int
+    reason: Optional[str] = None
+    counter: Optional[str] = None
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class GiftCategoryCreate(BaseModel):
-    company_id: int; name: str
+    company_id: int
+    name: str
 
 class GiftCategoryUpdate(BaseModel):
-    name: Optional[str] = None; is_active: Optional[bool] = None
+    name: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class GiftCategoryResponse(BaseModel):
-    id: int; company_id: int; name: str; is_active: bool
+    id: int
+    company_id: int
+    name: str
+    is_active: bool
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockGiftCreate(BaseModel):
-    company_id: int; name: str; category_id: Optional[int] = None
-    unit: str = "个"; current_stock: int = 0; unit_price: float = 0
+    company_id: int
+    name: str
+    category_id: Optional[int] = None
+    unit: str = "个"
+    current_stock: int = 0
+    unit_price: float = 0
 
 class StockGiftUpdate(BaseModel):
-    name: Optional[str] = None; category_id: Optional[int] = None
-    unit: Optional[str] = None; current_stock: Optional[int] = None
+    name: Optional[str] = None
+    category_id: Optional[int] = None
+    unit: Optional[str] = None
+    current_stock: Optional[int] = None
     unit_price: Optional[float] = None
 
 class StockGiftResponse(BaseModel):
-    id: int; company_id: int; name: str; category_id: Optional[int] = None
-    unit: str; current_stock: int; unit_price: float
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    name: str
+    category_id: Optional[int] = None
+    unit: str
+    current_stock: int
+    unit_price: float
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockGiftPurchaseCreate(BaseModel):
-    company_id: int; gift_id: Optional[int] = None
-    applicant: str; department: str; gift_name: str
-    quantity: int = 0; unit_price: float = 0; total_price: float = 0
-    supplier: Optional[str] = None; reason: Optional[str] = None
+    company_id: int
+    gift_id: Optional[int] = None
+    applicant: str
+    department: str
+    gift_name: str
+    quantity: int = 0
+    unit_price: float = 0
+    total_price: float = 0
+    supplier: Optional[str] = None
+    reason: Optional[str] = None
 
 class StockGiftPurchaseUpdate(BaseModel):
-    gift_id: Optional[int] = None; applicant: Optional[str] = None
-    department: Optional[str] = None; gift_name: Optional[str] = None
-    quantity: Optional[int] = None; unit_price: Optional[float] = None
-    total_price: Optional[float] = None; supplier: Optional[str] = None
+    gift_id: Optional[int] = None
+    applicant: Optional[str] = None
+    department: Optional[str] = None
+    gift_name: Optional[str] = None
+    quantity: Optional[int] = None
+    unit_price: Optional[float] = None
+    total_price: Optional[float] = None
+    supplier: Optional[str] = None
     reason: Optional[str] = None
 
 class StockGiftPurchaseResponse(BaseModel):
-    id: int; company_id: int; gift_id: Optional[int] = None
-    applicant: str; department: str; gift_name: str
-    quantity: int; unit_price: float; total_price: float
-    supplier: Optional[str] = None; reason: Optional[str] = None
-    status: str; submit_date: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    gift_id: Optional[int] = None
+    applicant: str
+    department: str
+    gift_name: str
+    quantity: int
+    unit_price: float
+    total_price: float
+    supplier: Optional[str] = None
+    reason: Optional[str] = None
+    status: str
+    submit_date: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockGiftRequisitionCreate(BaseModel):
-    company_id: int; gift_id: Optional[int] = None
-    applicant: str; department: str; quantity: int = 0
-    recipient: Optional[str] = None; recipient_organization: Optional[str] = None
+    company_id: int
+    gift_id: Optional[int] = None
+    applicant: str
+    department: str
+    quantity: int = 0
+    recipient: Optional[str] = None
+    recipient_organization: Optional[str] = None
     reason: Optional[str] = None
 
 class StockGiftRequisitionUpdate(BaseModel):
-    gift_id: Optional[int] = None; applicant: Optional[str] = None
-    department: Optional[str] = None; quantity: Optional[int] = None
-    recipient: Optional[str] = None; recipient_organization: Optional[str] = None
+    gift_id: Optional[int] = None
+    applicant: Optional[str] = None
+    department: Optional[str] = None
+    quantity: Optional[int] = None
+    recipient: Optional[str] = None
+    recipient_organization: Optional[str] = None
     reason: Optional[str] = None
 
 class StockGiftRequisitionResponse(BaseModel):
-    id: int; company_id: int; gift_id: Optional[int] = None
-    applicant: str; department: str; quantity: int
-    recipient: Optional[str] = None; recipient_organization: Optional[str] = None
-    reason: Optional[str] = None; status: str; submit_date: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    gift_id: Optional[int] = None
+    applicant: str
+    department: str
+    quantity: int
+    recipient: Optional[str] = None
+    recipient_organization: Optional[str] = None
+    reason: Optional[str] = None
+    status: str
+    submit_date: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockGiftInboundCreate(BaseModel):
-    company_id: int; gift_id: int; inbound_type: str = "采购"
-    quantity: int = 0; unit_price: float = 0; supplier: Optional[str] = None
-    inbound_date: str; receiver: str; notes: Optional[str] = None
+    company_id: int
+    gift_id: int
+    inbound_type: str = "采购"
+    quantity: int = 0
+    unit_price: float = 0
+    supplier: Optional[str] = None
+    inbound_date: str
+    receiver: str
+    notes: Optional[str] = None
 
 class StockGiftInboundUpdate(BaseModel):
-    gift_id: Optional[int] = None; inbound_type: Optional[str] = None
-    quantity: Optional[int] = None; unit_price: Optional[float] = None
-    supplier: Optional[str] = None; inbound_date: Optional[str] = None
-    receiver: Optional[str] = None; notes: Optional[str] = None
+    gift_id: Optional[int] = None
+    inbound_type: Optional[str] = None
+    quantity: Optional[int] = None
+    unit_price: Optional[float] = None
+    supplier: Optional[str] = None
+    inbound_date: Optional[str] = None
+    receiver: Optional[str] = None
+    notes: Optional[str] = None
 
 class StockGiftInboundResponse(BaseModel):
-    id: int; company_id: int; gift_id: int; inbound_type: str
-    quantity: int; unit_price: float; supplier: Optional[str] = None
-    inbound_date: str; receiver: str; status: str
-    notes: Optional[str] = None; submit_date: Optional[str] = None
+    id: int
+    company_id: int
+    gift_id: int
+    inbound_type: str
+    quantity: int
+    unit_price: float
+    supplier: Optional[str] = None
+    inbound_date: str
+    receiver: str
+    status: str
+    notes: Optional[str] = None
+    submit_date: Optional[str] = None
     created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class StockGiftOutboundCreate(BaseModel):
-    company_id: int; gift_id: int; outbound_type: str = "赠送"
-    quantity: int = 0; recipient: str; recipient_organization: Optional[str] = None
-    outbound_date: str; notes: Optional[str] = None
+    company_id: int
+    gift_id: int
+    outbound_type: str = "赠送"
+    quantity: int = 0
+    recipient: str
+    recipient_organization: Optional[str] = None
+    outbound_date: str
+    notes: Optional[str] = None
 
 class StockGiftOutboundUpdate(BaseModel):
-    gift_id: Optional[int] = None; outbound_type: Optional[str] = None
-    quantity: Optional[int] = None; recipient: Optional[str] = None
-    recipient_organization: Optional[str] = None; outbound_date: Optional[str] = None
+    gift_id: Optional[int] = None
+    outbound_type: Optional[str] = None
+    quantity: Optional[int] = None
+    recipient: Optional[str] = None
+    recipient_organization: Optional[str] = None
+    outbound_date: Optional[str] = None
     notes: Optional[str] = None
 
 class StockGiftOutboundResponse(BaseModel):
-    id: int; company_id: int; gift_id: int; outbound_type: str
-    quantity: int; recipient: str; recipient_organization: Optional[str] = None
-    outbound_date: str; status: str; notes: Optional[str] = None
-    submit_date: Optional[str] = None; created_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    gift_id: int
+    outbound_type: str
+    quantity: int
+    recipient: str
+    recipient_organization: Optional[str] = None
+    outbound_date: str
+    status: str
+    notes: Optional[str] = None
+    submit_date: Optional[str] = None
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
@@ -1517,13 +2182,20 @@ class ServerUpdate(BaseModel):
     description: Optional[str] = None
 
 class ServerResponse(BaseModel):
-    id: int; company_id: int; name: str
-    host: Optional[str] = None; port: Optional[int] = None
-    os: Optional[str] = None; cpu_cores: Optional[int] = None
-    memory_gb: Optional[float] = None; disk_gb: Optional[float] = None
-    location: Optional[str] = None; status: str = "active"
+    id: int
+    company_id: int
+    name: str
+    host: Optional[str] = None
+    port: Optional[int] = None
+    os: Optional[str] = None
+    cpu_cores: Optional[int] = None
+    memory_gb: Optional[float] = None
+    disk_gb: Optional[float] = None
+    location: Optional[str] = None
+    status: str = "active"
     description: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
@@ -1550,13 +2222,21 @@ class ServerServiceUpdate(BaseModel):
     notes: Optional[str] = None
 
 class ServerServiceResponse(BaseModel):
-    id: int; server_id: int; name: str
-    description: Optional[str] = None; service_type: str = "application"
-    status: str = "stopped"; port: Optional[int] = None
-    health_check_url: Optional[str] = None; process_name: Optional[str] = None
-    last_started_at: Optional[datetime] = None; uptime_hours: Optional[float] = None
-    auto_start: bool = False; notes: Optional[str] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    server_id: int
+    name: str
+    description: Optional[str] = None
+    service_type: str = "application"
+    status: str = "stopped"
+    port: Optional[int] = None
+    health_check_url: Optional[str] = None
+    process_name: Optional[str] = None
+    last_started_at: Optional[datetime] = None
+    uptime_hours: Optional[float] = None
+    auto_start: bool = False
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class ServerServiceStatusUpdate(BaseModel):
@@ -1581,13 +2261,18 @@ class KbArticleUpdate(BaseModel):
     status: Optional[str] = None
 
 class KbArticleResponse(BaseModel):
-    id: int; company_id: int; title: str
+    id: int
+    company_id: int
+    title: str
     content_md: Optional[str] = None
     category_id: Optional[int] = None
     category_name: Optional[str] = None
-    tags: Optional[str] = None; author: Optional[str] = None
-    status: str = "draft"; version: int = 1
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    tags: Optional[str] = None
+    author: Optional[str] = None
+    status: str = "draft"
+    version: int = 1
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 
@@ -1603,16 +2288,26 @@ class KbCategoryUpdate(BaseModel):
     sort_order: Optional[int] = None
 
 class KbCategoryResponse(BaseModel):
-    id: int; company_id: int; name: str
-    parent_id: Optional[int] = None; level: int = 1
-    sort_order: int = 0; is_system: bool = False
-    is_active: bool = True; created_by: Optional[int] = None
-    created_at: Optional[datetime] = None; updated_at: Optional[datetime] = None
+    id: int
+    company_id: int
+    name: str
+    parent_id: Optional[int] = None
+    level: int = 1
+    sort_order: int = 0
+    is_system: bool = False
+    is_active: bool = True
+    created_by: Optional[int] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
 
 class KbCategoryTreeNode(BaseModel):
-    id: int; name: str; level: int; is_system: bool = False
-    sort_order: int = 0; article_count: int = 0
+    id: int
+    name: str
+    level: int
+    is_system: bool = False
+    sort_order: int = 0
+    article_count: int = 0
     children: list["KbCategoryTreeNode"] = []
     model_config = {"from_attributes": True}
 

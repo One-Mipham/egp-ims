@@ -136,7 +136,6 @@ def export_data(
         raise HTTPException(status_code=400, detail="未选择有效的导出表")
 
     if format == "json":
-        import json as _json
         result = {}
         for key in selected:
             label, model, cols = EXPORT_TABLES[key]

@@ -2,10 +2,8 @@
 import { ref, onMounted, computed } from 'vue'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import Card from 'primevue/card'
-import Tag from 'primevue/tag'
 import api from '@/api/index'
 
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))

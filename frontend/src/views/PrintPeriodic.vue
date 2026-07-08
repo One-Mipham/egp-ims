@@ -27,7 +27,7 @@ const reportType = computed(() => {
 })
 
 const isPrintView = computed(() => route.path.startsWith('/print'))
-const pageTitle = computed(() => {
+const _pageTitle = computed(() => {
   const t = reportType.value
   const suffix = isPrintView.value ? '打印' : ''
   return t === 'quarterly' ? `季度报表${suffix}` : t === 'yearly' ? `年度报表${suffix}` : `月度报表${suffix}`

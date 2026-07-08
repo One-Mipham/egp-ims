@@ -60,7 +60,7 @@ async function loadRefs() {
     const [deptRes, catRes] = await Promise.all([listDepartments(companyId), getContractCategories()])
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
     categories.value = catRes.data
-  } catch (_) {}
+  } catch (_e) {}
 }
 
 async function load() {

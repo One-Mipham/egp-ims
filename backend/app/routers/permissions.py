@@ -58,8 +58,8 @@ def get_user_permissions(
     current_user: User = Depends(get_current_user),
 ):
     """获取指定用户在指定公司的权限。"""
-    user = _get_user_or_404(db, user_id)
-    company = _get_company_or_404(db, company_id)
+    _get_user_or_404(db, user_id)
+    _get_company_or_404(db, company_id)
 
     perm = db.query(UserPermission).filter_by(user_id=user_id, company_id=company_id).first()
     if perm:

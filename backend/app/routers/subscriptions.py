@@ -32,7 +32,7 @@ class SubscriptionStatusResponse(BaseModel):
 @router.get("/plans")
 def list_plans(db: Session = Depends(get_db)):
     """列出所有可用套餐。"""
-    plans = db.query(SubscriptionPlan).filter(SubscriptionPlan.is_active == True).order_by(SubscriptionPlan.sort_order).all()
+    plans = db.query(SubscriptionPlan).filter(SubscriptionPlan.is_active).order_by(SubscriptionPlan.sort_order).all()
     return [
         {
             "id": p.id, "name": p.name, "slug": p.slug,

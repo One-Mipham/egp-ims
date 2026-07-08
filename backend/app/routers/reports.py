@@ -1,8 +1,7 @@
 """报表中心路由：资产负债表、利润表、现金流量表。"""
 import calendar
-from datetime import datetime, date
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -449,7 +448,7 @@ def _compute_cash_flows(db: Session, company_id: int, start: str, end: str) -> d
     """
     cf_items = db.query(CashFlowItem).filter(
         CashFlowItem.company_id == company_id,
-        CashFlowItem.is_active == True,
+        CashFlowItem.is_active,
     ).all()
 
     if not cf_items:
@@ -533,7 +532,7 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
 
     # Build lookup: row_key → (curr_amount, ytd_amount, prev_amount)
     cf_items = {cfi.code: cfi for cfi in db.query(CashFlowItem).filter(
-        CashFlowItem.company_id == company_id, CashFlowItem.is_active == True
+        CashFlowItem.company_id == company_id, CashFlowItem.is_active
     ).all()}
 
     def _cf_val(row_key: str, period_data: dict) -> float:
@@ -636,13 +635,21 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
         for label, c, y, p, key, flow_type in computed_rows:
             if flow_type == "inflow":
                 cv, yv, pv = c, y, p
-                sec_in_c += cv; sec_in_y += yv; sec_in_p += pv
-                overall_in_c += cv; overall_in_y += yv; overall_in_p += pv
+                sec_in_c += cv
+                sec_in_y += yv
+                sec_in_p += pv
+                overall_in_c += cv
+                overall_in_y += yv
+                overall_in_p += pv
                 result.append((label, round(cv, 2), round(yv, 2), round(pv, 2)))
             elif flow_type == "outflow":
                 cv, yv, pv = c, y, p
-                sec_out_c += cv; sec_out_y += yv; sec_out_p += pv
-                overall_out_c += cv; overall_out_y += yv; overall_out_p += pv
+                sec_out_c += cv
+                sec_out_y += yv
+                sec_out_p += pv
+                overall_out_c += cv
+                overall_out_y += yv
+                overall_out_p += pv
                 result.append((label, round(cv, 2), round(yv, 2), round(pv, 2)))
             elif flow_type == "subtotal":
                 is_inflow_sub = "_in_sub" in key

@@ -5,7 +5,7 @@ import Badge from 'primevue/badge'
 import { getBillingHistory, renewSubscription, cancelSubscription } from '@/api/subscriptions'
 import { useI18n } from '@/i18n'
 
-const { t } = useI18n()
+const { t: _t } = useI18n()
 const subscriptions = ref<any[]>([])
 const payments = ref<any[]>([])
 const loading = ref(false)
@@ -32,7 +32,7 @@ async function load() {
     const res = await getBillingHistory(companyId)
     subscriptions.value = res.data.subscriptions || []
     payments.value = res.data.payments || []
-  } catch (_) {
+  } catch (_e) {
     /* */
   } finally {
     loading.value = false

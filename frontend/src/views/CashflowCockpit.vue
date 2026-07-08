@@ -24,7 +24,7 @@ const data = reactive({
   debtFin: Array(12).fill(null) as (number | null)[], // 债务融资
 })
 
-const manualKeys = [
+const _manualKeys = [
   'openingBalance',
   'salesCollection',
   'investmentDiv',
@@ -42,7 +42,7 @@ const manualKeys = [
   'equityFin',
   'debtFin',
 ] as const
-type ManualKey = (typeof manualKeys)[number]
+type ManualKey = (typeof _manualKeys)[number]
 
 function setValue(key: ManualKey, mi: number, val: string) {
   const n = parseFloat(val)

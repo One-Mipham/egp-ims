@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import (
     User, Company, Account, Voucher, VoucherEntry,
-    AccountingPeriod, Counterparty, Department, Person, Project,
+    Counterparty, Department, Person, Project,
     AutoTransferTemplate, CustomQuery,
 )
 from app.schemas import (
@@ -251,7 +251,7 @@ def get_subject_ledger(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    query = db.query(Account).filter(Account.company_id == company_id, Account.is_active == True)
+    query = db.query(Account).filter(Account.company_id == company_id, Account.is_active)
     if account_code:
         query = query.filter(Account.code.like(f"{account_code}%"))
     if level:
@@ -546,7 +546,7 @@ def _execute_saved_subject(db, company_id, filters):
     start_period = filters.get("start_period", "2024-01")
     end_period = filters.get("end_period", "2026-12")
     include_zero = filters.get("include_zero", False)
-    query = db.query(Account).filter(Account.company_id == company_id, Account.is_active == True)
+    query = db.query(Account).filter(Account.company_id == company_id, Account.is_active)
     if account_code:
         query = query.filter(Account.code.like(f"{account_code}%"))
     if level:
@@ -786,7 +786,7 @@ def get_transaction_detail(
         counterparty_id=counterparty_id, counterparty_name=cp_name,
         beginning_balance=round(beginning_balance, 2), direction=direction,
         entries=entries, total_debit=round(total_debit, 2),
-        total_credit=round(total_credit, 2), ending_balance=round(abs(ending_balance), 2),
+        total_credit=round(total_credit, 2), ending_balance=round(abs(ending), 2),
     )
 
 

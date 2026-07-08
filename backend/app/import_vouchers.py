@@ -362,7 +362,6 @@ def verify_balances(db: Session, company_id: int):
     # 按月汇总
     print()
     print("  按月汇总（收入/管理费/财务费）:")
-    from sqlalchemy import extract
     for month in ["2026-01", "2026-02", "2026-03", "2026-04"]:
         month_prefix = month[:7]
         revenue = db.query(sa_func.sum(VE.credit)).join(Voucher).join(

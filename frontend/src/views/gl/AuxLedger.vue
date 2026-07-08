@@ -124,7 +124,7 @@ async function loadAuxObjects() {
       data = res.data
     }
     auxObjects.value = data
-  } catch (err) {
+  } catch (_e) {
     auxObjects.value = []
   }
 }

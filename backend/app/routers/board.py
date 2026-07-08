@@ -129,7 +129,9 @@ def get_filing(filing_id: int, db: Session = Depends(get_db), user=Depends(get_c
 @router.post("/filings", response_model=BoardFilingResponse)
 def create_filing(data: BoardFilingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     obj = BoardFiling(**data.model_dump(), created_by=user.id)
-    db.add(obj); db.commit(); db.refresh(obj)
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
     return obj
 
 
@@ -140,7 +142,8 @@ def update_filing(filing_id: int, data: BoardFilingUpdate, db: Session = Depends
         raise HTTPException(status_code=404, detail="记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(obj, k, v)
-    db.commit(); db.refresh(obj)
+    db.commit()
+    db.refresh(obj)
     return obj
 
 
@@ -149,7 +152,8 @@ def delete_filing(filing_id: int, db: Session = Depends(get_db), user=Depends(ge
     obj = db.query(BoardFiling).filter(BoardFiling.id == filing_id).first()
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")
-    db.delete(obj); db.commit()
+    db.delete(obj)
+    db.commit()
     return {"ok": True}
 
 
@@ -168,7 +172,8 @@ def upsert_filing(data: BoardFilingCreate, db: Session = Depends(get_db), user=D
     else:
         existing = BoardFiling(**data.model_dump(), created_by=user.id)
         db.add(existing)
-    db.commit(); db.refresh(existing)
+    db.commit()
+    db.refresh(existing)
     return existing
 
 
@@ -184,7 +189,9 @@ def list_shareholders(company_id: int = Query(...), db: Session = Depends(get_db
 @router.post("/shareholders", response_model=BoardShareholderResponse)
 def create_shareholder(data: BoardShareholderCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     obj = BoardShareholder(**data.model_dump())
-    db.add(obj); db.commit(); db.refresh(obj)
+    db.add(obj)
+    db.commit()
+    db.refresh(obj)
     return obj
 
 
@@ -195,7 +202,8 @@ def update_shareholder(shareholder_id: int, data: BoardShareholderUpdate, db: Se
         raise HTTPException(status_code=404, detail="记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
         setattr(obj, k, v)
-    db.commit(); db.refresh(obj)
+    db.commit()
+    db.refresh(obj)
     return obj
 
 
@@ -204,5 +212,6 @@ def delete_shareholder(shareholder_id: int, db: Session = Depends(get_db), user=
     obj = db.query(BoardShareholder).filter(BoardShareholder.id == shareholder_id).first()
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")
-    db.delete(obj); db.commit()
+    db.delete(obj)
+    db.commit()
     return {"ok": True}

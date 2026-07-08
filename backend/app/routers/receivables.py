@@ -216,15 +216,20 @@ def create_payment(data: ReceivablePaymentCreate, db: Session = Depends(get_db),
 def receivables_summary(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     items = db.query(Receivable).filter(Receivable.company_id == company_id, Receivable.balance > 0).all()
     total_ar = sum(i.balance for i in items)
-    today = date.today()
+    date.today()
     buckets = {"current": 0, "1_30": 0, "31_60": 0, "61_90": 0, "over_90": 0}
     for i in items:
         ad = i.aging_days
-        if ad <= 0: buckets["current"] += i.balance
-        elif ad <= 30: buckets["1_30"] += i.balance
-        elif ad <= 60: buckets["31_60"] += i.balance
-        elif ad <= 90: buckets["61_90"] += i.balance
-        else: buckets["over_90"] += i.balance
+        if ad <= 0:
+            buckets["current"] += i.balance
+        elif ad <= 30:
+            buckets["1_30"] += i.balance
+        elif ad <= 60:
+            buckets["31_60"] += i.balance
+        elif ad <= 90:
+            buckets["61_90"] += i.balance
+        else:
+            buckets["over_90"] += i.balance
     return {
         "total_ar": total_ar,
         "invoice_count": len(items),
@@ -240,5 +245,5 @@ def receivables_summary(company_id: int, db: Session = Depends(get_db), user: Us
 def list_counterparties(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return db.query(Counterparty).filter(
         Counterparty.company_id == company_id,
-        Counterparty.is_active == True,
+        Counterparty.is_active,
     ).order_by(Counterparty.code).all()

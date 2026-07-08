@@ -54,7 +54,7 @@ def _auto_carry_forward(db: Session, company_id: int, period: str, user_id: int)
 
     pl_accounts = db.query(Account).filter(
         Account.company_id == company_id,
-        Account.is_active == True,
+        Account.is_active,
         Account.category.in_(["profit_loss", "cost"]),
         Account.code != "4103",
     ).all()
@@ -189,7 +189,7 @@ def close_period(req: ClosePeriodRequest, db: Session = Depends(get_db), user: U
         prev_closed = db.query(AccountingPeriod).filter(
             AccountingPeriod.company_id == req.company_id,
             AccountingPeriod.period == prev,
-            AccountingPeriod.is_closed == True,
+            AccountingPeriod.is_closed,
         ).first()
         if not prev_closed:
             raise HTTPException(
@@ -284,7 +284,7 @@ def unclose_period(company_id: int, period: str, reason: str, db: Session = Depe
     later_periods = db.query(AccountingPeriod).filter(
         AccountingPeriod.company_id == company_id,
         AccountingPeriod.period > period,
-        AccountingPeriod.is_closed == True,
+        AccountingPeriod.is_closed,
     ).all()
     if later_periods:
         later_list = ", ".join(p.period for p in later_periods)
@@ -380,7 +380,7 @@ def get_quarterly_summary(
         for p in db.query(AccountingPeriod).filter(
             AccountingPeriod.company_id == company_id,
             AccountingPeriod.period.like(f"{year}-%"),
-            AccountingPeriod.is_closed == True,
+            AccountingPeriod.is_closed,
         ).all()
     }
 
@@ -494,7 +494,7 @@ def execute_carry_forward(
     # 2. 查询所有损益类和成本类科目（排除本年利润本身）
     pl_accounts = db.query(Account).filter(
         Account.company_id == company_id,
-        Account.is_active == True,
+        Account.is_active,
         Account.category.in_(["profit_loss", "cost"]),
         Account.code != "4103",
     ).all()

@@ -20,7 +20,7 @@ const agingBuckets = computed(() => {
   })
 })
 
-const totalBalance = computed(() => items.value.reduce((s: number, i: any) => s + (i.balance || 0), 0))
+const _totalBalance = computed(() => items.value.reduce((s: number, i: any) => s + (i.balance || 0), 0))
 const totalCount = computed(() => items.value.filter((i: any) => i.balance > 0).length)
 
 async function load() {

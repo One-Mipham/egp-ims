@@ -6,7 +6,7 @@ import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import InputText from 'primevue/inputtext'
 import Card from 'primevue/card'
-import { listPortfolios, getPositionsReport, getIncomeReport } from '@/api'
+import { listPortfolios } from '@/api'
 import api from '@/api/index'
 
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))

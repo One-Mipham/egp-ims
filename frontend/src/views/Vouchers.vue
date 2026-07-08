@@ -234,7 +234,7 @@ function removeEntry(form: any, idx: number) {
   if (form.entries.length > 1) form.entries.splice(idx, 1)
 }
 
-function calcTotals(entries: any[]) {
+function _calcTotals(entries: any[]) {
   const debit = entries.reduce((s, e) => s + (Number(e.debit) || 0), 0)
   const credit = entries.reduce((s, e) => s + (Number(e.credit) || 0), 0)
   return { debit, credit, balanced: Math.abs(debit - credit) < 0.005 && debit > 0 }
@@ -388,7 +388,7 @@ function resetQuery() {
   loadVouchers()
 }
 
-function formatNumber(val: number | null) {
+function _formatNumber(val: number | null) {
   if (val === null || val === undefined) return ''
   return Number(val).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }

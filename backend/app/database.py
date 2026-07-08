@@ -20,7 +20,6 @@ def get_db():
 
 def init_db():
     """创建所有表。"""
-    from app import models
     Base.metadata.create_all(bind=engine)
 
 

@@ -7,7 +7,6 @@ import Column from 'primevue/column'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Dropdown from 'primevue/dropdown'
-import DatePicker from 'primevue/datepicker'
 import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 import Tag from 'primevue/tag'
@@ -15,7 +14,6 @@ import Toolbar from 'primevue/toolbar'
 
 import {
   listExceptionEvents,
-  getExceptionOptions,
   createExceptionEvent,
   updateExceptionEvent,
   deleteExceptionEvent,

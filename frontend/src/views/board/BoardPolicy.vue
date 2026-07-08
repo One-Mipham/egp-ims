@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
-import { type BoardFilingData, listFilings, upsertFiling } from '@/api/board'
+import { listFilings, upsertFiling } from '@/api/board'
 
 interface PolicyTab {
   label: string

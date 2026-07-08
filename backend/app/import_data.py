@@ -1,5 +1,4 @@
 """导入利美融信公司数据：公司、科目（4级）、期初余额、部门。"""
-import sys
 from pathlib import Path
 
 import openpyxl

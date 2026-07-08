@@ -8,7 +8,6 @@ from app.auth import get_current_user
 from app.models import Budget, BudgetItem, User
 from app.schemas import (
     BudgetCreate, BudgetUpdate, BudgetResponse,
-    BudgetItemCreate, BudgetItemResponse,
 )
 
 router = APIRouter()

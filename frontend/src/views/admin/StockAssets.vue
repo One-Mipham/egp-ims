@@ -78,7 +78,7 @@ async function remove(id: number) {
   try {
     await deleteStockAsset(id)
     await load()
-  } catch (e: any) {
+  } catch (_e: any) {
     alert('删除失败')
   }
 }

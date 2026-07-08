@@ -4,14 +4,11 @@ import Button from 'primevue/button'
 import Dropdown from 'primevue/dropdown'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
-import InputNumber from 'primevue/inputnumber'
 import Checkbox from 'primevue/checkbox'
-import Badge from 'primevue/badge'
 import {
   listAccounts,
   createAccount,
   updateAccountName,
-  bulkSetInitialBalance,
   deleteAccount,
   importAuxConfig,
 } from '@/api'
@@ -224,7 +221,7 @@ function toggleSelect(id: number) {
   else selectedIds.value.push(id)
 }
 
-const levelIndent = ['', '  ', '    ', '      ', '        ']
+const _levelIndent = ['', '  ', '    ', '      ', '        ']
 
 onMounted(loadAccounts)
 </script>

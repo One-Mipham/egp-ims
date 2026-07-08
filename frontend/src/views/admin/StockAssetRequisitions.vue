@@ -67,7 +67,7 @@ async function remove(id: number) {
   try {
     await deleteStockRequisition(id)
     await load()
-  } catch (e: any) {
+  } catch (_e: any) {
     alert('删除失败')
   }
 }
@@ -77,7 +77,7 @@ async function doSubmit(id: number) {
   try {
     await submitStockRequisition(id, ids.split(',').map(Number))
     await load()
-  } catch (e: any) {
+  } catch (_e: any) {
     alert('提交失败')
   }
 }

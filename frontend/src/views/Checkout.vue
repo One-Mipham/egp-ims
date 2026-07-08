@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import RadioButton from 'primevue/radiobutton'
-import FileUpload from 'primevue/fileupload'
 import { useI18n } from '@/i18n'
 
 const { t, locale } = useI18n()

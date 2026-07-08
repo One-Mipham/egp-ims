@@ -6,7 +6,7 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.models import (
     User, ExpenseItem, ExpenseReport, ExpenseReportItem,
-    ExpenseLoan, ExpensePolicy, ExpenseAttachment, Department, AuditLog,
+    ExpenseLoan, ExpensePolicy, ExpenseAttachment, AuditLog,
 )
 from app.schemas.expenses import (
     ExpenseItemCreate, ExpenseItemResponse,
@@ -76,7 +76,7 @@ def _build_approval_chain(total_amount: float, user: User, db: Session) -> list[
     })
 
     if total_amount > 2000:
-        fm_users = db.query(User).filter(User.role == "finance_manager", User.is_active == True).all()
+        fm_users = db.query(User).filter(User.role == "finance_manager", User.is_active).all()
         chain.append({
             "step": 2, "role": "finance_manager", "title": "财务经理",
             "user_id": fm_users[0].id if fm_users else None,
@@ -84,7 +84,7 @@ def _build_approval_chain(total_amount: float, user: User, db: Session) -> list[
         })
 
     if total_amount > 10000:
-        fd_users = db.query(User).filter(User.role == "finance_director", User.is_active == True).all()
+        fd_users = db.query(User).filter(User.role == "finance_director", User.is_active).all()
         chain.append({
             "step": len(chain) + 1, "role": "finance_director", "title": "财务总监",
             "user_id": fd_users[0].id if fd_users else None,
@@ -99,7 +99,7 @@ def _build_approval_chain(total_amount: float, user: User, db: Session) -> list[
 @router.get("/items", response_model=list[ExpenseItemResponse])
 def list_expense_items(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     return db.query(ExpenseItem).filter(
-        ExpenseItem.company_id == company_id, ExpenseItem.is_active == True
+        ExpenseItem.company_id == company_id, ExpenseItem.is_active
     ).order_by(ExpenseItem.code).all()
 
 

@@ -30,7 +30,7 @@ function getEnabledModules(): string[] {
   try {
     const raw = localStorage.getItem('enabledModules')
     if (raw) return JSON.parse(raw)
-  } catch (_) {
+  } catch (_e) {
     /* ignore */
   }
   return []
@@ -81,12 +81,12 @@ function isLocked(item: { roles?: string[] }): boolean {
   return !item.roles.includes(props.userRole)
 }
 
-function handleLockedClick(item: { lockedMessage?: string }) {
+function _handleLockedClick(item: { lockedMessage?: string }) {
   emit('locked', item.lockedMessage || '您无权访问此功能')
 }
 
 // Find which top-level item (or child) matches current route
-function isItemActive(item: { to?: string; children?: Array<{ to: string }> }): boolean {
+function _isItemActive(item: { to?: string; children?: Array<{ to: string }> }): boolean {
   if (item.to && route.path === item.to) return true
   if (item.children?.some(c => c.to === route.path)) return true
   return false

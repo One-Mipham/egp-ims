@@ -7,7 +7,6 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Dropdown from 'primevue/dropdown'
-import Textarea from 'primevue/textarea'
 import Tag from 'primevue/tag'
 import api from '@/api/index'
 import { listCounterparties } from '@/api'
@@ -82,7 +81,7 @@ async function load() {
   }
 }
 
-function getCounterpartyName(id: number | null) {
+function _getCounterpartyName(id: number | null) {
   if (!id) return '-'
   const cp = counterparties.value.find(c => c.id === id)
   return cp ? cp.name : `#${id}`

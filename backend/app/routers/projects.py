@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from app.database import get_db
-from app.models import User, Project
+from app.models import Project
 from app.schemas import ProjectResponse
 from app.auth import get_current_user
 
@@ -38,7 +38,7 @@ class ProjectUpdate(BaseModel):
 
 @router.get("/", response_model=list[ProjectResponse])
 def list_projects(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return db.query(Project).filter(Project.company_id == company_id, Project.is_active == True).order_by(Project.code).all()
+    return db.query(Project).filter(Project.company_id == company_id, Project.is_active).order_by(Project.code).all()
 
 
 @router.get("/types")

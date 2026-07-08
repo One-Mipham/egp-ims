@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConfirm } from 'primevue/useconfirm'
 import DataTable from 'primevue/datatable'
@@ -17,7 +17,6 @@ import Toolbar from 'primevue/toolbar'
 
 import {
   listTenderProjects,
-  getTenderOptions,
   createTenderProject,
   updateTenderProject,
   deleteTenderProject,

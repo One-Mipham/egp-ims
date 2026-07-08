@@ -1,11 +1,11 @@
 """往来单位管理路由。"""
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 
 from app.database import get_db
-from app.models import User, Counterparty
+from app.models import Counterparty
 from app.schemas import CounterpartyResponse
 from app.auth import get_current_user
 
@@ -29,7 +29,7 @@ class CounterpartyUpdate(BaseModel):
 
 @router.get("/", response_model=list[CounterpartyResponse])
 def list_counterparties(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return db.query(Counterparty).filter(Counterparty.company_id == company_id, Counterparty.is_active == True).order_by(Counterparty.code).all()
+    return db.query(Counterparty).filter(Counterparty.company_id == company_id, Counterparty.is_active).order_by(Counterparty.code).all()
 
 
 @router.post("/", response_model=CounterpartyResponse)

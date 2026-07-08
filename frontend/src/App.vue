@@ -56,7 +56,7 @@ function initTheme() {
   applyTheme(currentTheme.value)
 }
 
-const ROLE_LABELS: Record<string, string> = {
+const _ROLE_LABELS: Record<string, string> = {
   cashier: '出纳',
   accountant: '会计',
   finance_manager: '财务经理',

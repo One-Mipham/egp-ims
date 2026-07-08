@@ -62,7 +62,7 @@ async function handleRegister() {
     redirecting.value = true
     try {
       await activateTrial(res.data.company_id)
-    } catch (_) {
+    } catch (_e) {
       /* ok */
     }
     // 存储 ¥0.99 验证支付信息，跳转结算页

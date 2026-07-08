@@ -324,7 +324,7 @@ def seed_kb_categories(db: Session, company_id: int = 1):
     """为指定公司创建 L1 + L2 分类（幂等：已存在则跳过）。"""
     from app.models import KbCategory
     existing = db.query(KbCategory).filter(
-        KbCategory.company_id == company_id, KbCategory.is_system == True
+        KbCategory.company_id == company_id, KbCategory.is_system
     ).count()
     if existing > 0:
         return  # 已种子过

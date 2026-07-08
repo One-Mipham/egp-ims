@@ -17,7 +17,6 @@ import Toolbar from 'primevue/toolbar'
 
 import {
   listBidSubmissions,
-  getBidOptions,
   createBidSubmission,
   updateBidSubmission,
   deleteBidSubmission,

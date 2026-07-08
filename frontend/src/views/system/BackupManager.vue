@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import Button from 'primevue/button'
-import InputText from 'primevue/inputtext'
 import api from '@/api'
 import { listBackups, createBackup } from '@/api'
 
@@ -10,7 +9,7 @@ const props = defineProps<{ type: 'monthly' | 'yearly'; title: string }>()
 const backups = ref<any[]>([])
 const loading = ref(false)
 const actionLoading = ref(false)
-const label = ref('')
+const _label = ref('')
 const year = ref(new Date().getFullYear())
 const month = ref(new Date().getMonth() + 1)
 
@@ -41,7 +40,7 @@ async function doBackup() {
   }
 }
 
-function downloadUrl(filename: string) {
+function _downloadUrl(filename: string) {
   const base = (window as any).__API_BASE__ || ''
   const cid = localStorage.getItem('companyId') || '1'
   return `${base}/api/system/backups/${filename}?type=${props.type}&company_id=${cid}`
@@ -80,7 +79,7 @@ async function doDelete(filename: string) {
   }
 }
 
-function dateFromFilename(fn: string) {
+function _dateFromFilename(fn: string) {
   const m = fn.match(/(\d{8})_(\d{6})/)
   if (m) return `${m[1].slice(0, 4)}-${m[1].slice(4, 6)}-${m[1].slice(6, 8)} ${m[2].slice(0, 2)}:${m[2].slice(2, 4)}`
   return fn

@@ -12,11 +12,11 @@ const plans = ref<SubscriptionPlan[]>([])
 const selectedCycle = ref<'monthly' | 'annual'>('annual')
 const loading = ref(false)
 
-function isSubscriptionCycle(plan: SubscriptionPlan): boolean {
+function _isSubscriptionCycle(plan: SubscriptionPlan): boolean {
   return plan.billing_cycle === 'monthly' || plan.billing_cycle === 'semi_annual' || plan.billing_cycle === 'annual'
 }
 
-function isLifetime(plan: SubscriptionPlan): boolean {
+function _isLifetime(plan: SubscriptionPlan): boolean {
   return plan.billing_cycle === 'lifetime'
 }
 
@@ -41,7 +41,7 @@ function formatPrice(price: number) {
 }
 
 function selectPlan(plan: SubscriptionPlan) {
-  const companyId = localStorage.getItem('companyId') || '1'
+  const _companyId = localStorage.getItem('companyId') || '1'
   // For now: store selection and redirect. Checkout will be Phase 3.
   localStorage.setItem(
     'selectedPlan',
