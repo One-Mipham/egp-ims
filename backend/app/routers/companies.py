@@ -16,17 +16,21 @@ router = APIRouter()
 
 @router.get("/", response_model=list[CompanyResponse])
 def list_companies(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """列出所有公司（仅 super_admin）。"""
+    """列出公司（仅 super_admin，按公司隔离）。"""
     if user.role != "super_admin":
         raise HTTPException(status_code=403, detail="仅系统管理员可查看公司列表")
+    if user.company_id is not None:
+        return db.query(Company).filter(Company.id == user.company_id).all()
     return db.query(Company).all()
 
 
 @router.get("/{company_id}", response_model=CompanyResponse)
 def get_company(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    """查看公司信息（仅 super_admin）。"""
+    """查看公司信息（仅 super_admin，同公司隔离）。"""
     if user.role != "super_admin":
         raise HTTPException(status_code=403, detail="仅系统管理员可查看公司详情")
+    if user.company_id is not None and company_id != user.company_id:
+        raise HTTPException(status_code=403, detail="无权查看其他公司的信息")
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="公司不存在")
