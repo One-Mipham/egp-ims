@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Account, VoucherEntry, Voucher, Company
-from app.schemas import AccountCreate, AccountResponse
+from app.schemas import AccountCreate, AccountUpdate, AccountResponse
 from app.auth import get_current_user
 from app.permissions import check_account_level
 
@@ -126,20 +126,20 @@ def create_account(data: AccountCreate, db: Session = Depends(get_db), user=Depe
 
 
 @router.put("/{account_id}", response_model=AccountResponse)
-def update_account(account_id: int, name: str = None, is_active: bool = None, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_account(account_id: int, data: AccountUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """更新科目字段 — 仅更新传入的非空字段。"""
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
         raise HTTPException(status_code=404, detail="科目不存在")
     if account.is_system:
         raise HTTPException(status_code=403, detail="系统科目不可修改")
     company = db.query(Company).filter(Company.id == account.company_id).first()
-    err = check_account_level(user, company, account.level)
+    target_level = data.level if data.level is not None else account.level
+    err = check_account_level(user, company, target_level)
     if err:
         raise HTTPException(status_code=403, detail=err)
-    if name:
-        account.name = name
-    if is_active is not None:
-        account.is_active = is_active
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(account, field, value)
     db.commit()
     db.refresh(account)
     return account

@@ -70,9 +70,12 @@ class Department(Base):
     code = Column(String(10), nullable=False)
     is_active = Column(Boolean, default=True)
     manager = Column(String(100), nullable=True)
+    parent_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=True)
 
     company = relationship("Company", back_populates="departments")
+    parent = relationship("Department", remote_side="Department.id", backref="children")
 
 
 class Project(Base):

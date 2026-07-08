@@ -57,6 +57,8 @@ export const updateCompany = (companyId: number, data: Record<string, any>) => a
 export const listDepartments = (companyId: number) => api.get('/departments/', { params: { company_id: companyId } })
 export const createDepartment = (data: { company_id: number; name: string; code: string; manager?: string }) =>
   api.post('/departments/', data)
+export const updateDepartment = (deptId: number, data: Record<string, any>) =>
+  api.put(`/departments/${deptId}`, data)
 export const deleteDepartment = (deptId: number) => api.delete(`/departments/${deptId}`)
 export const bulkImportDepartments = (companyId: number, rows: any[]) =>
   api.post('/departments/bulk-import', rows, { params: { company_id: companyId } })
@@ -75,8 +77,8 @@ export const createAccount = (data: {
   balance_direction: string
   initial_balance?: number
 }) => api.post('/accounts/', data)
-export const updateAccountName = (accountId: number, name: string) =>
-  api.put(`/accounts/${accountId}`, null, { params: { name } })
+export const updateAccount = (accountId: number, data: Record<string, any>) =>
+  api.put(`/accounts/${accountId}`, data)
 export const deleteAccount = (accountId: number) => api.delete(`/accounts/${accountId}`)
 export const setInitialBalance = (accountId: number, balance: number) =>
   api.patch(`/accounts/${accountId}/initial-balance`, { initial_balance: balance })

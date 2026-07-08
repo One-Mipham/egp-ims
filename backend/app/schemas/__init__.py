@@ -73,6 +73,15 @@ class DepartmentCreate(BaseModel):
     name: str
     code: str
     manager: Optional[str] = None
+    parent_id: Optional[int] = None
+
+
+class DepartmentUpdate(BaseModel):
+    name: Optional[str] = None
+    code: Optional[str] = None
+    manager: Optional[str] = None
+    parent_id: Optional[int] = None
+    is_active: Optional[bool] = None
 
 
 class DepartmentResponse(BaseModel):
@@ -82,8 +91,25 @@ class DepartmentResponse(BaseModel):
     code: str
     is_active: bool
     manager: Optional[str]
+    parent_id: Optional[int] = None
 
     model_config = {"from_attributes": True}
+
+
+class AccountUpdate(BaseModel):
+    """可选的科目更新字段 — 仅传需要修改的字段。"""
+    code: Optional[str] = None
+    name: Optional[str] = None
+    level: Optional[int] = None
+    parent_code: Optional[str] = None
+    category: Optional[str] = None
+    balance_direction: Optional[str] = None
+    initial_balance: Optional[float] = None
+    is_active: Optional[bool] = None
+    aux_dept: Optional[int] = None
+    aux_person: Optional[int] = None
+    aux_counterparty: Optional[int] = None
+    aux_project: Optional[int] = None
 
 
 class AccountCreate(BaseModel):

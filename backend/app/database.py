@@ -45,6 +45,11 @@ def run_migrations():
         "CREATE TABLE IF NOT EXISTS bank_settlements (id INTEGER PRIMARY KEY AUTOINCREMENT, voucher_entry_id INTEGER NOT NULL REFERENCES voucher_entries(id), seq INTEGER NOT NULL, settlement_method VARCHAR(20) NOT NULL, account_name VARCHAR(100), instrument_no VARCHAR(50), instrument_date VARCHAR(10), direction VARCHAR(6) NOT NULL DEFAULT 'debit', amount FLOAT DEFAULT 0)",
         "ALTER TABLE users ADD COLUMN company_id INTEGER REFERENCES companies(id)",
         "CREATE TABLE IF NOT EXISTS voucher_sequences (id INTEGER PRIMARY KEY AUTOINCREMENT, company_id INTEGER NOT NULL REFERENCES companies(id), voucher_type VARCHAR(10) NOT NULL, period VARCHAR(7) NOT NULL, last_seq INTEGER NOT NULL DEFAULT 0, UNIQUE(company_id, voucher_type, period))",
+        # 2026-07-08: 部门层级 + 用户公司归属
+        "ALTER TABLE departments ADD COLUMN parent_id INTEGER REFERENCES departments(id)",
+        "ALTER TABLE departments ADD COLUMN updated_at TIMESTAMP",
+        # 将无公司归属的用户关联到公司 1（青岛利美融信）
+        "UPDATE users SET company_id = 1 WHERE company_id IS NULL",
     ]
     for sql in migrations:
         try:

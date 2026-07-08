@@ -8,7 +8,7 @@ import Checkbox from 'primevue/checkbox'
 import {
   listAccounts,
   createAccount,
-  updateAccountName,
+  updateAccount,
   deleteAccount,
   importAuxConfig,
 } from '@/api'
@@ -146,9 +146,52 @@ function doCopy(a: any) {
   showAddDialog.value = true
 }
 
-function doAuxSetup() {
+// ── 辅助核算设置 ──
+const selectedAuxAccountId = ref<number | null>(null)
+const auxForm = ref({ dept: false, person: false, customer: false, supplier: false, project: false })
+
+function doAuxSetup(a?: any) {
+  if (a) {
+    selectedAuxAccountId.value = a.id
+    auxForm.value = {
+      dept: !!a.aux_dept,
+      person: !!a.aux_person,
+      customer: !!a.aux_counterparty,
+      supplier: false,
+      project: !!a.aux_project,
+    }
+  } else {
+    // Toolbar button: pick first account (legacy behavior)
+    if (!accounts.value.length) { alert('暂无科目'); return }
+    const first = accounts.value[0]
+    selectedAuxAccountId.value = first.id
+    auxForm.value = {
+      dept: !!first.aux_dept,
+      person: !!first.aux_person,
+      customer: !!first.aux_counterparty,
+      supplier: false,
+      project: !!first.aux_project,
+    }
+  }
   showAuxDialog.value = true
 }
+
+async function saveAuxSettings() {
+  if (!selectedAuxAccountId.value) return
+  try {
+    await updateAccount(selectedAuxAccountId.value, {
+      aux_dept: auxForm.value.dept ? 1 : 0,
+      aux_person: auxForm.value.person ? 1 : 0,
+      aux_counterparty: (auxForm.value.customer || auxForm.value.supplier) ? 1 : 0,
+      aux_project: auxForm.value.project ? 1 : 0,
+    })
+    showAuxDialog.value = false
+    await loadAccounts()
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '保存失败')
+  }
+}
+
 function doSearch() {
   showSearchDialog.value = true
 }
@@ -202,7 +245,15 @@ async function handleAdd() {
 
 async function handleEdit() {
   try {
-    await updateAccountName(editTarget.value.id, editAccount.value.name)
+    const data: Record<string, any> = {}
+    if (editAccount.value.name !== editTarget.value.name) data.name = editAccount.value.name
+    if (editAccount.value.code !== editTarget.value.code && !editTarget.value.is_system) data.code = editAccount.value.code
+    if (editAccount.value.level !== editTarget.value.level) data.level = editAccount.value.level
+    if (editAccount.value.category !== editTarget.value.category) data.category = editAccount.value.category
+    if (editAccount.value.balance_direction !== editTarget.value.balance_direction) data.balance_direction = editAccount.value.balance_direction
+    if (editAccount.value.parent_code !== (editTarget.value.parent_code || '')) data.parent_code = editAccount.value.parent_code || undefined
+    if (Object.keys(data).length === 0) { showEditDialog.value = false; return }
+    await updateAccount(editTarget.value.id, data)
     showEditDialog.value = false
     await loadAccounts()
   } catch (e: any) {
@@ -286,7 +337,8 @@ onMounted(loadAccounts)
         :disabled="!editTarget"
       />
       <span class="border-r border-stone-200 mx-1" />
-      <Button label="辅助核算设置" icon="pi pi-cog" text size="small" @click="doAuxSetup" />
+      <Button label="辅助核算设置" icon="pi pi-cog" text size="small"
+        @click="doAuxSetup(editTarget || undefined)" />
       <Button label="查找" icon="pi pi-search" text size="small" @click="doSearch" />
       <Button label="栏目" icon="pi pi-table" text size="small" />
       <span class="border-r border-stone-200 mx-1" />
@@ -372,6 +424,16 @@ onMounted(loadAccounts)
         </div>
         <div class="flex gap-4">
           <div class="flex-1">
+            <label class="block text-xs text-zinc-500 mb-1">科目级次</label>
+            <Dropdown
+              v-model="newAccount.level"
+              :options="LEVEL_OPTIONS.filter(o => o.value > 0)"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+            />
+          </div>
+          <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">科目类型</label>
             <Dropdown
               v-model="newAccount.category"
@@ -381,6 +443,8 @@ onMounted(loadAccounts)
               class="w-full"
             />
           </div>
+        </div>
+        <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">余额方向</label>
             <Dropdown
@@ -394,10 +458,10 @@ onMounted(loadAccounts)
               class="w-full"
             />
           </div>
-        </div>
-        <div>
-          <label class="block text-xs text-zinc-500 mb-1">父科目编码（可选）</label>
-          <InputText v-model="newAccount.parent_code" class="w-full" placeholder="如：1002" />
+          <div class="flex-1">
+            <label class="block text-xs text-zinc-500 mb-1">父科目编码（可选）</label>
+            <InputText v-model="newAccount.parent_code" class="w-full" placeholder="如：1002" />
+          </div>
         </div>
       </div>
       <template #footer>
@@ -412,23 +476,40 @@ onMounted(loadAccounts)
         <div class="flex gap-4">
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">科目编码</label>
-            <InputText v-model="editAccount.code" class="w-full" disabled />
+            <InputText v-model="editAccount.code" class="w-full" :disabled="editTarget?.is_system" />
           </div>
           <div class="flex-1">
             <label class="block text-xs text-zinc-500 mb-1">科目名称</label>
             <InputText v-model="editAccount.name" class="w-full" />
           </div>
         </div>
+        <div class="flex gap-4">
+          <div class="flex-1">
+            <label class="block text-xs text-zinc-500 mb-1">科目级次</label>
+            <Dropdown
+              v-model="editAccount.level"
+              :options="LEVEL_OPTIONS.filter(o => o.value > 0)"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+              :disabled="editTarget?.is_system"
+            />
+          </div>
+          <div class="flex-1">
+            <label class="block text-xs text-zinc-500 mb-1">科目类型</label>
+            <Dropdown
+              v-model="editAccount.category"
+              :options="CATEGORY_OPTIONS"
+              optionLabel="label"
+              optionValue="value"
+              class="w-full"
+              :disabled="editTarget?.is_system"
+            />
+          </div>
+        </div>
         <div>
-          <label class="block text-xs text-zinc-500 mb-1">科目类型</label>
-          <Dropdown
-            v-model="editAccount.category"
-            :options="CATEGORY_OPTIONS"
-            optionLabel="label"
-            optionValue="value"
-            class="w-full"
-            disabled
-          />
+          <label class="block text-xs text-zinc-500 mb-1">父科目编码（可选）</label>
+          <InputText v-model="editAccount.parent_code" class="w-full" placeholder="如：1002" />
         </div>
       </div>
       <template #footer>
@@ -460,18 +541,30 @@ onMounted(loadAccounts)
     <Dialog v-model:visible="showAuxDialog" header="辅助核算设置" :style="{ width: '500px' }" :modal="true">
       <div class="flex flex-col gap-4 py-4">
         <p class="text-sm text-zinc-500">选择启用的辅助核算项目：</p>
-        <div
-          v-for="item in ['部门核算', '人员核算', '客户核算', '供应商核算', '项目核算']"
-          :key="item"
-          class="flex items-center gap-2"
-        >
-          <Checkbox :inputId="item" />
-          <label :for="item" class="text-sm text-zinc-600">{{ item }}</label>
+        <div class="flex items-center gap-2">
+          <Checkbox inputId="aux_dept" v-model="auxForm.dept" />
+          <label for="aux_dept" class="text-sm text-zinc-600 cursor-pointer">部门核算</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <Checkbox inputId="aux_person" v-model="auxForm.person" />
+          <label for="aux_person" class="text-sm text-zinc-600 cursor-pointer">人员核算</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <Checkbox inputId="aux_customer" v-model="auxForm.customer" />
+          <label for="aux_customer" class="text-sm text-zinc-600 cursor-pointer">客户核算</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <Checkbox inputId="aux_supplier" v-model="auxForm.supplier" />
+          <label for="aux_supplier" class="text-sm text-zinc-600 cursor-pointer">供应商核算</label>
+        </div>
+        <div class="flex items-center gap-2">
+          <Checkbox inputId="aux_project" v-model="auxForm.project" />
+          <label for="aux_project" class="text-sm text-zinc-600 cursor-pointer">项目核算</label>
         </div>
       </div>
       <template #footer>
         <Button label="取消" severity="secondary" @click="showAuxDialog = false" />
-        <Button label="保存设置" icon="pi pi-check" @click="showAuxDialog = false" />
+        <Button label="保存设置" icon="pi pi-check" @click="saveAuxSettings" />
       </template>
     </Dialog>
   </div>

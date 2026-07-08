@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 
 from fastapi import Depends
 
-from app.database import engine, Base, SessionLocal
+from app.database import engine, Base, SessionLocal, run_migrations
 from app.routers import auth, users, companies, departments, accounts, vouchers, templates, periods, reports, audit, prints, permissions, cockpit, counterparties, persons, projects, investments, init_data, hr, fixed_assets, receivables, payables, inventory_trade, admin, servers, kb, expenses, contracts, bids, budget, board, taxes, gl, subscriptions, cashflow_items, system, audit_reports, todo, access_control
 from app.auth import verify_company_isolation
 from app.permissions import require_module
@@ -14,6 +14,7 @@ from app.middleware import rate_limit_middleware, security_headers_middleware
 from app.seed import seed_account_mappings, seed_subscription_plans
 
 Base.metadata.create_all(bind=engine)
+run_migrations()
 
 try:
     seed_account_mappings()

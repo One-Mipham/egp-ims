@@ -6,15 +6,19 @@ import Button from 'primevue/button'
 import Tag from 'primevue/tag'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
-import { listDepartments, createDepartment, deleteDepartment, bulkImportDepartments } from '@/api'
+import Dropdown from 'primevue/dropdown'
+import { listDepartments, createDepartment, updateDepartment, deleteDepartment, bulkImportDepartments } from '@/api'
 
 const departments = ref<any[]>([])
 const loading = ref(false)
 const showAddDialog = ref(false)
+const showEditDialog = ref(false)
 const showImportDialog = ref(false)
 const importText = ref('')
 const importResult = ref('')
-const newDept = ref({ code: '', name: '', manager: '' })
+const editTarget = ref<any>(null)
+const newDept = ref({ code: '', name: '', manager: '', parent_id: null as number | null })
+const editDept = ref({ code: '', name: '', manager: '', parent_id: null as number | null })
 const companyId = computed(() => parseInt(localStorage.getItem('companyId') || '1'))
 
 async function load() {
@@ -27,15 +31,94 @@ async function load() {
   }
 }
 
+// ── Parent options (exclude self when editing) ──
+function parentOptions(excludeId?: number) {
+  return departments.value
+    .filter(d => d.id !== excludeId)
+    .map(d => ({ label: `${d.code} ${d.name}`, value: d.id }))
+}
+
+function getLevel(dept: any): number {
+  if (!dept.parent_id) return 1
+  const seen = new Set<number>()
+  let level = 1
+  let current = dept
+  while (current.parent_id && !seen.has(current.id)) {
+    seen.add(current.id)
+    level++
+    current = departments.value.find(d => d.id === current.parent_id)
+    if (!current) break
+  }
+  return level
+}
+
+// Sort departments: parent first, then children
+const sortedDepartments = computed(() => {
+  const depts = [...departments.value]
+  // Build parent map
+  const byParent = new Map<number | null, any[]>()
+  for (const d of depts) {
+    const pid = d.parent_id || null
+    if (!byParent.has(pid)) byParent.set(pid, [])
+    byParent.get(pid)!.push(d)
+  }
+  // Flatten recursively
+  const result: any[] = []
+  function walk(pid: number | null) {
+    const children = byParent.get(pid) || []
+    children.sort((a, b) => a.code.localeCompare(b.code))
+    for (const c of children) {
+      result.push(c)
+      walk(c.id)
+    }
+  }
+  walk(null)
+  return result
+})
+
 async function handleAdd() {
   if (!newDept.value.code || !newDept.value.name) return
   try {
-    await createDepartment({ company_id: companyId.value, ...newDept.value })
+    await createDepartment({
+      company_id: companyId.value,
+      code: newDept.value.code,
+      name: newDept.value.name,
+      manager: newDept.value.manager || undefined,
+      parent_id: newDept.value.parent_id || undefined,
+    })
     showAddDialog.value = false
-    newDept.value = { code: '', name: '', manager: '' }
+    newDept.value = { code: '', name: '', manager: '', parent_id: null }
     await load()
   } catch (e: any) {
     alert(e.response?.data?.detail || '添加失败')
+  }
+}
+
+function doEdit(dept: any) {
+  editTarget.value = dept
+  editDept.value = {
+    code: dept.code,
+    name: dept.name,
+    manager: dept.manager || '',
+    parent_id: dept.parent_id || null,
+  }
+  showEditDialog.value = true
+}
+
+async function handleEdit() {
+  if (!editTarget.value) return
+  try {
+    const data: Record<string, any> = {}
+    if (editDept.value.name !== editTarget.value.name) data.name = editDept.value.name
+    if (editDept.value.code !== editTarget.value.code) data.code = editDept.value.code
+    if (editDept.value.manager !== (editTarget.value.manager || '')) data.manager = editDept.value.manager || null
+    if (editDept.value.parent_id !== (editTarget.value.parent_id || null)) data.parent_id = editDept.value.parent_id || null
+    if (Object.keys(data).length === 0) { showEditDialog.value = false; return }
+    await updateDepartment(editTarget.value.id, data)
+    showEditDialog.value = false
+    await load()
+  } catch (e: any) {
+    alert(e.response?.data?.detail || '修改失败')
   }
 }
 
@@ -100,32 +183,36 @@ onMounted(load)
         <Button label="新增部门" icon="pi pi-plus" @click="showAddDialog = true" />
       </div>
     </div>
-    <div class="bg-white rounded-sm border border-stone-200 overflow-x-auto max-w-fit min-w-full">
-      <DataTable :value="departments" :loading="loading" stripedRows class="shadow-sm" tableStyle="min-width: auto">
-        <Column field="code" header="部门编码" sortable style="width: 100px" />
-        <Column field="name" header="部门名称" sortable style="width: 160px" />
-        <Column field="manager" header="负责人" style="width: 100px" />
-        <Column header="状态" style="width: 70px">
+
+    <div class="bg-white rounded-sm shadow-sm">
+      <DataTable :value="sortedDepartments" :loading="loading" stripedRows class="text-sm" size="small">
+        <Column field="code" header="编码" class="font-mono text-xs" />
+        <Column header="部门名称">
+          <template #body="{ data }">
+            <span :style="{ paddingLeft: `${(getLevel(data) - 1) * 20}px` }">
+              {{ data.name }}
+            </span>
+          </template>
+        </Column>
+        <Column field="manager" header="负责人" />
+        <Column header="状态">
           <template #body="{ data }">
             <Tag :value="data.is_active ? '启用' : '停用'" :severity="data.is_active ? 'success' : 'danger'" />
           </template>
         </Column>
-        <Column header="操作" style="width: 80px">
+        <Column header="操作" class="w-32">
           <template #body="{ data }">
-            <Button
-              v-if="data.is_active"
-              label="停用"
-              text
-              severity="danger"
-              size="small"
-              @click="handleDelete(data.id)"
-            />
+            <div class="flex gap-1">
+              <Button label="编辑" icon="pi pi-pencil" text size="small" @click="doEdit(data)" />
+              <Button label="停用" icon="pi pi-ban" text size="small" severity="danger" @click="handleDelete(data.id)" />
+            </div>
           </template>
         </Column>
       </DataTable>
     </div>
 
-    <Dialog v-model:visible="showAddDialog" header="新增部门" :style="{ width: '400px' }">
+    <!-- Add dialog -->
+    <Dialog v-model:visible="showAddDialog" header="新增部门" :style="{ width: '450px' }">
       <div class="flex flex-col gap-4 py-4">
         <div>
           <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">部门编码</label>
@@ -139,10 +226,54 @@ onMounted(load)
           <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">负责人</label>
           <InputText v-model="newDept.manager" class="w-full" />
         </div>
-        <Button label="保存" icon="pi pi-check" @click="handleAdd" />
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">上级部门（可选）</label>
+          <Dropdown
+            v-model="newDept.parent_id"
+            :options="parentOptions()"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+            placeholder="无（一级部门）"
+            :showClear="true"
+          />
+        </div>
+        <Button label="保存" icon="pi pi-check" @click="handleAdd" :disabled="!newDept.code || !newDept.name" />
       </div>
     </Dialog>
 
+    <!-- Edit dialog -->
+    <Dialog v-model:visible="showEditDialog" header="修改部门" :style="{ width: '450px' }">
+      <div class="flex flex-col gap-4 py-4">
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">部门编码</label>
+          <InputText v-model="editDept.code" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">部门名称</label>
+          <InputText v-model="editDept.name" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">负责人</label>
+          <InputText v-model="editDept.manager" class="w-full" />
+        </div>
+        <div>
+          <label class="block text-xs text-zinc-500 mb-1 tracking-wider uppercase">上级部门（可选）</label>
+          <Dropdown
+            v-model="editDept.parent_id"
+            :options="parentOptions(editTarget?.id)"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+            placeholder="无（一级部门）"
+            :showClear="true"
+          />
+        </div>
+        <Button label="保存" icon="pi pi-check" @click="handleEdit" />
+      </div>
+    </Dialog>
+
+    <!-- Import dialog -->
     <Dialog v-model:visible="showImportDialog" header="导入部门" :style="{ width: '600px' }">
       <div class="flex flex-col gap-4 py-4">
         <div class="text-xs text-zinc-500">
