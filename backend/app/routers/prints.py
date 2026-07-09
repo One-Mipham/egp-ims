@@ -102,19 +102,38 @@ def print_subject_balance(
         Account.is_active,
     ).order_by(Account.code).all()
 
+    # 构建父科目集合，用于判断是否汇总叶子后代
+    parent_codes = {a.parent_code for a in accts if a.parent_code}
+
     rows = []
     for a in accts:
-        beginning = _calc_ending(a, db, company_id, period[:4] + "-01-01")
-        # 本期发生
-        d, c = _occurrence(a, db, company_id, period + "-01", end_date)
-        ending = _calc_ending(a, db, company_id, end_date)
+        if a.code in parent_codes:
+            # 父科目：汇总其下所有叶子后代
+            children = [c for c in accts
+                        if c.code.startswith(a.code) and c.code not in parent_codes]
+            if not children:
+                children = [a]
+            beginning, d, c_sum, ending = 0.0, 0.0, 0.0, 0.0
+            for child in children:
+                beginning += _calc_ending(child, db, company_id, period[:4] + "-01-01")
+                dc, cc = _occurrence(child, db, company_id, period + "-01", end_date)
+                d += dc
+                c_sum += cc
+                ending += _calc_ending(child, db, company_id, end_date)
+            beginning, d, c_sum, ending = round(beginning, 2), round(d, 2), round(c_sum, 2), round(ending, 2)
+        else:
+            # 叶子科目：使用自身余额（行为不变）
+            beginning = _calc_ending(a, db, company_id, period[:4] + "-01-01")
+            d, c_sum = _occurrence(a, db, company_id, period + "-01", end_date)
+            ending = _calc_ending(a, db, company_id, end_date)
+            beginning, d, c_sum, ending = round(beginning, 2), round(d, 2), round(c_sum, 2), round(ending, 2)
         rows.append({
             "code": a.code,
             "name": a.name,
-            "beginning": round(beginning, 2),
-            "debit": round(d, 2),
-            "credit": round(c, 2),
-            "ending": round(ending, 2),
+            "beginning": beginning,
+            "debit": d,
+            "credit": c_sum,
+            "ending": ending,
         })
 
     return {"period": period, "rows": rows}
@@ -131,6 +150,12 @@ def print_general_ledger(
 ):
     _get_company(db, company_id)
     end_date = _period_end_date(period)
+
+    # 加载全部科目，构建叶子查找
+    all_accts = {a.code: a for a in db.query(Account).filter(
+        Account.company_id == company_id, Account.is_active).all()}
+    parent_codes = {a.parent_code for a in all_accts.values() if a.parent_code}
+
     # 只取一级科目
     accts = db.query(Account).filter(
         Account.company_id == company_id,
@@ -140,15 +165,24 @@ def print_general_ledger(
 
     rows = []
     for a in accts:
-        beginning = _calc_ending(a, db, company_id, period[:4] + "-01-01")
-        d, c = _occurrence(a, db, company_id, period + "-01", end_date)
-        ending = _calc_ending(a, db, company_id, end_date)
+        # 找到以该一级科目编码开头的所有叶子科目（自身不是父级）
+        children = [c for c in all_accts.values()
+                    if c.code.startswith(a.code) and c.code not in parent_codes]
+        if not children and a.code not in parent_codes:
+            children = [a]
+        beginning, d, c_sum, ending = 0.0, 0.0, 0.0, 0.0
+        for child in children:
+            beginning += _calc_ending(child, db, company_id, period[:4] + "-01-01")
+            dc, cc = _occurrence(child, db, company_id, period + "-01", end_date)
+            d += dc
+            c_sum += cc
+            ending += _calc_ending(child, db, company_id, end_date)
         rows.append({
             "code": a.code,
             "name": a.name,
             "beginning": round(beginning, 2),
             "debit": round(d, 2),
-            "credit": round(c, 2),
+            "credit": round(c_sum, 2),
             "ending": round(ending, 2),
         })
 

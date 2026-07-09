@@ -312,13 +312,11 @@ def income_statement(company_id: int, period: str, db: Session = Depends(get_db)
         codes = [c.strip() for c in code_str.split(",") if c.strip()]
         total = 0.0
         for code in codes:
-            # Get leaf accounts; also always include the exact code as fallback
+            # Aggregate only leaf accounts (those without children) to avoid double-counting
             matching = [a for a in accts.values() if a.code.startswith(code)]
             leaf_children = [a for a in matching if a.code not in _parent_codes]
-            if not leaf_children and code in accts:
+            if not leaf_children and code in accts and code not in _parent_codes:
                 leaf_children = [accts[code]]
-            if code in accts and accts[code] not in leaf_children:
-                leaf_children.append(accts[code])
             for a in leaf_children:
                 # For P&L accounts, exclude closing entries to get actual occurrence
                 exclude_xfer = (a.category == "profit_loss")
