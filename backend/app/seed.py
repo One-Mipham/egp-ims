@@ -1,7 +1,7 @@
 """初始化国标一级科目数据。"""
 
 from sqlalchemy.orm import Session
-from app.models import Account, Company, CashFlowItem
+from app.models import Account, Company, CashFlowItem, VoucherEntry
 
 # 企业会计准则一级科目完整列表
 LEVEL1_ACCOUNTS = [
@@ -29,8 +29,8 @@ LEVEL1_ACCOUNTS = [
     ("1701", "无形资产", "asset", "debit"),
     ("1702", "累计摊销", "asset", "credit"),
     ("1711", "商誉", "asset", "debit"),
-    ("1715", "长期待摊费用", "asset", "debit"),
-    ("1801", "递延所得税资产", "asset", "debit"),
+    ("1801", "长期待摊费用", "asset", "debit"),
+    ("1811", "递延所得税资产", "asset", "debit"),
     ("1821", "合同履约成本", "asset", "debit"),
     ("1822", "合同取得成本", "asset", "debit"),
     ("1901", "待处理财产损溢", "asset", "debit"),
@@ -48,7 +48,7 @@ LEVEL1_ACCOUNTS = [
     ("2501", "长期借款", "liability", "credit"),
     ("2701", "长期应付款", "liability", "credit"),
     ("2801", "预计负债", "liability", "credit"),
-    ("2802", "递延所得税负债", "liability", "credit"),
+    ("2901", "递延所得税负债", "liability", "credit"),
     # 权益类
     ("4001", "实收资本", "equity", "credit"),
     ("4002", "资本公积", "equity", "credit"),
@@ -721,7 +721,7 @@ def seed_cashflow_items(db: Session, company_id: int):
             "购建固定资产、无形资产和其他长期资产所支付的现金",
             "inv_build",
             "outflow",
-            "1601,1604,1701,1715",
+            "1601,1604,1701,1801",
             "1001,1002",
         ),
         (
@@ -778,6 +778,78 @@ def seed_cashflow_items(db: Session, company_id: int):
     if added:
         db.commit()
         print(f"  ✓ Seeded {added} cash flow items for company {company_id}")
+
+
+# ── 历史数据修复：将旧的非标准科目代码迁移到国标 ──
+
+CODE_MIGRATIONS = [
+    # (旧代码, 新代码, 科目名称)
+    ("1715", "1801", "长期待摊费用"),
+    ("1801", "1811", "递延所得税资产"),
+    ("2802", "2901", "递延所得税负债"),
+]
+
+
+def migrate_account_codes(db: Session, company_id: int, dry_run: bool = True):
+    """将旧种子数据中的非标准科目代码迁移至国标标准代码。
+
+    Args:
+        db: 数据库会话
+        company_id: 公司 ID
+        dry_run: True 时仅打印变更，不实际写入
+
+    Returns:
+        list[dict]: 每项变更的详情
+    """
+    changes = []
+    for old_code, new_code, name in CODE_MIGRATIONS:
+        acct = (
+            db.query(Account)
+            .filter(Account.company_id == company_id, Account.code == old_code)
+            .first()
+        )
+        if not acct:
+            continue
+        # 检查新代码是否已被占用
+        conflict = (
+            db.query(Account)
+            .filter(Account.company_id == company_id, Account.code == new_code)
+            .first()
+        )
+        entry_count = (
+            db.query(VoucherEntry)
+            .filter(VoucherEntry.account_code == old_code)
+            .count()
+        )
+
+        change = {
+            "old_code": old_code,
+            "new_code": new_code,
+            "name": name,
+            "account_found": True,
+            "conflict": conflict is not None,
+            "voucher_entries": entry_count,
+        }
+
+        if not dry_run:
+            if conflict:
+                change["skipped"] = True
+                change["reason"] = f"新代码 {new_code} 已被占用"
+            else:
+                acct.code = new_code
+                # 同步更新所有凭证分录
+                db.query(VoucherEntry).filter(
+                    VoucherEntry.account_code == old_code
+                ).update({VoucherEntry.account_code: new_code}, synchronize_session=False)
+                change["migrated"] = True
+
+        changes.append(change)
+
+    if not dry_run and any(c.get("migrated") for c in changes):
+        db.commit()
+        print(f"  ✓ 已迁移 {sum(1 for c in changes if c.get('migrated'))} 个科目的代码")
+
+    return changes
 
 
 if __name__ == "__main__":

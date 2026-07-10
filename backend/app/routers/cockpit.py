@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth import get_current_user
 from app.models import User, Voucher, VoucherEntry, Account, CashflowPlan, CashflowPlanItem
+from app.routers.reports import _get_leaf_descendants
 
 router = APIRouter()
 
@@ -50,8 +51,7 @@ def _calc_account_ending(code: str, db: Session, company_id: int, end_date: str)
 
 
 def _sum_by_prefix(prefix: str, db: Session, company_id: int, end_date: str) -> float:
-    """汇总所有以 prefix 开头的叶子科目余额。"""
-    total = 0.0
+    """汇总所有以 prefix 开头的科目余额，使用 recursive parent_code 层级遍历。"""
     accounts = (
         db.query(Account)
         .filter(
@@ -62,18 +62,25 @@ def _sum_by_prefix(prefix: str, db: Session, company_id: int, end_date: str) -> 
     )
     if not accounts:
         return 0.0
-    # 排除有子科目的父科目（叶子科目 = 它的code不是任何科目的parent_code）
-    parent_codes = {a.parent_code for a in accounts if a.parent_code}
-    for a in accounts:
-        if a.code in parent_codes:
-            continue
-        total += _calc_account_ending(a.code, db, company_id, end_date)
+    accts_by_code = {a.code: a for a in accounts}
+
+    # 找出该 prefix 下的顶级科目（parent_code 不在本次结果集中）
+    codes_in_set = set(accts_by_code.keys())
+    top_level = [a for a in accounts if a.parent_code not in codes_in_set]
+
+    total = 0.0
+    seen = set()
+    for a in top_level:
+        leaves = _get_leaf_descendants(a.code, accts_by_code)
+        for leaf in leaves:
+            if leaf.code not in seen:
+                seen.add(leaf.code)
+                total += _calc_account_ending(leaf.code, db, company_id, end_date)
     return round(total, 2)
 
 
 def _sum_occurrence_by_prefix(prefix: str, db: Session, company_id: int, start: str, end: str) -> float:
-    """汇总以 prefix 开头的叶子科目在期间内的净发生额。"""
-    total = 0.0
+    """汇总以 prefix 开头的科目在期间内的净发生额，使用 recursive parent_code 层级遍历。"""
     accounts = (
         db.query(Account)
         .filter(
@@ -82,28 +89,40 @@ def _sum_occurrence_by_prefix(prefix: str, db: Session, company_id: int, start: 
         )
         .all()
     )
-    parent_codes = {a.parent_code for a in accounts if a.parent_code}
-    for a in accounts:
-        if a.code in parent_codes:
-            continue
-        q = (
-            db.query(VoucherEntry)
-            .join(Voucher)
-            .filter(
-                Voucher.company_id == company_id,
-                VoucherEntry.account_code == a.code,
-                Voucher.status.in_(["posted", "closed"]),
-                Voucher.date >= start,
-                Voucher.date <= end,
+    if not accounts:
+        return 0.0
+    accts_by_code = {a.code: a for a in accounts}
+
+    # 找出该 prefix 下的顶级科目
+    codes_in_set = set(accts_by_code.keys())
+    top_level = [a for a in accounts if a.parent_code not in codes_in_set]
+
+    total = 0.0
+    seen = set()
+    for a in top_level:
+        leaves = _get_leaf_descendants(a.code, accts_by_code)
+        for leaf in leaves:
+            if leaf.code in seen:
+                continue
+            seen.add(leaf.code)
+            q = (
+                db.query(VoucherEntry)
+                .join(Voucher)
+                .filter(
+                    Voucher.company_id == company_id,
+                    VoucherEntry.account_code == leaf.code,
+                    Voucher.status.in_(["posted", "closed"]),
+                    Voucher.date >= start,
+                    Voucher.date <= end,
+                )
             )
-        )
-        entries = q.all()
-        debit = sum(e.debit for e in entries)
-        credit = sum(e.credit for e in entries)
-        if a.balance_direction == "debit":
-            total += debit - credit
-        else:
-            total += credit - debit
+            entries = q.all()
+            debit = sum(e.debit for e in entries)
+            credit = sum(e.credit for e in entries)
+            if leaf.balance_direction == "debit":
+                total += debit - credit
+            else:
+                total += credit - debit
     return round(total, 2)
 
 

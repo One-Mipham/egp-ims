@@ -350,6 +350,78 @@ def reverse_voucher(
     return voucher
 
 
+@router.post("/{voucher_id}/unpost", response_model=VoucherResponse)
+def unpost_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """取消记账：将已记账凭证回退到审核通过/草稿状态。"""
+    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    if not voucher:
+        raise HTTPException(status_code=404, detail="凭证不存在")
+    if voucher.status != "posted":
+        raise HTTPException(status_code=400, detail="只能取消已记账凭证")
+
+    _check_period_open(db, voucher.company_id, voucher.date)
+
+    company = _get_company(db, voucher.company_id)
+    err = check_voucher_reverse(user, company)
+    if err:
+        raise HTTPException(status_code=403, detail=err)
+
+    # 回到审批前状态（若跳过审批则为草稿）
+    new_status = "draft" if voucher.approved_by is None else "approved"
+    voucher.status = new_status
+    voucher.posted_by = None
+    voucher.posted_at = None
+
+    db.add(
+        AuditLog(
+            company_id=voucher.company_id,
+            user_id=user.id,
+            action="unpost_voucher",
+            target_type="voucher",
+            target_id=voucher_id,
+            reason="取消记账",
+        )
+    )
+    db.commit()
+    db.refresh(voucher)
+    return voucher
+
+
+@router.post("/{voucher_id}/unapprove", response_model=VoucherResponse)
+def unapprove_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """取消审核：将已审核凭证回退到草稿状态。"""
+    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    if not voucher:
+        raise HTTPException(status_code=404, detail="凭证不存在")
+    if voucher.status != "approved":
+        raise HTTPException(status_code=400, detail="只能取消已审核凭证")
+
+    _check_period_open(db, voucher.company_id, voucher.date)
+
+    company = _get_company(db, voucher.company_id)
+    err = check_voucher_approve(user, company, voucher.creator_id)
+    if err:
+        raise HTTPException(status_code=403, detail=err)
+
+    voucher.status = "draft"
+    voucher.approved_by = None
+    voucher.approved_at = None
+
+    db.add(
+        AuditLog(
+            company_id=voucher.company_id,
+            user_id=user.id,
+            action="unapprove_voucher",
+            target_type="voucher",
+            target_id=voucher_id,
+            reason="取消审核",
+        )
+    )
+    db.commit()
+    db.refresh(voucher)
+    return voucher
+
+
 # ── 历史凭证批量导入 ──
 
 

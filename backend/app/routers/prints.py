@@ -17,6 +17,8 @@ from app.routers.reports import (
     _prev_year_end,
     _calc_ending,
     _occurrence,
+    _get_leaf_descendants,
+    CODE_ALIASES,
     BS_ROWS,
     IS_ROWS,
     _compute_cash_flows,
@@ -123,29 +125,22 @@ def print_subject_balance(
     )
 
     # 构建父科目集合，用于判断是否汇总叶子后代
-    parent_codes = {a.parent_code for a in accts if a.parent_code}
+    accts_by_code = {a.code: a for a in accts}
 
     rows = []
     for a in accts:
-        if a.code in parent_codes:
-            # 父科目：汇总其下所有叶子后代
-            children = [c for c in accts if c.code.startswith(a.code) and c.code not in parent_codes]
-            if not children:
-                children = [a]
-            beginning, d, c_sum, ending = 0.0, 0.0, 0.0, 0.0
-            for child in children:
-                beginning += _calc_ending(child, db, company_id, period[:4] + "-01-01")
-                dc, cc = _occurrence(child, db, company_id, period + "-01", end_date)
-                d += dc
-                c_sum += cc
-                ending += _calc_ending(child, db, company_id, end_date)
-            beginning, d, c_sum, ending = round(beginning, 2), round(d, 2), round(c_sum, 2), round(ending, 2)
-        else:
-            # 叶子科目：使用自身余额（行为不变）
-            beginning = _calc_ending(a, db, company_id, period[:4] + "-01-01")
-            d, c_sum = _occurrence(a, db, company_id, period + "-01", end_date)
-            ending = _calc_ending(a, db, company_id, end_date)
-            beginning, d, c_sum, ending = round(beginning, 2), round(d, 2), round(c_sum, 2), round(ending, 2)
+        # 使用 recursive parent_code 层级递归获取所有叶子后代
+        leaves = _get_leaf_descendants(a.code, accts_by_code)
+        if not leaves:
+            leaves = [a]
+        beginning, d, c_sum, ending = 0.0, 0.0, 0.0, 0.0
+        for leaf in leaves:
+            beginning += _calc_ending(leaf, db, company_id, period[:4] + "-01-01")
+            dc, cc = _occurrence(leaf, db, company_id, period + "-01", end_date)
+            d += dc
+            c_sum += cc
+            ending += _calc_ending(leaf, db, company_id, end_date)
+        beginning, d, c_sum, ending = round(beginning, 2), round(d, 2), round(c_sum, 2), round(ending, 2)
         rows.append(
             {
                 "code": a.code,
@@ -173,9 +168,8 @@ def print_general_ledger(
     _get_company(db, company_id)
     end_date = _period_end_date(period)
 
-    # 加载全部科目，构建叶子查找
+    # 加载全部科目
     all_accts = {a.code: a for a in db.query(Account).filter(Account.company_id == company_id, Account.is_active).all()}
-    parent_codes = {a.parent_code for a in all_accts.values() if a.parent_code}
 
     # 只取一级科目
     accts = (
@@ -191,17 +185,17 @@ def print_general_ledger(
 
     rows = []
     for a in accts:
-        # 找到以该一级科目编码开头的所有叶子科目（自身不是父级）
-        children = [c for c in all_accts.values() if c.code.startswith(a.code) and c.code not in parent_codes]
-        if not children and a.code not in parent_codes:
-            children = [a]
+        # 使用 recursive parent_code 层级递归获取所有叶子后代
+        leaves = _get_leaf_descendants(a.code, all_accts)
+        if not leaves:
+            leaves = [a]
         beginning, d, c_sum, ending = 0.0, 0.0, 0.0, 0.0
-        for child in children:
-            beginning += _calc_ending(child, db, company_id, period[:4] + "-01-01")
-            dc, cc = _occurrence(child, db, company_id, period + "-01", end_date)
+        for leaf in leaves:
+            beginning += _calc_ending(leaf, db, company_id, period[:4] + "-01-01")
+            dc, cc = _occurrence(leaf, db, company_id, period + "-01", end_date)
             d += dc
             c_sum += cc
-            ending += _calc_ending(child, db, company_id, end_date)
+            ending += _calc_ending(leaf, db, company_id, end_date)
         rows.append(
             {
                 "code": a.code,
@@ -337,10 +331,6 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
     curr_start, prev_curr_start = _period_range(period, rtype)
 
     accts = {a.code: a for a in db.query(Account).filter(Account.company_id == company_id).all()}
-    parent_codes = set()
-    for a in accts.values():
-        if a.parent_code:
-            parent_codes.add(a.parent_code)
 
     if report == "balance":
 
@@ -358,10 +348,21 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             total = 0.0
             target_date = ref_date if ref_date is not None else end_date
             for code in codes:
-                children = [a for a in accts.values() if a.code.startswith(code) and a.code not in parent_codes]
-                if not children and code in accts and code not in parent_codes:
-                    children = [accts[code]]
-                for a in children:
+                # 使用 recursive parent_code 层级递归汇聚叶子后代
+                leaves = _get_leaf_descendants(code, accts)
+                # 向后兼容：匹配别名科目（历史种子数据的非标准代码）
+                alias_info = CODE_ALIASES.get(code)
+                if alias_info:
+                    alias_codes, mode = alias_info
+                    for alias in alias_codes:
+                        alias_leaves = _get_leaf_descendants(alias, accts)
+                        if mode == "replace" and alias_leaves:
+                            leaves = alias_leaves
+                        else:
+                            for la in alias_leaves:
+                                if la not in leaves:
+                                    leaves.append(la)
+                for a in leaves:
                     total += _calc_ending(a, db, company_id, target_date)
             return round(total, 2)
 
@@ -442,10 +443,9 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             codes = [c.strip() for c in code_str.split(",") if c.strip()]
             total = 0.0
             for code in codes:
-                children = [a for a in accts.values() if a.code.startswith(code) and a.code not in parent_codes]
-                if not children and code in accts and code not in parent_codes:
-                    children = [accts[code]]
-                for a in children:
+                # 使用 recursive parent_code 层级递归汇聚叶子后代
+                leaves = _get_leaf_descendants(code, accts)
+                for a in leaves:
                     exclude_xfer = a.category == "profit_loss"
                     d, c = _occurrence(a, db, company_id, start, end, exclude_transfer=exclude_xfer)
                     if a.category == "profit_loss":

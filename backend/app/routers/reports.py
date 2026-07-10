@@ -1,6 +1,7 @@
 """报表中心路由：资产负债表、利润表、现金流量表。"""
 
 import calendar
+import logging
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -8,6 +9,8 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Voucher, VoucherEntry, Account, CashFlowItem
 from app.auth import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -33,6 +36,40 @@ def _prev_year_period(period: str) -> str:
 def _prev_year_end(period: str) -> str:
     """Return Dec 31 of the year before the given period."""
     return f"{int(period[:4]) - 1}-12-31"
+
+
+# ──────────────── 科目聚合辅助 ────────────────
+
+
+def _get_leaf_descendants(code: str, accts_by_code: dict) -> list:
+    """递归获取某个科目代码下的所有叶子后代科目（使用 parent_code 层级关系）。
+
+    若科目有子科目：递归收集所有叶子后代，同时包含父科目自身
+    （以捕获直接记在父科目上的凭证分录）。"""
+    direct_children = [a for a in accts_by_code.values() if a.parent_code == code]
+    if not direct_children:
+        # 叶子科目：返回自身
+        if code in accts_by_code:
+            return [accts_by_code[code]]
+        # 代码可能匹配多个以该代码为前缀的科目（历史数据），遍历全量
+        return [a for a in accts_by_code.values() if a.code == code]
+    # 父科目：递归收集所有叶子后代 + 包含父科目自身
+    leaves = []
+    if code in accts_by_code:
+        leaves.append(accts_by_code[code])
+    for child in direct_children:
+        leaves.extend(_get_leaf_descendants(child.code, accts_by_code))
+    return leaves
+
+
+# 向后兼容：历史种子数据使用非标准科目代码的映射
+# mode="replace" → 别名替换主代码（主代码在旧种子中是不同类型的科目）
+# mode="append"  → 别名补充主代码（两者是同一类型，都应计入此行）
+CODE_ALIASES = {
+    "1801": (["1715"], "replace"),   # 长期待摊费用：标准1801，旧种子1715（旧种子中1801=递延所得税）
+    "1811": (["1801"], "append"),    # 递延所得税资产：标准1811，旧种子1801，两者都是递延所得税
+    "2901": (["2802"], "append"),    # 递延所得税负债：标准2901，旧种子2802
+}
 
 
 # ──────────────── 余额计算 ────────────────
@@ -122,7 +159,7 @@ BS_ROWS = [
     ("生产性生物资产", "left", "1621"),
     ("油气资产", "left", "1631"),
     ("无形资产", "left", "1701"),
-    ("开发支出", "left", "1702"),
+    ("开发支出", "left", ""),  # 无标准一级科目；企业按需设子科目
     ("商誉", "left", "1711"),
     ("长期待摊费用", "left", "1801"),
     ("递延所得税资产", "left", "1811"),
@@ -172,12 +209,6 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
     # build account lookup
     accts = {a.code: a for a in db.query(Account).filter(Account.company_id == company_id).all()}
 
-    # Find leaf accounts (those without children) to avoid double-counting
-    parent_codes = set()
-    for a in accts.values():
-        if a.parent_code:
-            parent_codes.add(a.parent_code)
-
     def _calc(code_str: str, ref_date: str | None = None):
         if not code_str or code_str in (
             "CURRENT_TOTAL",
@@ -193,11 +224,23 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
         total = 0.0
         target_date = ref_date or end_date
         for code in codes:
-            # Balance sheet: use only leaf accounts (initial_balance already aggregated to parents)
-            children = [a for a in accts.values() if a.code.startswith(code) and a.code not in parent_codes]
-            if not children and code in accts:
-                children = [accts[code]]
-            for a in children:
+            # 使用 recursive parent_code 层级递归，汇聚所有叶子后代
+            leaves = _get_leaf_descendants(code, accts)
+            # 向后兼容：匹配别名科目（历史种子数据的非标准代码）
+            alias_info = CODE_ALIASES.get(code)
+            if alias_info:
+                alias_codes, mode = alias_info
+                for alias in alias_codes:
+                    alias_leaves = _get_leaf_descendants(alias, accts)
+                    if mode == "replace" and alias_leaves:
+                        # 替换模式：主代码在旧种子中实际是其他科目，用别名替代
+                        leaves = alias_leaves
+                    else:
+                        # 补充模式：别名和主代码是同一类科目，合并两者
+                        for la in alias_leaves:
+                            if la not in leaves:
+                                leaves.append(la)
+            for a in leaves:
                 total += _calc_ending(a, db, company_id, target_date)
         return round(total, 2)
 
@@ -247,6 +290,10 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
         le = right_items[30][key]
         d = round(asset - le, 2)
         if abs(d) > 0.005:
+            if abs(d) > 10.0:
+                logger.warning(
+                    "资产负债表 %s 端不平衡 %.2f 元，吸入未分配利润——可能存在科目代码不匹配或聚合错误", key, d
+                )
             for item in right_items:
                 if item["name"] == "未分配利润":
                     item[key] = round(item[key] + d, 2)
@@ -322,24 +369,15 @@ def income_statement(
 
     accts = {a.code: a for a in db.query(Account).filter(Account.company_id == company_id).all()}
 
-    # Find leaf accounts to avoid double-counting
-    _parent_codes = set()
-    for a in accts.values():
-        if a.parent_code:
-            _parent_codes.add(a.parent_code)
-
     def _calc(code_str: str, start: str, end: str) -> float:
         if not code_str:
             return 0.0
         codes = [c.strip() for c in code_str.split(",") if c.strip()]
         total = 0.0
         for code in codes:
-            # Aggregate only leaf accounts (those without children) to avoid double-counting
-            matching = [a for a in accts.values() if a.code.startswith(code)]
-            leaf_children = [a for a in matching if a.code not in _parent_codes]
-            if not leaf_children and code in accts and code not in _parent_codes:
-                leaf_children = [accts[code]]
-            for a in leaf_children:
+            # 使用 recursive parent_code 层级递归，汇聚所有叶子后代
+            leaves = _get_leaf_descendants(code, accts)
+            for a in leaves:
                 # For P&L accounts, exclude closing entries to get actual occurrence
                 exclude_xfer = a.category == "profit_loss"
                 d, c = _occurrence(a, db, company_id, start, end, exclude_transfer=exclude_xfer)
