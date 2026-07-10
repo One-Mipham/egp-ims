@@ -17,7 +17,7 @@ import MultiSelect from 'primevue/multiselect'
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 
 const items = ref<any[]>([])
 const loading = ref(false)

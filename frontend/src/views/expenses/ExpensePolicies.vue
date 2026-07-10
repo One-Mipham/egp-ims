@@ -21,7 +21,7 @@ import {
 
 const { t } = useI18n()
 const toast = useToast()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 const policies = ref<any[]>([])
 const expenseItems = ref<any[]>([])
 const dialog = ref(false)

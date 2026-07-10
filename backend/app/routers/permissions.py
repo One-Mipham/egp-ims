@@ -1,4 +1,5 @@
 """权限管理路由：获取/设置用户细粒度权限。"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -21,18 +22,24 @@ def list_all_permissions(
     result = []
     for u in users:
         perm = db.query(UserPermission).filter_by(user_id=u.id, company_id=company_id).first()
-        perm_data = UserPermissionSchema.model_validate(perm) if perm else UserPermissionSchema(user_id=u.id, company_id=company_id)
-        result.append({
-            "user_id": u.id,
-            "username": u.username,
-            "role": u.role,
-            "is_admin": u.is_admin,
-            "permissions": {
-                k: getattr(perm_data, k)
-                for k in UserPermissionSchema.model_fields
-                if k not in ("user_id", "company_id")
-            },
-        })
+        perm_data = (
+            UserPermissionSchema.model_validate(perm)
+            if perm
+            else UserPermissionSchema(user_id=u.id, company_id=company_id)
+        )
+        result.append(
+            {
+                "user_id": u.id,
+                "username": u.username,
+                "role": u.role,
+                "is_admin": u.is_admin,
+                "permissions": {
+                    k: getattr(perm_data, k)
+                    for k in UserPermissionSchema.model_fields
+                    if k not in ("user_id", "company_id")
+                },
+            }
+        )
     return result
 
 

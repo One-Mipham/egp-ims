@@ -1,4 +1,5 @@
 """知识库管理 — 文章 CRUD + 分类检索 + 审计 + 批量 + 导出."""
+
 import csv as csv_mod
 import io
 from datetime import datetime
@@ -35,25 +36,40 @@ def _get_descendant_ids(all_cats: list, root_id: int) -> set[int]:
 def _article_dict(item: KbArticle, cat_map: dict[int, str]) -> dict:
     """将 KbArticle ORM 对象转为字典（含 category_name）."""
     return {
-        "id": item.id, "company_id": item.company_id, "title": item.title,
-        "content_md": item.content_md, "category_id": item.category_id,
+        "id": item.id,
+        "company_id": item.company_id,
+        "title": item.title,
+        "content_md": item.content_md,
+        "category_id": item.category_id,
         "category_name": cat_map.get(item.category_id) if item.category_id else None,
-        "tags": item.tags, "author": item.author,
-        "status": item.status, "version": item.version,
-        "created_at": item.created_at, "updated_at": item.updated_at,
+        "tags": item.tags,
+        "author": item.author,
+        "status": item.status,
+        "version": item.version,
+        "created_at": item.created_at,
+        "updated_at": item.updated_at,
     }
 
 
-def _audit(db: Session, user: User, action: str, target_id: int | None = None, details: dict | None = None, target_type: str = "kb_article"):
-    db.add(AuditLog(
-        company_id=getattr(user, 'company_id', 1),
-        user_id=user.id,
-        action=action,
-        target_type=target_type,
-        target_id=target_id,
-        details=details,
-        created_at=datetime.utcnow(),
-    ))
+def _audit(
+    db: Session,
+    user: User,
+    action: str,
+    target_id: int | None = None,
+    details: dict | None = None,
+    target_type: str = "kb_article",
+):
+    db.add(
+        AuditLog(
+            company_id=getattr(user, "company_id", 1),
+            user_id=user.id,
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            details=details,
+            created_at=datetime.utcnow(),
+        )
+    )
 
 
 @router.get("/articles")
@@ -69,9 +85,7 @@ def list_articles(
 ):
     q = db.query(KbArticle).filter(KbArticle.company_id == company_id)
     if category_id:
-        all_cats = db.query(KbCategory).filter(
-            KbCategory.company_id == company_id, KbCategory.is_active
-        ).all()
+        all_cats = db.query(KbCategory).filter(KbCategory.company_id == company_id, KbCategory.is_active).all()
         ids = _get_descendant_ids(all_cats, category_id)
         q = q.filter(KbArticle.category_id.in_(ids))
     if status:
@@ -100,9 +114,24 @@ def export_articles_csv(
     writer.writerow(["标题", "分类", "作者", "状态", "版本", "标签", "更新时间", "正文"])
     for i in items:
         cat_name = cat_map.get(i.category_id, "") if i.category_id else ""
-        writer.writerow([i.title, cat_name, i.author or "", i.status, i.version, i.tags or "", (i.updated_at.strftime("%Y-%m-%d %H:%M") if i.updated_at else ""), (i.content_md or "")[:500]])
+        writer.writerow(
+            [
+                i.title,
+                cat_name,
+                i.author or "",
+                i.status,
+                i.version,
+                i.tags or "",
+                (i.updated_at.strftime("%Y-%m-%d %H:%M") if i.updated_at else ""),
+                (i.content_md or "")[:500],
+            ]
+        )
     output.seek(0)
-    return StreamingResponse(io.BytesIO(output.getvalue().encode('utf-8-sig')), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=kb_articles.csv"})
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode("utf-8-sig")),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=kb_articles.csv"},
+    )
 
 
 @router.get("/articles/{article_id}")
@@ -122,7 +151,9 @@ def get_article(article_id: int, db: Session = Depends(get_db), user: User = Dep
 def create_article(data: KbArticleCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     if not data.title.strip():
         raise HTTPException(status_code=400, detail="标题不能为空")
-    cat = db.query(KbCategory).filter(KbCategory.id == data.category_id, KbCategory.company_id == data.company_id).first()
+    cat = (
+        db.query(KbCategory).filter(KbCategory.id == data.category_id, KbCategory.company_id == data.company_id).first()
+    )
     if not cat:
         raise HTTPException(status_code=400, detail="分类不存在")
     tags_str = ",".join(data.tags) if data.tags else None
@@ -138,13 +169,19 @@ def create_article(data: KbArticleCreate, db: Session = Depends(get_db), user: U
 
 
 @router.put("/articles/{article_id}")
-def update_article(article_id: int, data: KbArticleUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_article(
+    article_id: int, data: KbArticleUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(KbArticle).filter(KbArticle.id == article_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="文章不存在")
     update_data = data.model_dump(exclude_unset=True, exclude={"tags"})
     if "category_id" in update_data:
-        cat = db.query(KbCategory).filter(KbCategory.id == update_data["category_id"], KbCategory.company_id == item.company_id).first()
+        cat = (
+            db.query(KbCategory)
+            .filter(KbCategory.id == update_data["category_id"], KbCategory.company_id == item.company_id)
+            .first()
+        )
         if not cat:
             raise HTTPException(status_code=400, detail="分类不存在")
     if data.tags is not None:
@@ -177,8 +214,11 @@ def delete_article(article_id: int, db: Session = Depends(get_db), user: User = 
 class BatchDeleteRequest(BaseModel):
     ids: list[int]
 
+
 @router.post("/articles/batch-delete")
-def batch_delete_articles(data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def batch_delete_articles(
+    data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     count = db.query(KbArticle).filter(KbArticle.id.in_(data.ids)).delete(synchronize_session=False)
     _audit(db, user, "batch_delete", None, {"deleted_count": count, "ids": data.ids})
     db.commit()
@@ -187,16 +227,22 @@ def batch_delete_articles(data: BatchDeleteRequest, db: Session = Depends(get_db
 
 # ═══════════ 分类管理 ═══════════
 
+
 def _build_tree(categories: list, article_counts: dict, parent_id: int | None = None) -> list[dict]:
     result = []
     for cat in categories:
         if cat.parent_id == parent_id:
-            result.append({
-                "id": cat.id, "name": cat.name, "level": cat.level,
-                "is_system": cat.is_system, "sort_order": cat.sort_order,
-                "article_count": article_counts.get(cat.id, 0),
-                "children": _build_tree(categories, article_counts, cat.id),
-            })
+            result.append(
+                {
+                    "id": cat.id,
+                    "name": cat.name,
+                    "level": cat.level,
+                    "is_system": cat.is_system,
+                    "sort_order": cat.sort_order,
+                    "article_count": article_counts.get(cat.id, 0),
+                    "children": _build_tree(categories, article_counts, cat.id),
+                }
+            )
     result.sort(key=lambda x: (x["sort_order"], x["id"]))
     return result
 
@@ -207,15 +253,21 @@ def list_categories(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    cats = db.query(KbCategory).filter(
-        KbCategory.company_id == company_id,
-        KbCategory.is_active,
-    ).order_by(KbCategory.sort_order, KbCategory.id).all()
+    cats = (
+        db.query(KbCategory)
+        .filter(
+            KbCategory.company_id == company_id,
+            KbCategory.is_active,
+        )
+        .order_by(KbCategory.sort_order, KbCategory.id)
+        .all()
+    )
 
     article_counts = dict(
         db.query(KbArticle.category_id, func.count(KbArticle.id))
         .filter(KbArticle.company_id == company_id, KbArticle.category_id.in_([c.id for c in cats]))
-        .group_by(KbArticle.category_id).all()
+        .group_by(KbArticle.category_id)
+        .all()
     )
     return _build_tree(cats, article_counts)
 
@@ -253,7 +305,14 @@ def create_category(
     db.add(cat)
     db.commit()
     db.refresh(cat)
-    _audit(db, user, "create_category", target_id=cat.id, details={"name": cat.name, "parent_id": data.parent_id}, target_type="kb_category")
+    _audit(
+        db,
+        user,
+        "create_category",
+        target_id=cat.id,
+        details={"name": cat.name, "parent_id": data.parent_id},
+        target_type="kb_category",
+    )
     db.commit()
     return cat
 
@@ -300,11 +359,17 @@ def delete_category(
     if children > 0:
         raise HTTPException(status_code=400, detail="该分类下还有子分类，请先删除子分类")
 
-    article_count = db.query(KbArticle).filter(KbArticle.category_id == cat_id, KbArticle.company_id == company_id).count()
+    article_count = (
+        db.query(KbArticle).filter(KbArticle.category_id == cat_id, KbArticle.company_id == company_id).count()
+    )
     if article_count > 0:
         raise HTTPException(status_code=400, detail=f"该分类下有 {article_count} 篇文章，请先迁移或删除文章")
 
-    can_delete = user.is_admin or user.role in ("super_admin", "finance_director", "finance_manager") or cat.created_by == user.id
+    can_delete = (
+        user.is_admin
+        or user.role in ("super_admin", "finance_director", "finance_manager")
+        or cat.created_by == user.id
+    )
     if not can_delete:
         raise HTTPException(status_code=403, detail="需上级批准：只有部门负责人或创建人可以删除分类")
 

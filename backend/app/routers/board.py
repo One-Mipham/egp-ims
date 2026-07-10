@@ -1,4 +1,5 @@
 """董事办 — API 路由."""
+
 from datetime import date, datetime, timedelta
 from typing import List
 
@@ -9,15 +10,21 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.models import BoardFiling, BoardShareholder
 from app.schemas.board import (
-    BoardFilingCreate, BoardFilingUpdate, BoardFilingResponse,
-    BoardShareholderCreate, BoardShareholderUpdate, BoardShareholderResponse,
-    BoardCockpitResponse, CockpitLight,
+    BoardFilingCreate,
+    BoardFilingUpdate,
+    BoardFilingResponse,
+    BoardShareholderCreate,
+    BoardShareholderUpdate,
+    BoardShareholderResponse,
+    BoardCockpitResponse,
+    CockpitLight,
 )
 
 router = APIRouter()
 
 
 # ═══════════ 驾驶舱红绿灯 ═══════════
+
 
 def _compute_light(filings: list, today: date) -> str:
     """判定红绿灯：有逾期 → red；7天内截止 → yellow；无逾期无待提交 → green"""
@@ -46,42 +53,62 @@ def cockpit_lights(company_id: int = Query(...), db: Session = Depends(get_db), 
     lights = []
 
     # 证监会/局规定文件
-    csrc = db.query(BoardFiling).filter(
-        BoardFiling.company_id == company_id,
-        BoardFiling.doc_type == "filing",
-        BoardFiling.doc_subtype == "csrc",
-    ).all()
+    csrc = (
+        db.query(BoardFiling)
+        .filter(
+            BoardFiling.company_id == company_id,
+            BoardFiling.doc_type == "filing",
+            BoardFiling.doc_subtype == "csrc",
+        )
+        .all()
+    )
     lights.append(CockpitLight(label="证监会/局规定文件", status=_compute_light(csrc, today)))
 
     # 交易所规定文件
-    exchange = db.query(BoardFiling).filter(
-        BoardFiling.company_id == company_id,
-        BoardFiling.doc_type == "filing",
-        BoardFiling.doc_subtype == "exchange",
-    ).all()
+    exchange = (
+        db.query(BoardFiling)
+        .filter(
+            BoardFiling.company_id == company_id,
+            BoardFiling.doc_type == "filing",
+            BoardFiling.doc_subtype == "exchange",
+        )
+        .all()
+    )
     lights.append(CockpitLight(label="交易所规定文件", status=_compute_light(exchange, today)))
 
     # 股东大会法律文件
-    shareholder_filing = db.query(BoardFiling).filter(
-        BoardFiling.company_id == company_id,
-        BoardFiling.doc_type == "filing",
-        BoardFiling.doc_subtype == "shareholder",
-    ).all()
+    shareholder_filing = (
+        db.query(BoardFiling)
+        .filter(
+            BoardFiling.company_id == company_id,
+            BoardFiling.doc_type == "filing",
+            BoardFiling.doc_subtype == "shareholder",
+        )
+        .all()
+    )
     lights.append(CockpitLight(label="股东大会法律文件", status=_compute_light(shareholder_filing, today)))
 
     # 财务部门报备文件
-    finance = db.query(BoardFiling).filter(
-        BoardFiling.company_id == company_id,
-        BoardFiling.doc_type == "filing",
-        BoardFiling.doc_subtype == "finance",
-    ).all()
+    finance = (
+        db.query(BoardFiling)
+        .filter(
+            BoardFiling.company_id == company_id,
+            BoardFiling.doc_type == "filing",
+            BoardFiling.doc_subtype == "finance",
+        )
+        .all()
+    )
     lights.append(CockpitLight(label="财务部门报备文件", status=_compute_light(finance, today)))
 
     # 内部报批事项
-    approvals = db.query(BoardFiling).filter(
-        BoardFiling.company_id == company_id,
-        BoardFiling.doc_type == "approval",
-    ).all()
+    approvals = (
+        db.query(BoardFiling)
+        .filter(
+            BoardFiling.company_id == company_id,
+            BoardFiling.doc_type == "approval",
+        )
+        .all()
+    )
     has_unfinished = any(a.status not in ("已完成",) for a in approvals) if approvals else False
     approvals_status = "yellow" if has_unfinished else "green"
     if not approvals:
@@ -89,11 +116,17 @@ def cockpit_lights(company_id: int = Query(...), db: Session = Depends(get_db), 
     lights.append(CockpitLight(label="内部报批事项", status=approvals_status))
 
     # 档案完整度
-    archives = db.query(BoardFiling).filter(
-        BoardFiling.company_id == company_id,
-        BoardFiling.doc_type == "archive",
-    ).all()
-    recent = [a for a in archives if a.updated_at and a.updated_at.date() >= today - timedelta(days=30)] if archives else []
+    archives = (
+        db.query(BoardFiling)
+        .filter(
+            BoardFiling.company_id == company_id,
+            BoardFiling.doc_type == "archive",
+        )
+        .all()
+    )
+    recent = (
+        [a for a in archives if a.updated_at and a.updated_at.date() >= today - timedelta(days=30)] if archives else []
+    )
     archive_status = "green" if recent else ("yellow" if archives else "green")
     lights.append(CockpitLight(label="档案完整度", status=archive_status))
 
@@ -101,6 +134,7 @@ def cockpit_lights(company_id: int = Query(...), db: Session = Depends(get_db), 
 
 
 # ═══════════ BoardFiling CRUD ═══════════
+
 
 @router.get("/filings", response_model=List[BoardFilingResponse])
 def list_filings(
@@ -136,7 +170,9 @@ def create_filing(data: BoardFilingCreate, db: Session = Depends(get_db), user=D
 
 
 @router.put("/filings/{filing_id}", response_model=BoardFilingResponse)
-def update_filing(filing_id: int, data: BoardFilingUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_filing(
+    filing_id: int, data: BoardFilingUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     obj = db.query(BoardFiling).filter(BoardFiling.id == filing_id).first()
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")
@@ -160,11 +196,15 @@ def delete_filing(filing_id: int, db: Session = Depends(get_db), user=Depends(ge
 @router.post("/filings/upsert", response_model=BoardFilingResponse)
 def upsert_filing(data: BoardFilingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     """Policy 视图使用的 upsert — 按 company_id + doc_type + doc_subtype + title 去重"""
-    existing = db.query(BoardFiling).filter(
-        BoardFiling.company_id == data.company_id,
-        BoardFiling.doc_type == data.doc_type,
-        BoardFiling.title == data.title,
-    ).first()
+    existing = (
+        db.query(BoardFiling)
+        .filter(
+            BoardFiling.company_id == data.company_id,
+            BoardFiling.doc_type == data.doc_type,
+            BoardFiling.title == data.title,
+        )
+        .first()
+    )
     if existing:
         for k, v in data.model_dump(exclude_unset=True).items():
             setattr(existing, k, v)
@@ -179,11 +219,17 @@ def upsert_filing(data: BoardFilingCreate, db: Session = Depends(get_db), user=D
 
 # ═══════════ BoardShareholder CRUD ═══════════
 
+
 @router.get("/shareholders", response_model=List[BoardShareholderResponse])
 def list_shareholders(company_id: int = Query(...), db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return db.query(BoardShareholder).filter(
-        BoardShareholder.company_id == company_id,
-    ).order_by(BoardShareholder.share_ratio.desc()).all()
+    return (
+        db.query(BoardShareholder)
+        .filter(
+            BoardShareholder.company_id == company_id,
+        )
+        .order_by(BoardShareholder.share_ratio.desc())
+        .all()
+    )
 
 
 @router.post("/shareholders", response_model=BoardShareholderResponse)
@@ -196,7 +242,9 @@ def create_shareholder(data: BoardShareholderCreate, db: Session = Depends(get_d
 
 
 @router.put("/shareholders/{shareholder_id}", response_model=BoardShareholderResponse)
-def update_shareholder(shareholder_id: int, data: BoardShareholderUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_shareholder(
+    shareholder_id: int, data: BoardShareholderUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     obj = db.query(BoardShareholder).filter(BoardShareholder.id == shareholder_id).first()
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")

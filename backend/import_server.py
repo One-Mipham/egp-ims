@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Import real vouchers on the server."""
+
 import sys, os
+
 os.chdir("/opt/egp-ims/intranet/backend")
 sys.path.insert(0, ".")
 
-from app.database import SessionLocal
-from app.models import Voucher, VoucherEntry, Account, Company
-import openpyxl
-from collections import defaultdict
+from app.database import SessionLocal  # noqa: E402
+from app.models import Voucher, VoucherEntry, Account  # noqa: E402
+import openpyxl  # noqa: E402
+from collections import defaultdict  # noqa: E402
 
 SRC = "/opt/egp-ims/intranet/data/凭证.xlsx"
 CID = 1
@@ -44,7 +46,7 @@ for i, sec in enumerate(sections):
     vnos = set()
     for r in sec:
         vnos.add(str(ws.cell(row=r, column=2).value or "").strip())
-    print(f"  Section {i+1}: {len(sec)} rows, {len(vnos)} vouchers, samples: {sorted(vnos)[:3]}")
+    print(f"  Section {i + 1}: {len(sec)} rows, {len(vnos)} vouchers, samples: {sorted(vnos)[:3]}")
 
 # Import
 db = SessionLocal()
@@ -111,13 +113,15 @@ for sec_idx, rows in enumerate(sections):
         db.flush()
 
         for e in entries:
-            db.add(VoucherEntry(
-                voucher_id=v.id,
-                account_code=e["code"],
-                debit=e["debit"],
-                credit=e["credit"],
-                description=e["summary"],
-            ))
+            db.add(
+                VoucherEntry(
+                    voucher_id=v.id,
+                    account_code=e["code"],
+                    debit=e["debit"],
+                    credit=e["credit"],
+                    description=e["summary"],
+                )
+            )
             total_entries += 1
 
         created += 1
@@ -135,7 +139,7 @@ tc = sum(e.credit for e in all_entries)
 print("")
 print("=" * 50)
 print(f"Import done: {created} vouchers, {total_entries} entries")
-print(f"Total: D={td:,.2f} C={tc:,.2f} {'OK' if abs(td-tc)<0.01 else 'IMBALANCE!'}")
+print(f"Total: D={td:,.2f} C={tc:,.2f} {'OK' if abs(td - tc) < 0.01 else 'IMBALANCE!'}")
 if unknown:
     print(f"Unknown codes ({len(unknown)}): {sorted(unknown)[:30]}")
 
@@ -147,6 +151,8 @@ for m in range(1, 6):
         mes.extend(db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).all())
     md = sum(e.debit for e in mes)
     mc = sum(e.credit for e in mes)
-    print(f"  2026-{m:02d}: {len(mvs)} vouchers D={md:>14,.2f} C={mc:>14,.2f} {'OK' if abs(md-mc)<0.01 else 'IMBAL!'}")
+    print(
+        f"  2026-{m:02d}: {len(mvs)} vouchers D={md:>14,.2f} C={mc:>14,.2f} {'OK' if abs(md - mc) < 0.01 else 'IMBAL!'}"
+    )
 
 db.close()

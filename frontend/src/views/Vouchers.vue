@@ -37,6 +37,8 @@ const showEditDialog = ref(false)
 const showReverseDialog = ref(false)
 const showQueryDialog = ref(false)
 const showBatchApproveDialog = ref(false)
+const showDetailDialog = ref(false)
+const detailVoucher = ref<any>(null)
 const reverseReason = ref('')
 const reverseTarget = ref<number | null>(null)
 const editTarget = ref<any>(null)
@@ -399,6 +401,24 @@ function doPrintVoucher() {
   window.print()
 }
 
+function onRowClick(event: any) {
+  detailVoucher.value = event.data
+  showDetailDialog.value = true
+}
+
+const totalDetailDebit = computed(() =>
+  (detailVoucher.value?.entries || []).reduce((s: number, e: any) => s + (Number(e.debit) || 0), 0)
+)
+const totalDetailCredit = computed(() =>
+  (detailVoucher.value?.entries || []).reduce((s: number, e: any) => s + (Number(e.credit) || 0), 0)
+)
+
+function getAccountName(code: string): string {
+  if (!code) return ''
+  const a = accounts.value.find((ac: any) => ac.code === code)
+  return a ? a.name : ''
+}
+
 const draftVouchers = computed(() => vouchers.value.filter(v => v.status === 'draft'))
 
 onMounted(() => {
@@ -440,6 +460,7 @@ onMounted(() => {
         :rows="15"
         class="shadow-sm"
         tableStyle="min-width: auto"
+        @row-click="onRowClick"
       >
         <Column field="voucher_no" :header="t('accounting.vouchers_page.voucherNo')" sortable style="width: 140px" />
         <Column field="date" :header="t('accounting.vouchers_page.voucherDate')" sortable style="width: 90px" />
@@ -488,6 +509,10 @@ onMounted(() => {
               size="small"
               @click="handleApprove(data.id)"
             />
+            <span
+              v-else-if="data.status !== 'draft'"
+              class="text-xs text-zinc-400 italic px-2"
+            >{{ t('accounting.vouchers_page.approved') }}</span>
             <Button
               v-if="data.status === 'draft' || data.status === 'approved'"
               :label="t('accounting.vouchers_page.postVoucher')"
@@ -496,6 +521,10 @@ onMounted(() => {
               size="small"
               @click="handlePost(data.id)"
             />
+            <span
+              v-else-if="data.status === 'posted' || data.status === 'closed'"
+              class="text-xs text-zinc-400 italic px-2"
+            >{{ t('accounting.vouchers_page.posted') }}</span>
             <Button
               v-if="data.status === 'posted'"
               :label="t('accounting.vouchers_page.reverseVoucher')"
@@ -955,6 +984,43 @@ onMounted(() => {
           @click="handleReverse"
           :disabled="!reverseReason"
         />
+      </div>
+    </Dialog>
+
+    <!-- 凭证详情查看弹窗 -->
+    <Dialog v-model:visible="showDetailDialog" header="凭证详情" :style="{ width: '900px' }" :modal="true">
+      <div v-if="detailVoucher" class="text-sm">
+        <div class="grid grid-cols-4 gap-3 mb-4 p-3 bg-stone-50 rounded">
+          <div><span class="text-zinc-500">凭证号</span><div class="font-medium">{{ detailVoucher.voucher_no }}</div></div>
+          <div><span class="text-zinc-500">日期</span><div class="font-medium">{{ detailVoucher.date }}</div></div>
+          <div><span class="text-zinc-500">凭证类型</span><div class="font-medium">{{ TYPE_LABELS[detailVoucher.voucher_type] || detailVoucher.voucher_type }}</div></div>
+          <div><span class="text-zinc-500">状态</span><div><Tag :value="STATUS_LABELS[detailVoucher.status]" :severity="detailVoucher.status==='posted'?'success':detailVoucher.status==='approved'?'info':'warning'" /></div></div>
+        </div>
+        <div class="mb-4">
+          <span class="text-zinc-500">摘要</span>
+          <div class="font-medium">{{ detailVoucher.summary }}</div>
+        </div>
+        <DataTable :value="detailVoucher.entries || []" size="small" stripedRows class="text-sm">
+          <Column header="科目代码" style="width: 110px">
+            <template #body="{ data }">{{ data.account_code }}</template>
+          </Column>
+          <Column header="科目名称" style="width: 200px">
+            <template #body="{ data }">{{ getAccountName(data.account_code) }}</template>
+          </Column>
+          <Column header="借方" style="width: 120px">
+            <template #body="{ data }">{{ data.debit ? Number(data.debit).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) : '' }}</template>
+          </Column>
+          <Column header="贷方" style="width: 120px">
+            <template #body="{ data }">{{ data.credit ? Number(data.credit).toLocaleString('zh-CN', { minimumFractionDigits: 2 }) : '' }}</template>
+          </Column>
+          <Column header="摘要" style="min-width: 200px">
+            <template #body="{ data }">{{ data.description || '' }}</template>
+          </Column>
+        </DataTable>
+        <div class="flex justify-between mt-3 p-2 bg-stone-50 rounded font-medium">
+          <span>合计</span>
+          <span>借: {{ totalDetailDebit.toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }} &nbsp; 贷: {{ totalDetailCredit.toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</span>
+        </div>
       </div>
     </Dialog>
   </div>

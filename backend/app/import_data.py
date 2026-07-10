@@ -1,4 +1,5 @@
 """导入利美融信公司数据：公司、科目（4级）、期初余额、部门。"""
+
 from pathlib import Path
 
 import openpyxl
@@ -143,9 +144,7 @@ def import_balances(db: Session, company_id: int) -> int:
             continue
 
         # 按余额方向计算期初余额
-        acct = db.query(Account).filter(
-            Account.company_id == company_id, Account.code == code
-        ).first()
+        acct = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
         if acct:
             # 余额表中，期初余额列显示的是该方向的发生额累计
             # 余额 = 该方向累计 - 反方向累计
@@ -167,12 +166,14 @@ def import_departments(db: Session, company_id: int) -> int:
     db.commit()
 
     for dept in DEPARTMENTS:
-        db.add(Department(
-            company_id=company_id,
-            code=dept["code"],
-            name=dept["name"],
-            is_active=True,
-        ))
+        db.add(
+            Department(
+                company_id=company_id,
+                code=dept["code"],
+                name=dept["name"],
+                is_active=True,
+            )
+        )
     db.commit()
     print(f"  部门: {len(DEPARTMENTS)} 条")
     return len(DEPARTMENTS)

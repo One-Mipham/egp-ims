@@ -34,7 +34,7 @@ const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const { t } = useI18n()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 const userId = Number(localStorage.getItem('user_id') || '0')
 
 const contractType = ref<string>('')

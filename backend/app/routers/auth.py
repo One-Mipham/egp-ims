@@ -1,4 +1,5 @@
 """认证路由：注册、登录。"""
+
 import re
 from datetime import datetime, timezone
 
@@ -58,6 +59,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
 
     # 3. 创建公司（SaaS 环境公司编号从 1004 起）
     from sqlalchemy import func
+
     max_id = db.query(func.max(Company.id)).scalar() or 0
     company = Company(
         name=data.company_name,
@@ -135,10 +137,7 @@ def identify_user(data: IdentifyRequest, db: Session = Depends(get_db)):
 
     # 优先使用 user.company_id，否则回退到 company-lookup
     cid = user.company_id
-    if cid:
-        company = db.query(Company).filter(Company.id == cid).first()
-    else:
-        company = None
+    company = db.query(Company).filter(Company.id == cid).first() if cid else None
 
     if not company:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该用户未关联公司，请联系管理员")
@@ -174,12 +173,14 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     user.last_login = datetime.now(timezone.utc)
     db.commit()
 
-    token = create_access_token(data={
-        "sub": user.id,
-        "role": user.role,
-        "is_admin": user.is_admin,
-        "company_id": cid,
-    })
+    token = create_access_token(
+        data={
+            "sub": user.id,
+            "role": user.role,
+            "is_admin": user.is_admin,
+            "company_id": cid,
+        }
+    )
 
     return LoginResponse(
         access_token=token,

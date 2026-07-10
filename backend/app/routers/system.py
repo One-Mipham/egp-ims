@@ -1,4 +1,5 @@
 """系统管理路由：数据导出、数据库备份。"""
+
 import io
 import os
 import csv
@@ -44,6 +45,7 @@ def _backup_path(label: str) -> str:
 
 # ──────────────── 数据库备份 ────────────────
 
+
 @router.get("/backups")
 def list_backups(
     type: str = Query("monthly", pattern="^(monthly|yearly)$"),
@@ -57,11 +59,15 @@ def list_backups(
         name = os.path.basename(f)
         stat = os.stat(f)
         size_kb = round(stat.st_size / 1024, 1)
-        result.append({
-            "filename": name,
-            "size_kb": size_kb,
-            "created_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S"),
-        })
+        result.append(
+            {
+                "filename": name,
+                "size_kb": size_kb,
+                "created_at": datetime.fromtimestamp(stat.st_mtime, tz=timezone(timedelta(hours=8))).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                ),
+            }
+        )
     return result
 
 
@@ -114,9 +120,17 @@ def delete_backup(
 # ──────────────── 数据导出 ────────────────
 
 EXPORT_TABLES = {
-    "accounts": ("科目表", Account, ["code", "name", "level", "parent_code", "category", "balance_direction", "initial_balance", "is_active"]),
+    "accounts": (
+        "科目表",
+        Account,
+        ["code", "name", "level", "parent_code", "category", "balance_direction", "initial_balance", "is_active"],
+    ),
     "vouchers": ("凭证", Voucher, ["id", "date", "voucher_no", "voucher_type", "summary", "status", "creator_id"]),
-    "voucher_entries": ("凭证分录", VoucherEntry, ["id", "voucher_id", "account_code", "debit", "credit", "description"]),
+    "voucher_entries": (
+        "凭证分录",
+        VoucherEntry,
+        ["id", "voucher_id", "account_code", "debit", "credit", "description"],
+    ),
     "departments": ("部门", Department, ["id", "code", "name", "parent_id", "is_active"]),
     "periods": ("会计期间", AccountingPeriod, ["id", "company_id", "period", "is_closed", "closed_at"]),
 }

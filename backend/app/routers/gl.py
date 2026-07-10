@@ -1,4 +1,5 @@
 """总账模块路由：自动转账、科目账、辅助账、自定义账、自定义明细表、往来管理。"""
+
 from datetime import datetime, timezone, date
 from io import StringIO
 import csv
@@ -9,19 +10,36 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import (
-    User, Company, Account, Voucher, VoucherEntry,
-    Counterparty, Department, Person, Project,
-    AutoTransferTemplate, CustomQuery,
+    User,
+    Company,
+    Account,
+    Voucher,
+    VoucherEntry,
+    Counterparty,
+    Department,
+    Person,
+    Project,
+    AutoTransferTemplate,
+    CustomQuery,
 )
 from app.schemas import (
-    AutoTransferTemplateCreate, AutoTransferTemplateUpdate,
+    AutoTransferTemplateCreate,
+    AutoTransferTemplateUpdate,
     AutoTransferTemplateResponse,
-    SubjectLedgerResponse, SubjectLedgerEntry,
-    AuxLedgerResponse, AuxLedgerEntry,
-    CustomQueryCreate, CustomQueryUpdate, CustomQueryResponse,
-    CustomDetailColumn, CustomDetailQueryRequest,
-    TransactionBalanceRow, TransactionDetailResponse,
-    TransactionDetailEntry, AgingRow, AgingBucket,
+    SubjectLedgerResponse,
+    SubjectLedgerEntry,
+    AuxLedgerResponse,
+    AuxLedgerEntry,
+    CustomQueryCreate,
+    CustomQueryUpdate,
+    CustomQueryResponse,
+    CustomDetailColumn,
+    CustomDetailQueryRequest,
+    TransactionBalanceRow,
+    TransactionDetailResponse,
+    TransactionDetailEntry,
+    AgingRow,
+    AgingBucket,
 )
 from app.auth import get_current_user
 
@@ -36,6 +54,7 @@ def _get_company(db: Session, company_id: int) -> Company:
 
 
 # ── 自动转账模板 ──
+
 
 @router.get("/auto-transfer-templates", response_model=list[AutoTransferTemplateResponse])
 def list_auto_transfer_templates(
@@ -124,10 +143,14 @@ def execute_auto_transfer(
     user: User = Depends(get_current_user),
 ):
     """执行自动转账，生成凭证。"""
-    template = db.query(AutoTransferTemplate).filter(
-        AutoTransferTemplate.id == template_id,
-        AutoTransferTemplate.company_id == company_id,
-    ).first()
+    template = (
+        db.query(AutoTransferTemplate)
+        .filter(
+            AutoTransferTemplate.id == template_id,
+            AutoTransferTemplate.company_id == company_id,
+        )
+        .first()
+    )
     if not template:
         raise HTTPException(404, "模板不存在")
     if not template.is_active:
@@ -138,10 +161,12 @@ def execute_auto_transfer(
     account_codes_needed = [e["account_code"] for e in template.entries]
     accounts_map = {
         a.code: a
-        for a in db.query(Account).filter(
+        for a in db.query(Account)
+        .filter(
             Account.company_id == company_id,
             Account.code.in_(account_codes_needed),
-        ).all()
+        )
+        .all()
     }
 
     voucher_entries = []
@@ -202,13 +227,15 @@ def execute_auto_transfer(
             voucher_entries[-1]["credit"] = round(voucher_entries[-1]["credit"] + diff, 2)
 
     for entry_data in voucher_entries:
-        db.add(VoucherEntry(
-            voucher_id=voucher.id,
-            account_code=entry_data["account_code"],
-            debit=entry_data["debit"],
-            credit=entry_data["credit"],
-            description=entry_data.get("description", ""),
-        ))
+        db.add(
+            VoucherEntry(
+                voucher_id=voucher.id,
+                account_code=entry_data["account_code"],
+                debit=entry_data["debit"],
+                credit=entry_data["credit"],
+                description=entry_data.get("description", ""),
+            )
+        )
 
     db.commit()
     db.refresh(voucher)
@@ -230,15 +257,14 @@ def _get_account_balance(db: Session, company_id: int, account_code: str, period
     )
     total_debit = sum(e.debit for e in entries)
     total_credit = sum(e.credit for e in entries)
-    account = db.query(Account).filter(
-        Account.company_id == company_id, Account.code == account_code
-    ).first()
+    account = db.query(Account).filter(Account.company_id == company_id, Account.code == account_code).first()
     if account and account.balance_direction == "debit":
         return account.initial_balance + total_debit - total_credit
     return total_debit - total_credit
 
 
 # ── 科目账 ──
+
 
 @router.get("/subject-ledger", response_model=list[SubjectLedgerResponse])
 def get_subject_ledger(
@@ -276,17 +302,18 @@ def get_single_subject_ledger(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    account = db.query(Account).filter(
-        Account.company_id == company_id, Account.code == code
-    ).first()
+    account = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
     if not account:
         raise HTTPException(404, "科目不存在")
     return _build_ledger_for_account(db, company_id, account, start_period, end_period)
 
 
 def _build_ledger_for_account(
-    db: Session, company_id: int, account: Account,
-    start_period: str, end_period: str,
+    db: Session,
+    company_id: int,
+    account: Account,
+    start_period: str,
+    end_period: str,
 ) -> SubjectLedgerResponse:
     beg_entries = (
         db.query(VoucherEntry)
@@ -327,14 +354,16 @@ def _build_ledger_for_account(
             running_balance = running_balance + e.debit - e.credit
         else:
             running_balance = running_balance + e.credit - e.debit
-        entries.append(SubjectLedgerEntry(
-            date=e.voucher.date,
-            voucher_no=e.voucher.voucher_no,
-            summary=e.voucher.summary,
-            debit=e.debit,
-            credit=e.credit,
-            balance=round(running_balance, 2),
-        ))
+        entries.append(
+            SubjectLedgerEntry(
+                date=e.voucher.date,
+                voucher_no=e.voucher.voucher_no,
+                summary=e.voucher.summary,
+                debit=e.debit,
+                credit=e.credit,
+                balance=round(running_balance, 2),
+            )
+        )
 
     total_debit = sum(e.debit for e in period_entries)
     total_credit = sum(e.credit for e in period_entries)
@@ -356,6 +385,7 @@ def _build_ledger_for_account(
 
 
 # ── 辅助账 ──
+
 
 @router.get("/aux-ledger", response_model=AuxLedgerResponse)
 def get_aux_ledger(
@@ -424,40 +454,51 @@ def get_aux_ledger(
     account_codes = list(set(e.account_code for e in cur_entries))
     account_map = {
         a.code: a.name
-        for a in db.query(Account).filter(
-            Account.company_id == company_id, Account.code.in_(account_codes),
-        ).all()
+        for a in db.query(Account)
+        .filter(
+            Account.company_id == company_id,
+            Account.code.in_(account_codes),
+        )
+        .all()
     }
 
     running_balance = beginning_balance
     entries = []
     for e in cur_entries:
         running_balance = running_balance + e.debit - e.credit
-        entries.append(AuxLedgerEntry(
-            date=e.voucher.date,
-            voucher_no=e.voucher.voucher_no,
-            account_code=e.account_code,
-            account_name=account_map.get(e.account_code, ""),
-            summary=e.voucher.summary,
-            aux_name=aux_name,
-            debit=e.debit,
-            credit=e.credit,
-            balance=round(running_balance, 2),
-        ))
+        entries.append(
+            AuxLedgerEntry(
+                date=e.voucher.date,
+                voucher_no=e.voucher.voucher_no,
+                account_code=e.account_code,
+                account_name=account_map.get(e.account_code, ""),
+                summary=e.voucher.summary,
+                aux_name=aux_name,
+                debit=e.debit,
+                credit=e.credit,
+                balance=round(running_balance, 2),
+            )
+        )
 
     total_debit = sum(e.debit for e in cur_entries)
     total_credit = sum(e.credit for e in cur_entries)
     ending_balance = beginning_balance + total_debit - total_credit
 
     return AuxLedgerResponse(
-        aux_type=aux_type, aux_id=aux_id, aux_name=aux_name,
-        beginning_balance=round(beginning_balance, 2), direction="debit",
-        entries=entries, total_debit=round(total_debit, 2),
-        total_credit=round(total_credit, 2), ending_balance=round(ending_balance, 2),
+        aux_type=aux_type,
+        aux_id=aux_id,
+        aux_name=aux_name,
+        beginning_balance=round(beginning_balance, 2),
+        direction="debit",
+        entries=entries,
+        total_debit=round(total_debit, 2),
+        total_credit=round(total_credit, 2),
+        ending_balance=round(ending_balance, 2),
     )
 
 
 # ── 自定义查询 ──
+
 
 @router.get("/custom-queries", response_model=list[CustomQueryResponse])
 def list_custom_queries(
@@ -479,8 +520,11 @@ def create_custom_query(
     user: User = Depends(get_current_user),
 ):
     obj = CustomQuery(
-        company_id=data.company_id, name=data.name,
-        query_type=data.query_type, filters=data.filters, created_by=user.id,
+        company_id=data.company_id,
+        name=data.name,
+        query_type=data.query_type,
+        filters=data.filters,
+        created_by=user.id,
     )
     db.add(obj)
     db.commit()
@@ -490,8 +534,10 @@ def create_custom_query(
 
 @router.put("/custom-queries/{query_id}", response_model=CustomQueryResponse)
 def update_custom_query(
-    query_id: int, data: CustomQueryUpdate,
-    db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    query_id: int,
+    data: CustomQueryUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     obj = db.query(CustomQuery).filter(CustomQuery.id == query_id).first()
     if not obj:
@@ -508,7 +554,9 @@ def update_custom_query(
 
 @router.delete("/custom-queries/{query_id}")
 def delete_custom_query(
-    query_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    query_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     obj = db.query(CustomQuery).filter(CustomQuery.id == query_id).first()
     if not obj:
@@ -520,9 +568,12 @@ def delete_custom_query(
 
 @router.get("/custom-queries/{query_id}/execute")
 def execute_custom_query(
-    query_id: int, company_id: int,
-    start_period: str = Query(...), end_period: str = Query(...),
-    db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    query_id: int,
+    company_id: int,
+    start_period: str = Query(...),
+    end_period: str = Query(...),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     obj = db.query(CustomQuery).filter(CustomQuery.id == query_id).first()
     if not obj:
@@ -577,20 +628,31 @@ def _execute_saved_aux(db, company_id, filters):
         db.query(VoucherEntry)
         .join(Voucher, VoucherEntry.voucher_id == Voucher.id)
         .filter(
-            Voucher.company_id == company_id, filter_col == aux_id,
-            Voucher.date >= f"{start_period}-01", Voucher.date <= f"{end_period}-31",
+            Voucher.company_id == company_id,
+            filter_col == aux_id,
+            Voucher.date >= f"{start_period}-01",
+            Voucher.date <= f"{end_period}-31",
             Voucher.status.in_(["posted", "closed"]),
         )
     )
     if account_code:
         cur_query = cur_query.filter(VoucherEntry.account_code.like(f"{account_code}%"))
     entries = cur_query.order_by(Voucher.date, Voucher.voucher_no).all()
-    return [{"date": e.voucher.date, "voucher_no": e.voucher.voucher_no,
-             "account_code": e.account_code, "debit": e.debit, "credit": e.credit,
-             "summary": e.voucher.summary} for e in entries]
+    return [
+        {
+            "date": e.voucher.date,
+            "voucher_no": e.voucher.voucher_no,
+            "account_code": e.account_code,
+            "debit": e.debit,
+            "credit": e.credit,
+            "summary": e.voucher.summary,
+        }
+        for e in entries
+    ]
 
 
 # ── 自定义明细表 ──
+
 
 @router.get("/custom-detail/columns", response_model=list[CustomDetailColumn])
 def get_custom_detail_columns(user: User = Depends(get_current_user)):
@@ -612,8 +674,10 @@ def get_custom_detail_columns(user: User = Depends(get_current_user)):
 
 @router.post("/custom-detail/query")
 def query_custom_detail(
-    company_id: int, data: CustomDetailQueryRequest,
-    db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    company_id: int,
+    data: CustomDetailQueryRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     return _execute_custom_detail(db, company_id, data.filters)
 
@@ -633,7 +697,8 @@ def _execute_custom_detail(db, company_id, filters):
         .outerjoin(Project, VoucherEntry.project_id == Project.id)
         .filter(
             Voucher.company_id == company_id,
-            Voucher.date >= start_date, Voucher.date <= end_date,
+            Voucher.date >= start_date,
+            Voucher.date <= end_date,
             Voucher.status.in_(["posted", "closed"]),
         )
     )
@@ -666,39 +731,77 @@ def export_custom_detail(
     start_date: str = Query(default="2024-01-01"),
     end_date: str = Query(default="2026-12-31"),
     account_code: str = Query(None),
-    db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     filters = {"start_date": start_date, "end_date": end_date, "account_code": account_code}
     rows = _execute_custom_detail(db, company_id, filters)
     output = StringIO()
     writer = csv.writer(output)
-    writer.writerow(["日期", "凭证号", "凭证类型", "科目代码", "科目名称", "摘要", "借方金额", "贷方金额", "部门", "个人", "往来单位", "项目"])
+    writer.writerow(
+        [
+            "日期",
+            "凭证号",
+            "凭证类型",
+            "科目代码",
+            "科目名称",
+            "摘要",
+            "借方金额",
+            "贷方金额",
+            "部门",
+            "个人",
+            "往来单位",
+            "项目",
+        ]
+    )
     for r in rows:
-        writer.writerow([r["date"], r["voucher_no"], r.get("voucher_type", ""),
-                         r["account_code"], r.get("account_name", ""), r["summary"],
-                         r["debit"], r["credit"], r.get("department_name", ""),
-                         r.get("person_name", ""), r.get("counterparty_name", ""),
-                         r.get("project_name", "")])
+        writer.writerow(
+            [
+                r["date"],
+                r["voucher_no"],
+                r.get("voucher_type", ""),
+                r["account_code"],
+                r.get("account_name", ""),
+                r["summary"],
+                r["debit"],
+                r["credit"],
+                r.get("department_name", ""),
+                r.get("person_name", ""),
+                r.get("counterparty_name", ""),
+                r.get("project_name", ""),
+            ]
+        )
     output.seek(0)
-    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv",
-                             headers={"Content-Disposition": "attachment; filename=custom_detail.csv"})
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=custom_detail.csv"},
+    )
 
 
 # ── 往来管理 ──
 
+
 @router.get("/transactions/balance", response_model=list[TransactionBalanceRow])
 def get_transaction_balances(
-    company_id: int, start_period: str = Query(...), end_period: str = Query(...),
-    account_code: str = Query(None), db: Session = Depends(get_db),
+    company_id: int,
+    start_period: str = Query(...),
+    end_period: str = Query(...),
+    account_code: str = Query(None),
+    db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     cp_ids = [
-        r[0] for r in
-        db.query(VoucherEntry.counterparty_id)
+        r[0]
+        for r in db.query(VoucherEntry.counterparty_id)
         .join(Voucher, VoucherEntry.voucher_id == Voucher.id)
-        .filter(Voucher.company_id == company_id, VoucherEntry.counterparty_id.isnot(None),
-                Voucher.status.in_(["posted", "closed"]))
-        .distinct().all()
+        .filter(
+            Voucher.company_id == company_id,
+            VoucherEntry.counterparty_id.isnot(None),
+            Voucher.status.in_(["posted", "closed"]),
+        )
+        .distinct()
+        .all()
     ]
     if not cp_ids:
         return []
@@ -709,19 +812,29 @@ def get_transaction_balances(
         cp = counterparties.get(cp_id)
         cp_name = cp.name if cp else "未知"
         beg = (
-            db.query(VoucherEntry).join(Voucher, VoucherEntry.voucher_id == Voucher.id)
-            .filter(Voucher.company_id == company_id, VoucherEntry.counterparty_id == cp_id,
-                    Voucher.date < f"{start_period}-01", Voucher.status.in_(["posted", "closed"]))
+            db.query(VoucherEntry)
+            .join(Voucher, VoucherEntry.voucher_id == Voucher.id)
+            .filter(
+                Voucher.company_id == company_id,
+                VoucherEntry.counterparty_id == cp_id,
+                Voucher.date < f"{start_period}-01",
+                Voucher.status.in_(["posted", "closed"]),
+            )
         )
         if account_code:
             beg = beg.filter(VoucherEntry.account_code.like(f"{account_code}%"))
         beg_entries = beg.all()
         beginning_balance = sum(e.debit for e in beg_entries) - sum(e.credit for e in beg_entries)
         cur = (
-            db.query(VoucherEntry).join(Voucher, VoucherEntry.voucher_id == Voucher.id)
-            .filter(Voucher.company_id == company_id, VoucherEntry.counterparty_id == cp_id,
-                    Voucher.date >= f"{start_period}-01", Voucher.date <= f"{end_period}-31",
-                    Voucher.status.in_(["posted", "closed"]))
+            db.query(VoucherEntry)
+            .join(Voucher, VoucherEntry.voucher_id == Voucher.id)
+            .filter(
+                Voucher.company_id == company_id,
+                VoucherEntry.counterparty_id == cp_id,
+                Voucher.date >= f"{start_period}-01",
+                Voucher.date <= f"{end_period}-31",
+                Voucher.status.in_(["posted", "closed"]),
+            )
         )
         if account_code:
             cur = cur.filter(VoucherEntry.account_code.like(f"{account_code}%"))
@@ -730,78 +843,116 @@ def get_transaction_balances(
         cur_credit = sum(e.credit for e in cur_entries)
         ending_balance = beginning_balance + cur_debit - cur_credit
         direction = "debit" if ending_balance >= 0 else "credit"
-        result.append(TransactionBalanceRow(
-            counterparty_id=cp_id, counterparty_name=cp_name,
-            beginning_balance=round(beginning_balance, 2), direction=direction,
-            current_debit=round(cur_debit, 2), current_credit=round(cur_credit, 2),
-            ending_balance=round(abs(ending_balance), 2),
-        ))
+        result.append(
+            TransactionBalanceRow(
+                counterparty_id=cp_id,
+                counterparty_name=cp_name,
+                beginning_balance=round(beginning_balance, 2),
+                direction=direction,
+                current_debit=round(cur_debit, 2),
+                current_credit=round(cur_credit, 2),
+                ending_balance=round(abs(ending_balance), 2),
+            )
+        )
     return sorted(result, key=lambda r: abs(r.ending_balance), reverse=True)
 
 
 @router.get("/transactions/{counterparty_id}", response_model=TransactionDetailResponse)
 def get_transaction_detail(
-    counterparty_id: int, company_id: int, start_period: str = Query(...),
-    end_period: str = Query(...), account_code: str = Query(None),
-    db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    counterparty_id: int,
+    company_id: int,
+    start_period: str = Query(...),
+    end_period: str = Query(...),
+    account_code: str = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     cp = db.query(Counterparty).filter(Counterparty.id == counterparty_id).first()
     cp_name = cp.name if cp else "未知"
     beg = (
-        db.query(VoucherEntry).join(Voucher, VoucherEntry.voucher_id == Voucher.id)
-        .filter(Voucher.company_id == company_id, VoucherEntry.counterparty_id == counterparty_id,
-                Voucher.date < f"{start_period}-01", Voucher.status.in_(["posted", "closed"]))
+        db.query(VoucherEntry)
+        .join(Voucher, VoucherEntry.voucher_id == Voucher.id)
+        .filter(
+            Voucher.company_id == company_id,
+            VoucherEntry.counterparty_id == counterparty_id,
+            Voucher.date < f"{start_period}-01",
+            Voucher.status.in_(["posted", "closed"]),
+        )
     )
     if account_code:
         beg = beg.filter(VoucherEntry.account_code.like(f"{account_code}%"))
     beg_entries = beg.all()
     beginning_balance = sum(e.debit for e in beg_entries) - sum(e.credit for e in beg_entries)
     cur = (
-        db.query(VoucherEntry).join(Voucher, VoucherEntry.voucher_id == Voucher.id)
-        .filter(Voucher.company_id == company_id, VoucherEntry.counterparty_id == counterparty_id,
-                Voucher.date >= f"{start_period}-01", Voucher.date <= f"{end_period}-31",
-                Voucher.status.in_(["posted", "closed"]))
+        db.query(VoucherEntry)
+        .join(Voucher, VoucherEntry.voucher_id == Voucher.id)
+        .filter(
+            Voucher.company_id == company_id,
+            VoucherEntry.counterparty_id == counterparty_id,
+            Voucher.date >= f"{start_period}-01",
+            Voucher.date <= f"{end_period}-31",
+            Voucher.status.in_(["posted", "closed"]),
+        )
     )
     if account_code:
         cur = cur.filter(VoucherEntry.account_code.like(f"{account_code}%"))
     cur_entries = cur.order_by(Voucher.date, Voucher.voucher_no).all()
     acct_codes = list(set(e.account_code for e in cur_entries))
-    acct_map = {a.code: a.name for a in db.query(Account).filter(
-        Account.company_id == company_id, Account.code.in_(acct_codes)).all()}
+    acct_map = {
+        a.code: a.name
+        for a in db.query(Account).filter(Account.company_id == company_id, Account.code.in_(acct_codes)).all()
+    }
     running = beginning_balance
     entries = []
     for e in cur_entries:
         running = running + e.debit - e.credit
-        entries.append(TransactionDetailEntry(
-            date=e.voucher.date, voucher_no=e.voucher.voucher_no,
-            account_code=e.account_code, account_name=acct_map.get(e.account_code, ""),
-            summary=e.voucher.summary, debit=e.debit, credit=e.credit,
-            balance=round(running, 2),
-        ))
+        entries.append(
+            TransactionDetailEntry(
+                date=e.voucher.date,
+                voucher_no=e.voucher.voucher_no,
+                account_code=e.account_code,
+                account_name=acct_map.get(e.account_code, ""),
+                summary=e.voucher.summary,
+                debit=e.debit,
+                credit=e.credit,
+                balance=round(running, 2),
+            )
+        )
     total_debit = sum(e.debit for e in cur_entries)
     total_credit = sum(e.credit for e in cur_entries)
     ending = beginning_balance + total_debit - total_credit
     direction = "debit" if ending >= 0 else "credit"
     return TransactionDetailResponse(
-        counterparty_id=counterparty_id, counterparty_name=cp_name,
-        beginning_balance=round(beginning_balance, 2), direction=direction,
-        entries=entries, total_debit=round(total_debit, 2),
-        total_credit=round(total_credit, 2), ending_balance=round(abs(ending), 2),
+        counterparty_id=counterparty_id,
+        counterparty_name=cp_name,
+        beginning_balance=round(beginning_balance, 2),
+        direction=direction,
+        entries=entries,
+        total_debit=round(total_debit, 2),
+        total_credit=round(total_credit, 2),
+        ending_balance=round(abs(ending), 2),
     )
 
 
 @router.get("/transactions/aging", response_model=list[AgingRow])
 def get_transaction_aging(
-    company_id: int, end_period: str = Query(...), account_code: str = Query(None),
-    db: Session = Depends(get_db), user: User = Depends(get_current_user),
+    company_id: int,
+    end_period: str = Query(...),
+    account_code: str = Query(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     cp_ids = [
-        r[0] for r in
-        db.query(VoucherEntry.counterparty_id)
+        r[0]
+        for r in db.query(VoucherEntry.counterparty_id)
         .join(Voucher, VoucherEntry.voucher_id == Voucher.id)
-        .filter(Voucher.company_id == company_id, VoucherEntry.counterparty_id.isnot(None),
-                Voucher.status.in_(["posted", "closed"]))
-        .distinct().all()
+        .filter(
+            Voucher.company_id == company_id,
+            VoucherEntry.counterparty_id.isnot(None),
+            Voucher.status.in_(["posted", "closed"]),
+        )
+        .distinct()
+        .all()
     ]
     if not cp_ids:
         return []
@@ -809,17 +960,25 @@ def get_transaction_aging(
     ref_date_str = f"{end_period}-31"
     ref_date = date.fromisoformat(ref_date_str)
     buckets_def = [
-        ("0-30天", 0, 30), ("31-90天", 31, 90), ("91-180天", 91, 180),
-        ("181-365天", 181, 365), ("365天+", 366, 99999),
+        ("0-30天", 0, 30),
+        ("31-90天", 31, 90),
+        ("91-180天", 91, 180),
+        ("181-365天", 181, 365),
+        ("365天+", 366, 99999),
     ]
     result = []
     for cp_id in cp_ids:
         cp = counterparties.get(cp_id)
         cp_name = cp.name if cp else "未知"
         entries_query = (
-            db.query(VoucherEntry).join(Voucher, VoucherEntry.voucher_id == Voucher.id)
-            .filter(Voucher.company_id == company_id, VoucherEntry.counterparty_id == cp_id,
-                    Voucher.date <= ref_date_str, Voucher.status.in_(["posted", "closed"]))
+            db.query(VoucherEntry)
+            .join(Voucher, VoucherEntry.voucher_id == Voucher.id)
+            .filter(
+                Voucher.company_id == company_id,
+                VoucherEntry.counterparty_id == cp_id,
+                Voucher.date <= ref_date_str,
+                Voucher.status.in_(["posted", "closed"]),
+            )
         )
         if account_code:
             entries_query = entries_query.filter(VoucherEntry.account_code.like(f"{account_code}%"))
@@ -835,6 +994,9 @@ def get_transaction_aging(
                     amount += e.debit - e.credit
             buckets.append(AgingBucket(range=label, amount=round(amount, 2)))
             total_balance += amount
-        result.append(AgingRow(counterparty_id=cp_id, counterparty_name=cp_name,
-                               total_balance=round(total_balance, 2), buckets=buckets))
+        result.append(
+            AgingRow(
+                counterparty_id=cp_id, counterparty_name=cp_name, total_balance=round(total_balance, 2), buckets=buckets
+            )
+        )
     return sorted(result, key=lambda r: abs(r.total_balance), reverse=True)

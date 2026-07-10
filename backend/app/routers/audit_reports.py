@@ -1,4 +1,5 @@
 """年度审计报告路由。"""
+
 import os
 from datetime import datetime
 
@@ -24,10 +25,14 @@ def get_audit_report(
     current_user: User = Depends(get_current_user),
 ):
     """获取某公司某年度的审计报告信息。"""
-    report = db.query(AuditReport).filter(
-        AuditReport.company_id == company_id,
-        AuditReport.year == year,
-    ).first()
+    report = (
+        db.query(AuditReport)
+        .filter(
+            AuditReport.company_id == company_id,
+            AuditReport.year == year,
+        )
+        .first()
+    )
     if not report:
         return {"found": False, "data": None}
     return {
@@ -68,10 +73,14 @@ def save_audit_report(
     current_user: User = Depends(get_current_user),
 ):
     """创建或更新审计报告信息。"""
-    report = db.query(AuditReport).filter(
-        AuditReport.company_id == company_id,
-        AuditReport.year == year,
-    ).first()
+    report = (
+        db.query(AuditReport)
+        .filter(
+            AuditReport.company_id == company_id,
+            AuditReport.year == year,
+        )
+        .first()
+    )
 
     if not report:
         report = AuditReport(company_id=company_id, year=year)
@@ -118,10 +127,14 @@ def upload_audit_file(
         f.write(contents)
 
     # 更新数据库记录
-    report = db.query(AuditReport).filter(
-        AuditReport.company_id == company_id,
-        AuditReport.year == year,
-    ).first()
+    report = (
+        db.query(AuditReport)
+        .filter(
+            AuditReport.company_id == company_id,
+            AuditReport.year == year,
+        )
+        .first()
+    )
     if not report:
         report = AuditReport(company_id=company_id, year=year)
         db.add(report)
@@ -142,10 +155,14 @@ def download_audit_file(
     current_user: User = Depends(get_current_user),
 ):
     """下载审计报告文件。"""
-    report = db.query(AuditReport).filter(
-        AuditReport.company_id == company_id,
-        AuditReport.year == year,
-    ).first()
+    report = (
+        db.query(AuditReport)
+        .filter(
+            AuditReport.company_id == company_id,
+            AuditReport.year == year,
+        )
+        .first()
+    )
     if not report or not report.report_file:
         raise HTTPException(status_code=404, detail="未找到审计报告文件")
 

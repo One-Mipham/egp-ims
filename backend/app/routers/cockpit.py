@@ -1,4 +1,5 @@
 """财务管理驾驶舱 — 公司预算、现金流计划、经营指标"""
+
 import calendar
 import os
 from typing import Optional, List
@@ -18,6 +19,7 @@ DOWNLOADS = os.path.expanduser("~/Downloads")
 # 辅助函数 — 从报表模块提取，避免循环导入
 # ═══════════════════════════════════════════
 
+
 def _period_end_date(period: str) -> str:
     y, m = int(period[:4]), int(period[5:7])
     last_day = calendar.monthrange(y, m)[1]
@@ -26,16 +28,18 @@ def _period_end_date(period: str) -> str:
 
 def _calc_account_ending(code: str, db: Session, company_id: int, end_date: str) -> float:
     """计算单个科目的期末余额。"""
-    acct = db.query(Account).filter(
-        Account.company_id == company_id, Account.code == code
-    ).first()
+    acct = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
     if not acct:
         return 0.0
-    q = db.query(VoucherEntry).join(Voucher).filter(
-        Voucher.company_id == company_id,
-        VoucherEntry.account_code == acct.code,
-        Voucher.status == "posted",
-        Voucher.date <= end_date,
+    q = (
+        db.query(VoucherEntry)
+        .join(Voucher)
+        .filter(
+            Voucher.company_id == company_id,
+            VoucherEntry.account_code == acct.code,
+            Voucher.status.in_(["posted", "closed"]),
+            Voucher.date <= end_date,
+        )
     )
     entries = q.all()
     debit = sum(e.debit for e in entries)
@@ -48,10 +52,14 @@ def _calc_account_ending(code: str, db: Session, company_id: int, end_date: str)
 def _sum_by_prefix(prefix: str, db: Session, company_id: int, end_date: str) -> float:
     """汇总所有以 prefix 开头的叶子科目余额。"""
     total = 0.0
-    accounts = db.query(Account).filter(
-        Account.company_id == company_id,
-        Account.code.like(f"{prefix}%"),
-    ).all()
+    accounts = (
+        db.query(Account)
+        .filter(
+            Account.company_id == company_id,
+            Account.code.like(f"{prefix}%"),
+        )
+        .all()
+    )
     if not accounts:
         return 0.0
     # 排除有子科目的父科目（叶子科目 = 它的code不是任何科目的parent_code）
@@ -66,20 +74,28 @@ def _sum_by_prefix(prefix: str, db: Session, company_id: int, end_date: str) -> 
 def _sum_occurrence_by_prefix(prefix: str, db: Session, company_id: int, start: str, end: str) -> float:
     """汇总以 prefix 开头的叶子科目在期间内的净发生额。"""
     total = 0.0
-    accounts = db.query(Account).filter(
-        Account.company_id == company_id,
-        Account.code.like(f"{prefix}%"),
-    ).all()
+    accounts = (
+        db.query(Account)
+        .filter(
+            Account.company_id == company_id,
+            Account.code.like(f"{prefix}%"),
+        )
+        .all()
+    )
     parent_codes = {a.parent_code for a in accounts if a.parent_code}
     for a in accounts:
         if a.code in parent_codes:
             continue
-        q = db.query(VoucherEntry).join(Voucher).filter(
-            Voucher.company_id == company_id,
-            VoucherEntry.account_code == a.code,
-            Voucher.status == "posted",
-            Voucher.date >= start,
-            Voucher.date <= end,
+        q = (
+            db.query(VoucherEntry)
+            .join(Voucher)
+            .filter(
+                Voucher.company_id == company_id,
+                VoucherEntry.account_code == a.code,
+                Voucher.status.in_(["posted", "closed"]),
+                Voucher.date >= start,
+                Voucher.date <= end,
+            )
         )
         entries = q.all()
         debit = sum(e.debit for e in entries)
@@ -93,37 +109,56 @@ def _sum_occurrence_by_prefix(prefix: str, db: Session, company_id: int, start: 
 
 def _has_data(db: Session, company_id: int) -> bool:
     """检查公司是否有已记账凭证。"""
-    return db.query(Voucher).filter(
-        Voucher.company_id == company_id, Voucher.status == "posted"
-    ).count() > 0
+    return db.query(Voucher).filter(Voucher.company_id == company_id, Voucher.status.in_(["posted", "closed"])).count() > 0
 
 
 # ═══════════════════════════════════════════
 # 1. 公司预算与绩效评价
 # ═══════════════════════════════════════════
 
+
 @router.get("/budget")
 def get_budget(user: User = Depends(get_current_user)):
     """读取公司预算与绩效评价表，返回行列数据供前端渲染"""
-    return {"message": "预算数据端点就绪，使用Excel导入", "rows": [], "summary": {
-        "total_revenue": 0, "total_cost": 0, "gross_profit": 0,
-        "operating_expense": 0, "admin_expense": 0, "finance_expense": 0,
-        "pretax_profit": 0, "income_tax": 0, "net_profit": 0,
-        "revenue_completion": 0, "profit_completion": 0,
-    }}
+    return {
+        "message": "预算数据端点就绪，使用Excel导入",
+        "rows": [],
+        "summary": {
+            "total_revenue": 0,
+            "total_cost": 0,
+            "gross_profit": 0,
+            "operating_expense": 0,
+            "admin_expense": 0,
+            "finance_expense": 0,
+            "pretax_profit": 0,
+            "income_tax": 0,
+            "net_profit": 0,
+            "revenue_completion": 0,
+            "profit_completion": 0,
+        },
+    }
 
 
 # ═══════════════════════════════════════════
 # 2. 现金流计划与融资计划
 # ═══════════════════════════════════════════
 
+
 @router.get("/cashflow-plan")
 def get_cashflow_plan_summary(user: User = Depends(get_current_user)):
-    return {"message": "现金流计划数据端点就绪", "rows": [], "summary": {
-        "beginning_balance": 0, "actual_inflow": 0, "actual_outflow": 0,
-        "ending_balance": 0, "equity_financing": 0, "debt_financing": 0,
-        "cash_safety_days": 0,
-    }}
+    return {
+        "message": "现金流计划数据端点就绪",
+        "rows": [],
+        "summary": {
+            "beginning_balance": 0,
+            "actual_inflow": 0,
+            "actual_outflow": 0,
+            "ending_balance": 0,
+            "equity_financing": 0,
+            "debt_financing": 0,
+            "cash_safety_days": 0,
+        },
+    }
 
 
 # ═══════════════════════════════════════════
@@ -132,34 +167,150 @@ def get_cashflow_plan_summary(user: User = Depends(get_current_user)):
 
 INDICATOR_DEFS = [
     # 偿债能力
-    {"dimension": "偿债能力", "name": "流动比率", "key": "current_ratio", "unit": "%", "green_min": 150, "yellow_min": 100},
-    {"dimension": "偿债能力", "name": "速动比率", "key": "quick_ratio", "unit": "%", "green_min": 100, "yellow_min": 50},
-    {"dimension": "偿债能力", "name": "现金流动负债比", "key": "cash_current_liab_ratio", "unit": "%", "green_min": 50, "yellow_min": 20},
-    {"dimension": "偿债能力", "name": "资产负债率", "key": "debt_ratio", "unit": "%", "green_max": 50, "yellow_max": 70},
-    {"dimension": "偿债能力", "name": "利息保障倍数", "key": "interest_coverage", "unit": "倍", "green_min": 3, "yellow_min": 1},
+    {
+        "dimension": "偿债能力",
+        "name": "流动比率",
+        "key": "current_ratio",
+        "unit": "%",
+        "green_min": 150,
+        "yellow_min": 100,
+    },
+    {
+        "dimension": "偿债能力",
+        "name": "速动比率",
+        "key": "quick_ratio",
+        "unit": "%",
+        "green_min": 100,
+        "yellow_min": 50,
+    },
+    {
+        "dimension": "偿债能力",
+        "name": "现金流动负债比",
+        "key": "cash_current_liab_ratio",
+        "unit": "%",
+        "green_min": 50,
+        "yellow_min": 20,
+    },
+    {
+        "dimension": "偿债能力",
+        "name": "资产负债率",
+        "key": "debt_ratio",
+        "unit": "%",
+        "green_max": 50,
+        "yellow_max": 70,
+    },
+    {
+        "dimension": "偿债能力",
+        "name": "利息保障倍数",
+        "key": "interest_coverage",
+        "unit": "倍",
+        "green_min": 3,
+        "yellow_min": 1,
+    },
     # 营运能力
-    {"dimension": "营运能力", "name": "应收帐款周转率", "key": "ar_turnover", "unit": "次", "green_min": 6, "yellow_min": 3},
-    {"dimension": "营运能力", "name": "存货周转率", "key": "inventory_turnover", "unit": "次", "green_min": 5, "yellow_min": 2},
-    {"dimension": "营运能力", "name": "流动资产周转率", "key": "current_asset_turnover", "unit": "次", "green_min": 2, "yellow_min": 1},
-    {"dimension": "营运能力", "name": "总资产周转率", "key": "total_asset_turnover", "unit": "次", "green_min": 0.8, "yellow_min": 0.4},
+    {
+        "dimension": "营运能力",
+        "name": "应收帐款周转率",
+        "key": "ar_turnover",
+        "unit": "次",
+        "green_min": 6,
+        "yellow_min": 3,
+    },
+    {
+        "dimension": "营运能力",
+        "name": "存货周转率",
+        "key": "inventory_turnover",
+        "unit": "次",
+        "green_min": 5,
+        "yellow_min": 2,
+    },
+    {
+        "dimension": "营运能力",
+        "name": "流动资产周转率",
+        "key": "current_asset_turnover",
+        "unit": "次",
+        "green_min": 2,
+        "yellow_min": 1,
+    },
+    {
+        "dimension": "营运能力",
+        "name": "总资产周转率",
+        "key": "total_asset_turnover",
+        "unit": "次",
+        "green_min": 0.8,
+        "yellow_min": 0.4,
+    },
     # 盈利能力
     {"dimension": "盈利能力", "name": "毛利率", "key": "gross_margin", "unit": "%", "green_min": 30, "yellow_min": 15},
-    {"dimension": "盈利能力", "name": "营业利润率", "key": "operating_margin", "unit": "%", "green_min": 15, "yellow_min": 5},
+    {
+        "dimension": "盈利能力",
+        "name": "营业利润率",
+        "key": "operating_margin",
+        "unit": "%",
+        "green_min": 15,
+        "yellow_min": 5,
+    },
     {"dimension": "盈利能力", "name": "总资产回报率(ROA)", "key": "roa", "unit": "%", "green_min": 5, "yellow_min": 2},
     {"dimension": "盈利能力", "name": "净资产回报率(ROE)", "key": "roe", "unit": "%", "green_min": 10, "yellow_min": 5},
-    {"dimension": "盈利能力", "name": "成本费用率", "key": "cost_expense_ratio", "unit": "%", "green_max": 80, "yellow_max": 95},
+    {
+        "dimension": "盈利能力",
+        "name": "成本费用率",
+        "key": "cost_expense_ratio",
+        "unit": "%",
+        "green_max": 80,
+        "yellow_max": 95,
+    },
     # 成长能力
-    {"dimension": "成长能力", "name": "营业收入增长率", "key": "revenue_growth", "unit": "%", "green_min": 15, "yellow_min": 5},
-    {"dimension": "成长能力", "name": "净利润增长率", "key": "profit_growth", "unit": "%", "green_min": 10, "yellow_min": 0},
-    {"dimension": "成长能力", "name": "总资产增长率", "key": "asset_growth", "unit": "%", "green_min": 10, "yellow_min": 0},
-    {"dimension": "成长能力", "name": "资本积累率", "key": "capital_accum_rate", "unit": "%", "green_min": 8, "yellow_min": 0},
-    {"dimension": "成长能力", "name": "研发经费投入强度", "key": "rd_intensity", "unit": "%", "green_min": 5, "yellow_min": 2},
+    {
+        "dimension": "成长能力",
+        "name": "营业收入增长率",
+        "key": "revenue_growth",
+        "unit": "%",
+        "green_min": 15,
+        "yellow_min": 5,
+    },
+    {
+        "dimension": "成长能力",
+        "name": "净利润增长率",
+        "key": "profit_growth",
+        "unit": "%",
+        "green_min": 10,
+        "yellow_min": 0,
+    },
+    {
+        "dimension": "成长能力",
+        "name": "总资产增长率",
+        "key": "asset_growth",
+        "unit": "%",
+        "green_min": 10,
+        "yellow_min": 0,
+    },
+    {
+        "dimension": "成长能力",
+        "name": "资本积累率",
+        "key": "capital_accum_rate",
+        "unit": "%",
+        "green_min": 8,
+        "yellow_min": 0,
+    },
+    {
+        "dimension": "成长能力",
+        "name": "研发经费投入强度",
+        "key": "rd_intensity",
+        "unit": "%",
+        "green_min": 5,
+        "yellow_min": 2,
+    },
 ]
 
 
-def _traffic_light(value: float | None, green_min: float | None = None,
-                   yellow_min: float | None = None, green_max: float | None = None,
-                   yellow_max: float | None = None) -> str:
+def _traffic_light(
+    value: float | None,
+    green_min: float | None = None,
+    yellow_min: float | None = None,
+    green_max: float | None = None,
+    yellow_max: float | None = None,
+) -> str:
     """根据阈值返回 red / yellow / green / gray。
     gray = 无数据（公司尚无财务数据）。
     """
@@ -191,9 +342,11 @@ def _compute_indicators(db: Session, company_id: int, period: str) -> dict[str, 
     # 流动资产科目：以 1 开头的科目（1001 库存现金 ~ 19xx）
     current_assets = _sum_by_prefix("1", db, company_id, end_date)
     # 排除非流动资产：以 15/16/17/18 开头的通常是非流动的
-    noncurrent_in_current = _sum_by_prefix("15", db, company_id, end_date) + \
-                           _sum_by_prefix("16", db, company_id, end_date) + \
-                           _sum_by_prefix("18", db, company_id, end_date)
+    noncurrent_in_current = (
+        _sum_by_prefix("15", db, company_id, end_date)
+        + _sum_by_prefix("16", db, company_id, end_date)
+        + _sum_by_prefix("18", db, company_id, end_date)
+    )
     current_assets = current_assets - noncurrent_in_current
 
     # 总资产 = 所有资产科目
@@ -203,24 +356,27 @@ def _compute_indicators(db: Session, company_id: int, period: str) -> dict[str, 
         total_assets += _sum_by_prefix(cat, db, company_id, end_date)
 
     # 流动负债：2001, 22xx, 2231, 2232, 2241
-    current_liabilities = _sum_by_prefix("2001", db, company_id, end_date) + \
-                         _sum_by_prefix("22", db, company_id, end_date) + \
-                         _sum_by_prefix("2231", db, company_id, end_date) + \
-                         _sum_by_prefix("2232", db, company_id, end_date) + \
-                         _sum_by_prefix("2241", db, company_id, end_date)
+    current_liabilities = (
+        _sum_by_prefix("2001", db, company_id, end_date)
+        + _sum_by_prefix("22", db, company_id, end_date)
+        + _sum_by_prefix("2231", db, company_id, end_date)
+        + _sum_by_prefix("2232", db, company_id, end_date)
+        + _sum_by_prefix("2241", db, company_id, end_date)
+    )
 
     # 总负债 = 2 开头的科目
     total_liabilities = _sum_by_prefix("2", db, company_id, end_date)
 
     # 所有者权益 = 3/4 开头
-    total_equity = _sum_by_prefix("3", db, company_id, end_date) + \
-                   _sum_by_prefix("4", db, company_id, end_date)
+    total_equity = _sum_by_prefix("3", db, company_id, end_date) + _sum_by_prefix("4", db, company_id, end_date)
 
     # 存货 = 1405 + 1406 等
-    inventory = _sum_by_prefix("1405", db, company_id, end_date) + \
-                _sum_by_prefix("1406", db, company_id, end_date) + \
-                _sum_by_prefix("1407", db, company_id, end_date) + \
-                _sum_by_prefix("1408", db, company_id, end_date)
+    inventory = (
+        _sum_by_prefix("1405", db, company_id, end_date)
+        + _sum_by_prefix("1406", db, company_id, end_date)
+        + _sum_by_prefix("1407", db, company_id, end_date)
+        + _sum_by_prefix("1408", db, company_id, end_date)
+    )
 
     # ── 从利润表提取数据 ──
     year_start = f"{period[:4]}-01-01"
@@ -311,6 +467,7 @@ def get_indicators(
     """返回经营指标定义及当前值/红黄绿灯判定。基于实际财务数据计算。"""
     if not period:
         from datetime import date
+
         today = date.today()
         period = f"{today.year}-{today.month:02d}"
 
@@ -321,8 +478,10 @@ def get_indicators(
         v = values.get(d["key"])
         light = _traffic_light(
             v,
-            green_min=d.get("green_min"), yellow_min=d.get("yellow_min"),
-            green_max=d.get("green_max"), yellow_max=d.get("yellow_max"),
+            green_min=d.get("green_min"),
+            yellow_min=d.get("yellow_min"),
+            green_max=d.get("green_max"),
+            yellow_max=d.get("yellow_max"),
         )
         items.append({**d, "value": v, "light": light})
 
@@ -361,6 +520,7 @@ def get_cockpit_lights(
     """返回财务管理驾驶舱六项指示灯状态。基于实际数据判定。"""
     if not period:
         from datetime import date
+
         today = date.today()
         period = f"{today.year}-{today.month:02d}"
 
@@ -392,10 +552,9 @@ def get_cockpit_lights(
 def _get_budget_light(db: Session, company_id: int, period: str) -> str:
     """预算完成表现：检查是否有预算数据。"""
     from app.models import Budget
+
     year = int(period[:4])
-    budgets = db.query(Budget).filter(
-        Budget.company_id == company_id, Budget.year == year
-    ).count()
+    budgets = db.query(Budget).filter(Budget.company_id == company_id, Budget.year == year).count()
     if budgets == 0:
         return "gray"
     # 有预算数据 → 简单判定（后续可增强为实际vs预算比较）
@@ -406,9 +565,11 @@ def _get_cashflow_light(db: Session, company_id: int, period: str) -> str:
     """现金流安全：检查期末现金余额是否为正。"""
     end_date = _period_end_date(period)
     # 货币资金 = 1001(库存现金) + 1002(银行存款) + 1003(其他货币资金)
-    cash = _sum_by_prefix("1001", db, company_id, end_date) + \
-           _sum_by_prefix("1002", db, company_id, end_date) + \
-           _sum_by_prefix("1003", db, company_id, end_date)
+    cash = (
+        _sum_by_prefix("1001", db, company_id, end_date)
+        + _sum_by_prefix("1002", db, company_id, end_date)
+        + _sum_by_prefix("1003", db, company_id, end_date)
+    )
     if cash <= 0:
         return "red"
     if cash < 100000:  # 现金低于10万 → 黄灯
@@ -450,9 +611,19 @@ def list_cashflow_plans(
     if year:
         q = q.filter(CashflowPlan.year == year)
     plans = q.order_by(CashflowPlan.year.desc()).all()
-    return [{"id": p.id, "company_id": p.company_id, "name": p.name, "year": p.year,
-             "status": p.status, "items": [{"id": i.id, "account_code": i.account_code,
-             "month": i.month, "amount": i.amount} for i in p.items]} for p in plans]
+    return [
+        {
+            "id": p.id,
+            "company_id": p.company_id,
+            "name": p.name,
+            "year": p.year,
+            "status": p.status,
+            "items": [
+                {"id": i.id, "account_code": i.account_code, "month": i.month, "amount": i.amount} for i in p.items
+            ],
+        }
+        for p in plans
+    ]
 
 
 @router.get("/cashflow-plan/{plan_id}")
@@ -464,9 +635,14 @@ def get_cashflow_plan(
     p = db.query(CashflowPlan).filter(CashflowPlan.id == plan_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="现金流计划不存在")
-    return {"id": p.id, "company_id": p.company_id, "name": p.name, "year": p.year,
-            "status": p.status, "items": [{"id": i.id, "account_code": i.account_code,
-            "month": i.month, "amount": i.amount} for i in p.items]}
+    return {
+        "id": p.id,
+        "company_id": p.company_id,
+        "name": p.name,
+        "year": p.year,
+        "status": p.status,
+        "items": [{"id": i.id, "account_code": i.account_code, "month": i.month, "amount": i.amount} for i in p.items],
+    }
 
 
 @router.post("/cashflow-plan")
@@ -479,8 +655,11 @@ def create_cashflow_plan(
     db.add(plan)
     db.flush()
     for item_data in data.items:
-        db.add(CashflowPlanItem(plan_id=plan.id, account_code=item_data.account_code,
-                                month=item_data.month, amount=item_data.amount))
+        db.add(
+            CashflowPlanItem(
+                plan_id=plan.id, account_code=item_data.account_code, month=item_data.month, amount=item_data.amount
+            )
+        )
     db.commit()
     db.refresh(plan)
     return {"id": plan.id, "name": plan.name, "year": plan.year, "status": plan.status}
@@ -501,8 +680,11 @@ def update_cashflow_plan(
     if data.items is not None:
         db.query(CashflowPlanItem).filter(CashflowPlanItem.plan_id == plan.id).delete()
         for item_data in data.items:
-            db.add(CashflowPlanItem(plan_id=plan.id, account_code=item_data.account_code,
-                                    month=item_data.month, amount=item_data.amount))
+            db.add(
+                CashflowPlanItem(
+                    plan_id=plan.id, account_code=item_data.account_code, month=item_data.month, amount=item_data.amount
+                )
+            )
     db.commit()
     return {"ok": True}
 

@@ -3,7 +3,9 @@
 导入 2026年1-5月 真实凭证数据。
 来源: Downloads/20260101-20260531-填制凭证.xlsx
 """
+
 import os, sys
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 import openpyxl
@@ -15,19 +17,19 @@ from app.models import Voucher, VoucherEntry, Company, Account
 SRC = os.path.expanduser("~/Downloads/20260101-20260531-填制凭证.xlsx")
 COMPANY_ID = 1
 
+
 def parse_sections(ws):
     """Detect monthly sections based on voucher number restarts."""
     sections = []
     prev_num = 0
-    section_start = 2
     current_rows = []
 
     for row_idx in range(2, ws.max_row + 1):
-        vno = str(ws.cell(row=row_idx, column=2).value or '').strip()
+        vno = str(ws.cell(row=row_idx, column=2).value or "").strip()
         if not vno:
             continue
         try:
-            vno_num = int(vno.split('-')[1])
+            vno_num = int(vno.split("-")[1])
         except (ValueError, IndexError):
             continue
 
@@ -36,7 +38,6 @@ def parse_sections(ws):
             current_rows = []
 
         current_rows.append(row_idx)
-        prev_vno_num = vno_num
 
     if current_rows:
         sections.append(current_rows)
@@ -86,11 +87,11 @@ def import_vouchers():
         # Group rows by voucher number within this section
         voucher_rows = defaultdict(list)
         for row_idx in rows:
-            vno = str(ws.cell(row=row_idx, column=2).value or '').strip()
+            vno = str(ws.cell(row=row_idx, column=2).value or "").strip()
             if vno:
                 voucher_rows[vno].append(row_idx)
 
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"2026-{month:02d}月: {len(voucher_rows)} 张凭证, {len(rows)} 行分录")
 
         # Assign dates: distribute evenly across month
@@ -101,11 +102,11 @@ def import_vouchers():
             voucher_total = 0
 
             for row_idx in vrows:
-                summary = str(ws.cell(row=row_idx, column=6).value or '').strip()
-                acct_code = str(ws.cell(row=row_idx, column=7).value or '').strip()
+                summary = str(ws.cell(row=row_idx, column=6).value or "").strip()
+                acct_code = str(ws.cell(row=row_idx, column=7).value or "").strip()
                 debit = float(ws.cell(row=row_idx, column=10).value or 0)
                 credit = float(ws.cell(row=row_idx, column=11).value or 0)
-                aux = str(ws.cell(row=row_idx, column=9).value or '').strip()
+                aux = str(ws.cell(row=row_idx, column=9).value or "").strip()
 
                 # Look up the exact account code
                 code = acct_code
@@ -114,13 +115,15 @@ def import_vouchers():
                     unknown_codes.add(code)
                     continue
 
-                entries_data.append({
-                    'account_code': code,
-                    'debit': debit,
-                    'credit': credit,
-                    'description': summary,
-                    'aux': aux,
-                })
+                entries_data.append(
+                    {
+                        "account_code": code,
+                        "debit": debit,
+                        "credit": credit,
+                        "description": summary,
+                        "aux": aux,
+                    }
+                )
                 voucher_total += debit  # both debit and credit should be same total
 
             if not entries_data:
@@ -130,8 +133,8 @@ def import_vouchers():
             day = min(day + 1, 28)  # increment day, cap at 28
 
             # Determine voucher type from analysis
-            has_bank = any('1002' in e['account_code'][:4] for e in entries_data)
-            voucher_type = 'payment' if has_bank else 'transfer'
+            has_bank = any("1002" in e["account_code"][:4] for e in entries_data)
+            voucher_type = "payment" if has_bank else "transfer"
 
             # Create voucher
             v = Voucher(
@@ -139,28 +142,30 @@ def import_vouchers():
                 date=date,
                 voucher_no=f"记字2026{month:02d}-{vno.split('-')[1].zfill(4)}",
                 voucher_type=voucher_type,
-                summary=entries_data[0]['description'],
+                summary=entries_data[0]["description"],
                 creator_id=1,
-                status='draft',
+                status="draft",
             )
             db.add(v)
             db.flush()
 
             for e in entries_data:
-                db.add(VoucherEntry(
-                    voucher_id=v.id,
-                    account_code=e['account_code'],
-                    debit=e['debit'],
-                    credit=e['credit'],
-                    description=e['description'],
-                ))
+                db.add(
+                    VoucherEntry(
+                        voucher_id=v.id,
+                        account_code=e["account_code"],
+                        debit=e["debit"],
+                        credit=e["credit"],
+                        description=e["description"],
+                    )
+                )
                 entries_created += 1
 
             created += 1
 
     db.commit()
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"✅ 导入完成:")
     print(f"  凭证: {created} 张")
     print(f"  分录: {entries_created} 行")
@@ -172,16 +177,15 @@ def import_vouchers():
     # Quick verification
     vouchers = db.query(Voucher).filter(Voucher.company_id == COMPANY_ID).all()
     total_d = sum(
-        e.debit for v in vouchers
-        for e in db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).all()
+        e.debit for v in vouchers for e in db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).all()
     )
     total_c = sum(
-        e.credit for v in vouchers
-        for e in db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).all()
+        e.credit for v in vouchers for e in db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).all()
     )
-    print(f"\n  凭证合计: 借={total_d:,.2f} 贷={total_c:,.2f} {'✅' if abs(total_d-total_c)<0.01 else '❌'}")
+    print(f"\n  凭证合计: 借={total_d:,.2f} 贷={total_c:,.2f} {'✅' if abs(total_d - total_c) < 0.01 else '❌'}")
 
     db.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import_vouchers()

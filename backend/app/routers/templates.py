@@ -1,4 +1,5 @@
 """凭证模板路由。"""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 

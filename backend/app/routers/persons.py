@@ -1,4 +1,5 @@
 """员工个人管理路由。"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
@@ -11,7 +12,9 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[PersonResponse])
-def list_persons(company_id: int, department_code: str = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_persons(
+    company_id: int, department_code: str = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     q = db.query(Person).filter(Person.company_id == company_id, Person.is_active)
     if department_code:
         q = q.filter(Person.department_code == department_code)
@@ -22,10 +25,11 @@ def list_persons(company_id: int, department_code: str = Query(None), db: Sessio
 def import_persons(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     """从 basic_master_data/员工.xlsx 导入。"""
     from pathlib import Path
+
     try:
         import openpyxl
-    except ImportError:
-        raise HTTPException(status_code=500, detail="需要安装 openpyxl")
+    except ImportError as err:
+        raise HTTPException(status_code=500, detail="需要安装 openpyxl") from err
 
     data_dir = Path(__file__).parent.parent.parent.parent / "basic_master_data"
     wb_path = data_dir / "员工.xlsx"

@@ -127,7 +127,7 @@ import { getTransactionBalances, getTransactionDetail, getTransactionAging } fro
 
 const toast = useToast()
 const { t } = useI18n()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 const now = new Date()
 const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 

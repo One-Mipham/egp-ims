@@ -1,23 +1,39 @@
 """人力资源管理路由。"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import (
-    HrPolicy, HrPosition, HrEmployee, HrTraining,
-    HrEvaluation, HrSalary, HrRewardPunishment,
-    HrOffboarding, HrBudget,
+    HrPolicy,
+    HrPosition,
+    HrEmployee,
+    HrTraining,
+    HrEvaluation,
+    HrSalary,
+    HrRewardPunishment,
+    HrOffboarding,
+    HrBudget,
 )
 from app.schemas import (
-    HrPolicyCreate, HrPolicyResponse,
-    HrPositionCreate, HrPositionResponse,
-    HrEmployeeCreate, HrEmployeeResponse,
-    HrTrainingCreate, HrTrainingResponse,
-    HrEvaluationCreate, HrEvaluationResponse,
-    HrSalaryCreate, HrSalaryResponse,
-    HrRewardPunishmentCreate, HrRewardPunishmentResponse,
-    HrOffboardingCreate, HrOffboardingResponse,
-    HrBudgetCreate, HrBudgetResponse,
+    HrPolicyCreate,
+    HrPolicyResponse,
+    HrPositionCreate,
+    HrPositionResponse,
+    HrEmployeeCreate,
+    HrEmployeeResponse,
+    HrTrainingCreate,
+    HrTrainingResponse,
+    HrEvaluationCreate,
+    HrEvaluationResponse,
+    HrSalaryCreate,
+    HrSalaryResponse,
+    HrRewardPunishmentCreate,
+    HrRewardPunishmentResponse,
+    HrOffboardingCreate,
+    HrOffboardingResponse,
+    HrBudgetCreate,
+    HrBudgetResponse,
 )
 from app.auth import get_current_user
 
@@ -25,15 +41,15 @@ router = APIRouter()
 
 # ═══════════ 公司人力资源管理制度 ═══════════
 
+
 @router.get("/policies", response_model=list[HrPolicyResponse])
 def list_policies(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     return db.query(HrPolicy).filter(HrPolicy.company_id == company_id).all()
 
+
 @router.post("/policies", response_model=HrPolicyResponse)
 def upsert_policy(data: HrPolicyCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    existing = db.query(HrPolicy).filter(
-        HrPolicy.company_id == data.company_id
-    ).first()
+    existing = db.query(HrPolicy).filter(HrPolicy.company_id == data.company_id).first()
     if existing:
         existing.title = data.title
         existing.content = data.content
@@ -47,24 +63,28 @@ def upsert_policy(data: HrPolicyCreate, db: Session = Depends(get_db), user=Depe
 
 # ═══════════ 职级管理 ═══════════
 
+
 @router.get("/positions", response_model=list[HrPositionResponse])
 def list_positions(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    return db.query(HrPosition).filter(
-        HrPosition.company_id == company_id
-    ).order_by(HrPosition.sort_order).all()
+    return db.query(HrPosition).filter(HrPosition.company_id == company_id).order_by(HrPosition.sort_order).all()
+
 
 @router.post("/positions", response_model=HrPositionResponse)
 def create_position(data: HrPositionCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     if data.sort_order is None:
-        max_order = db.query(HrPosition.sort_order).filter(
-            HrPosition.company_id == data.company_id
-        ).order_by(HrPosition.sort_order.desc()).first()
+        max_order = (
+            db.query(HrPosition.sort_order)
+            .filter(HrPosition.company_id == data.company_id)
+            .order_by(HrPosition.sort_order.desc())
+            .first()
+        )
         data.sort_order = (max_order[0] + 1) if max_order and max_order[0] else 0
     pos = HrPosition(**data.model_dump())
     db.add(pos)
     db.commit()
     db.refresh(pos)
     return pos
+
 
 @router.put("/positions/{pos_id}", response_model=HrPositionResponse)
 def update_position(pos_id: int, data: HrPositionCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -77,6 +97,7 @@ def update_position(pos_id: int, data: HrPositionCreate, db: Session = Depends(g
     db.refresh(pos)
     return pos
 
+
 @router.delete("/positions/{pos_id}")
 def delete_position(pos_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     pos = db.query(HrPosition).filter(HrPosition.id == pos_id).first()
@@ -88,6 +109,7 @@ def delete_position(pos_id: int, db: Session = Depends(get_db), user=Depends(get
 
 
 # ═══════════ 员工管理 ═══════════
+
 
 @router.get("/employees", response_model=list[HrEmployeeResponse])
 def list_employees(
@@ -104,6 +126,7 @@ def list_employees(
         q = q.filter(HrEmployee.department_id == department_id)
     return q.order_by(HrEmployee.employee_code).all()
 
+
 @router.post("/employees", response_model=HrEmployeeResponse)
 def create_employee(data: HrEmployeeCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     emp = HrEmployee(**data.model_dump())
@@ -111,6 +134,7 @@ def create_employee(data: HrEmployeeCreate, db: Session = Depends(get_db), user=
     db.commit()
     db.refresh(emp)
     return emp
+
 
 @router.put("/employees/{emp_id}", response_model=HrEmployeeResponse)
 def update_employee(emp_id: int, data: HrEmployeeCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -122,6 +146,7 @@ def update_employee(emp_id: int, data: HrEmployeeCreate, db: Session = Depends(g
     db.commit()
     db.refresh(emp)
     return emp
+
 
 @router.delete("/employees/{emp_id}")
 def delete_employee(emp_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -135,12 +160,16 @@ def delete_employee(emp_id: int, db: Session = Depends(get_db), user=Depends(get
 
 # ═══════════ 员工培训 ═══════════
 
+
 @router.get("/trainings", response_model=list[HrTrainingResponse])
-def list_trainings(company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_trainings(
+    company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     q = db.query(HrTraining).filter(HrTraining.company_id == company_id)
     if employee_id:
         q = q.filter(HrTraining.employee_id == employee_id)
     return q.order_by(HrTraining.training_date.desc()).all()
+
 
 @router.post("/trainings", response_model=HrTrainingResponse)
 def create_training(data: HrTrainingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -149,6 +178,7 @@ def create_training(data: HrTrainingCreate, db: Session = Depends(get_db), user=
     db.commit()
     db.refresh(t)
     return t
+
 
 @router.put("/trainings/{t_id}", response_model=HrTrainingResponse)
 def update_training(t_id: int, data: HrTrainingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -160,6 +190,7 @@ def update_training(t_id: int, data: HrTrainingCreate, db: Session = Depends(get
     db.commit()
     db.refresh(t)
     return t
+
 
 @router.delete("/trainings/{t_id}")
 def delete_training(t_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -173,12 +204,16 @@ def delete_training(t_id: int, db: Session = Depends(get_db), user=Depends(get_c
 
 # ═══════════ 员工考核 ═══════════
 
+
 @router.get("/evaluations", response_model=list[HrEvaluationResponse])
-def list_evaluations(company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_evaluations(
+    company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     q = db.query(HrEvaluation).filter(HrEvaluation.company_id == company_id)
     if employee_id:
         q = q.filter(HrEvaluation.employee_id == employee_id)
     return q.order_by(HrEvaluation.period.desc()).all()
+
 
 @router.post("/evaluations", response_model=HrEvaluationResponse)
 def create_evaluation(data: HrEvaluationCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -188,8 +223,11 @@ def create_evaluation(data: HrEvaluationCreate, db: Session = Depends(get_db), u
     db.refresh(e)
     return e
 
+
 @router.put("/evaluations/{e_id}", response_model=HrEvaluationResponse)
-def update_evaluation(e_id: int, data: HrEvaluationCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_evaluation(
+    e_id: int, data: HrEvaluationCreate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     e = db.query(HrEvaluation).filter(HrEvaluation.id == e_id).first()
     if not e:
         raise HTTPException(status_code=404, detail="考核记录不存在")
@@ -198,6 +236,7 @@ def update_evaluation(e_id: int, data: HrEvaluationCreate, db: Session = Depends
     db.commit()
     db.refresh(e)
     return e
+
 
 @router.delete("/evaluations/{e_id}")
 def delete_evaluation(e_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -211,14 +250,22 @@ def delete_evaluation(e_id: int, db: Session = Depends(get_db), user=Depends(get
 
 # ═══════════ 薪酬管理 ═══════════
 
+
 @router.get("/salaries", response_model=list[HrSalaryResponse])
-def list_salaries(company_id: int, employee_id: int = Query(None), year_month: str = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_salaries(
+    company_id: int,
+    employee_id: int = Query(None),
+    year_month: str = Query(None),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
     q = db.query(HrSalary).filter(HrSalary.company_id == company_id)
     if employee_id:
         q = q.filter(HrSalary.employee_id == employee_id)
     if year_month:
         q = q.filter(HrSalary.year_month == year_month)
     return q.order_by(HrSalary.year_month.desc()).all()
+
 
 @router.post("/salaries", response_model=HrSalaryResponse)
 def create_salary(data: HrSalaryCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -227,6 +274,7 @@ def create_salary(data: HrSalaryCreate, db: Session = Depends(get_db), user=Depe
     db.commit()
     db.refresh(s)
     return s
+
 
 @router.put("/salaries/{s_id}", response_model=HrSalaryResponse)
 def update_salary(s_id: int, data: HrSalaryCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -238,6 +286,7 @@ def update_salary(s_id: int, data: HrSalaryCreate, db: Session = Depends(get_db)
     db.commit()
     db.refresh(s)
     return s
+
 
 @router.delete("/salaries/{s_id}")
 def delete_salary(s_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -251,12 +300,16 @@ def delete_salary(s_id: int, db: Session = Depends(get_db), user=Depends(get_cur
 
 # ═══════════ 员工奖惩 ═══════════
 
+
 @router.get("/rewards", response_model=list[HrRewardPunishmentResponse])
-def list_rewards(company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_rewards(
+    company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     q = db.query(HrRewardPunishment).filter(HrRewardPunishment.company_id == company_id)
     if employee_id:
         q = q.filter(HrRewardPunishment.employee_id == employee_id)
     return q.order_by(HrRewardPunishment.date.desc()).all()
+
 
 @router.post("/rewards", response_model=HrRewardPunishmentResponse)
 def create_reward(data: HrRewardPunishmentCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -266,8 +319,11 @@ def create_reward(data: HrRewardPunishmentCreate, db: Session = Depends(get_db),
     db.refresh(r)
     return r
 
+
 @router.put("/rewards/{r_id}", response_model=HrRewardPunishmentResponse)
-def update_reward(r_id: int, data: HrRewardPunishmentCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_reward(
+    r_id: int, data: HrRewardPunishmentCreate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     r = db.query(HrRewardPunishment).filter(HrRewardPunishment.id == r_id).first()
     if not r:
         raise HTTPException(status_code=404, detail="记录不存在")
@@ -276,6 +332,7 @@ def update_reward(r_id: int, data: HrRewardPunishmentCreate, db: Session = Depen
     db.commit()
     db.refresh(r)
     return r
+
 
 @router.delete("/rewards/{r_id}")
 def delete_reward(r_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -289,12 +346,16 @@ def delete_reward(r_id: int, db: Session = Depends(get_db), user=Depends(get_cur
 
 # ═══════════ 员工离职 ═══════════
 
+
 @router.get("/offboarding", response_model=list[HrOffboardingResponse])
-def list_offboarding(company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_offboarding(
+    company_id: int, employee_id: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     q = db.query(HrOffboarding).filter(HrOffboarding.company_id == company_id)
     if employee_id:
         q = q.filter(HrOffboarding.employee_id == employee_id)
     return q.order_by(HrOffboarding.apply_date.desc()).all()
+
 
 @router.post("/offboarding", response_model=HrOffboardingResponse)
 def create_offboarding(data: HrOffboardingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -304,8 +365,11 @@ def create_offboarding(data: HrOffboardingCreate, db: Session = Depends(get_db),
     db.refresh(o)
     return o
 
+
 @router.put("/offboarding/{o_id}", response_model=HrOffboardingResponse)
-def update_offboarding(o_id: int, data: HrOffboardingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_offboarding(
+    o_id: int, data: HrOffboardingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     o = db.query(HrOffboarding).filter(HrOffboarding.id == o_id).first()
     if not o:
         raise HTTPException(status_code=404, detail="记录不存在")
@@ -319,6 +383,7 @@ def update_offboarding(o_id: int, data: HrOffboardingCreate, db: Session = Depen
     db.refresh(o)
     return o
 
+
 @router.delete("/offboarding/{o_id}")
 def delete_offboarding(o_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     o = db.query(HrOffboarding).filter(HrOffboarding.id == o_id).first()
@@ -331,20 +396,28 @@ def delete_offboarding(o_id: int, db: Session = Depends(get_db), user=Depends(ge
 
 # ═══════════ 人力资源预算 ═══════════
 
+
 @router.get("/budgets", response_model=list[HrBudgetResponse])
-def list_budgets(company_id: int, year: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_budgets(
+    company_id: int, year: int = Query(None), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     q = db.query(HrBudget).filter(HrBudget.company_id == company_id)
     if year:
         q = q.filter(HrBudget.year == year)
     return q.order_by(HrBudget.year.desc(), HrBudget.department_id).all()
 
+
 @router.post("/budgets", response_model=HrBudgetResponse)
 def upsert_budget(data: HrBudgetCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    existing = db.query(HrBudget).filter(
-        HrBudget.company_id == data.company_id,
-        HrBudget.year == data.year,
-        HrBudget.department_id == data.department_id,
-    ).first()
+    existing = (
+        db.query(HrBudget)
+        .filter(
+            HrBudget.company_id == data.company_id,
+            HrBudget.year == data.year,
+            HrBudget.department_id == data.department_id,
+        )
+        .first()
+    )
     if existing:
         for k, v in data.model_dump(exclude_unset=True).items():
             setattr(existing, k, v)
@@ -354,6 +427,7 @@ def upsert_budget(data: HrBudgetCreate, db: Session = Depends(get_db), user=Depe
     db.commit()
     db.refresh(existing)
     return existing
+
 
 @router.delete("/budgets/{b_id}")
 def delete_budget(b_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):

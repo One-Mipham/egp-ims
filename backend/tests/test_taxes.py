@@ -1,5 +1,5 @@
 """税务管理端点测试."""
-import pytest
+
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -20,11 +20,17 @@ def test_list_invoices_empty():
 
 def test_declaration_crud_unauthorized():
     """申报 CRUD — 无认证拒绝"""
-    resp = client.post("/api/taxes/declarations", json={
-        "company_id": 1, "tax_type": "vat",
-        "period_start": "2026-01-01", "period_end": "2026-01-31",
-        "tax_amount": 1000.0, "status": "pending",
-    })
+    resp = client.post(
+        "/api/taxes/declarations",
+        json={
+            "company_id": 1,
+            "tax_type": "vat",
+            "period_start": "2026-01-01",
+            "period_end": "2026-01-31",
+            "tax_amount": 1000.0,
+            "status": "pending",
+        },
+    )
     assert resp.status_code == 401
 
     resp = client.get("/api/taxes/declarations/1")
@@ -39,12 +45,19 @@ def test_declaration_crud_unauthorized():
 
 def test_invoice_crud_unauthorized():
     """发票 CRUD — 无认证拒绝"""
-    resp = client.post("/api/taxes/invoices", json={
-        "company_id": 1, "invoice_type": "sales",
-        "invoice_number": "INV-001", "invoice_date": "2026-01-15",
-        "amount": 10000.0, "tax_rate": 13.0,
-        "tax_amount": 1300.0, "total_amount": 11300.0,
-    })
+    resp = client.post(
+        "/api/taxes/invoices",
+        json={
+            "company_id": 1,
+            "invoice_type": "sales",
+            "invoice_number": "INV-001",
+            "invoice_date": "2026-01-15",
+            "amount": 10000.0,
+            "tax_rate": 13.0,
+            "tax_amount": 1300.0,
+            "total_amount": 11300.0,
+        },
+    )
     assert resp.status_code == 401
 
     resp = client.get("/api/taxes/invoices/1")

@@ -14,7 +14,7 @@ import Tag from 'primevue/tag'
 
 const { t } = useI18n()
 const toast = useToast()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 const loans = ref<any[]>([])
 const loading = ref(false)
 const dialog = ref(false)

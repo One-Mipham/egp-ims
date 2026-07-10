@@ -1,21 +1,34 @@
 """费用报销管理 — 报销单 + 借款 + 费用标准."""
+
 from datetime import date, datetime
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth import get_current_user
 from app.models import (
-    User, ExpenseItem, ExpenseReport, ExpenseReportItem,
-    ExpenseLoan, ExpensePolicy, ExpenseAttachment, AuditLog,
+    User,
+    ExpenseItem,
+    ExpenseReport,
+    ExpenseReportItem,
+    ExpenseLoan,
+    ExpensePolicy,
+    ExpenseAttachment,
+    AuditLog,
 )
 from app.schemas.expenses import (
-    ExpenseItemCreate, ExpenseItemResponse,
-    ExpensePolicyCreate, ExpensePolicyResponse,
-    ExpenseReportCreate, ExpenseReportUpdate, ExpenseReportResponse,
+    ExpenseItemCreate,
+    ExpenseItemResponse,
+    ExpensePolicyCreate,
+    ExpensePolicyResponse,
+    ExpenseReportCreate,
+    ExpenseReportUpdate,
+    ExpenseReportResponse,
     ExpenseReportItemResponse,
-    ExpenseLoanCreate, ExpenseLoanResponse,
+    ExpenseLoanCreate,
+    ExpenseLoanResponse,
     ExpenseAttachmentResponse,
-    ApprovalAction, RepayAction,
+    ApprovalAction,
+    RepayAction,
 )
 from app.schemas import BypassAction
 from app.permissions import check_approval_bypass
@@ -27,33 +40,48 @@ router = APIRouter()
 
 # ── 辅助函数 ──
 
+
 def _generate_report_no(company_id: int, db: Session) -> str:
     today = date.today().strftime("%Y%m%d")
-    count = db.query(ExpenseReport).filter(
-        ExpenseReport.company_id == company_id,
-        ExpenseReport.report_no.like(f"ER-{today}-%"),
-    ).count()
+    count = (
+        db.query(ExpenseReport)
+        .filter(
+            ExpenseReport.company_id == company_id,
+            ExpenseReport.report_no.like(f"ER-{today}-%"),
+        )
+        .count()
+    )
     return f"ER-{today}-{count + 1:03d}"
 
 
 def _generate_loan_no(company_id: int, db: Session) -> str:
     today = date.today().strftime("%Y%m%d")
-    count = db.query(ExpenseLoan).filter(
-        ExpenseLoan.company_id == company_id,
-        ExpenseLoan.loan_no.like(f"LN-{today}-%"),
-    ).count()
+    count = (
+        db.query(ExpenseLoan)
+        .filter(
+            ExpenseLoan.company_id == company_id,
+            ExpenseLoan.loan_no.like(f"LN-{today}-%"),
+        )
+        .count()
+    )
     return f"LN-{today}-{count + 1:03d}"
 
 
-def _check_policy(company_id: int, expense_item_id: int, amount: float, db: Session) -> dict:
+def _check_policy(
+    company_id: int, expense_item_id: int, amount: float, db: Session
+) -> dict:
     """匹配费用标准，返回检查结果。"""
     result = {"exceeded": False, "limit": None, "message": None}
     today_iso = date.today().isoformat()
-    policies = db.query(ExpensePolicy).filter(
-        ExpensePolicy.company_id == company_id,
-        ExpensePolicy.expense_item_id == expense_item_id,
-        ExpensePolicy.effective_from <= today_iso,
-    ).all()
+    policies = (
+        db.query(ExpensePolicy)
+        .filter(
+            ExpensePolicy.company_id == company_id,
+            ExpensePolicy.expense_item_id == expense_item_id,
+            ExpensePolicy.effective_from <= today_iso,
+        )
+        .all()
+    )
     for p in policies:
         if p.effective_to and p.effective_to < today_iso:
             continue
@@ -70,41 +98,76 @@ def _build_approval_chain(total_amount: float, user: User, db: Session) -> list[
     chain = []
 
     # Step 1: 部门负责人
-    chain.append({
-        "step": 1, "role": "department_head", "title": "部门负责人",
-        "user_id": None, "status": "pending", "comment": None, "timestamp": None,
-    })
+    chain.append(
+        {
+            "step": 1,
+            "role": "department_head",
+            "title": "部门负责人",
+            "user_id": None,
+            "status": "pending",
+            "comment": None,
+            "timestamp": None,
+        }
+    )
 
     if total_amount > 2000:
-        fm_users = db.query(User).filter(User.role == "finance_manager", User.is_active).all()
-        chain.append({
-            "step": 2, "role": "finance_manager", "title": "财务经理",
-            "user_id": fm_users[0].id if fm_users else None,
-            "status": "pending", "comment": None, "timestamp": None,
-        })
+        fm_users = (
+            db.query(User).filter(User.role == "finance_manager", User.is_active).all()
+        )
+        chain.append(
+            {
+                "step": 2,
+                "role": "finance_manager",
+                "title": "财务经理",
+                "user_id": fm_users[0].id if fm_users else None,
+                "status": "pending",
+                "comment": None,
+                "timestamp": None,
+            }
+        )
 
     if total_amount > 10000:
-        fd_users = db.query(User).filter(User.role == "finance_director", User.is_active).all()
-        chain.append({
-            "step": len(chain) + 1, "role": "finance_director", "title": "财务总监",
-            "user_id": fd_users[0].id if fd_users else None,
-            "status": "pending", "comment": None, "timestamp": None,
-        })
+        fd_users = (
+            db.query(User).filter(User.role == "finance_director", User.is_active).all()
+        )
+        chain.append(
+            {
+                "step": len(chain) + 1,
+                "role": "finance_director",
+                "title": "财务总监",
+                "user_id": fd_users[0].id if fd_users else None,
+                "status": "pending",
+                "comment": None,
+                "timestamp": None,
+            }
+        )
 
     return chain
 
 
 # ═══════════ 费用项目 CRUD ═══════════
 
+
 @router.get("/items", response_model=list[ExpenseItemResponse])
-def list_expense_items(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(ExpenseItem).filter(
-        ExpenseItem.company_id == company_id, ExpenseItem.is_active
-    ).order_by(ExpenseItem.code).all()
+def list_expense_items(
+    company_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return (
+        db.query(ExpenseItem)
+        .filter(ExpenseItem.company_id == company_id, ExpenseItem.is_active)
+        .order_by(ExpenseItem.code)
+        .all()
+    )
 
 
 @router.post("/items", response_model=ExpenseItemResponse)
-def create_expense_item(data: ExpenseItemCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_expense_item(
+    data: ExpenseItemCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     item = ExpenseItem(**data.model_dump())
     db.add(item)
     db.commit()
@@ -113,7 +176,12 @@ def create_expense_item(data: ExpenseItemCreate, db: Session = Depends(get_db), 
 
 
 @router.put("/items/{item_id}", response_model=ExpenseItemResponse)
-def update_expense_item(item_id: int, data: ExpenseItemCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_expense_item(
+    item_id: int,
+    data: ExpenseItemCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     item = db.query(ExpenseItem).filter(ExpenseItem.id == item_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="费用项目不存在")
@@ -126,15 +194,27 @@ def update_expense_item(item_id: int, data: ExpenseItemCreate, db: Session = Dep
 
 # ═══════════ 费用标准 CRUD ═══════════
 
+
 @router.get("/policies", response_model=list[ExpensePolicyResponse])
-def list_policies(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(ExpensePolicy).filter(
-        ExpensePolicy.company_id == company_id
-    ).order_by(ExpensePolicy.effective_from.desc()).all()
+def list_policies(
+    company_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return (
+        db.query(ExpensePolicy)
+        .filter(ExpensePolicy.company_id == company_id)
+        .order_by(ExpensePolicy.effective_from.desc())
+        .all()
+    )
 
 
 @router.post("/policies", response_model=ExpensePolicyResponse)
-def create_policy(data: ExpensePolicyCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_policy(
+    data: ExpensePolicyCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     item = ExpensePolicy(**data.model_dump())
     db.add(item)
     db.commit()
@@ -143,7 +223,12 @@ def create_policy(data: ExpensePolicyCreate, db: Session = Depends(get_db), user
 
 
 @router.put("/policies/{policy_id}", response_model=ExpensePolicyResponse)
-def update_policy(policy_id: int, data: ExpensePolicyCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_policy(
+    policy_id: int,
+    data: ExpensePolicyCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     item = db.query(ExpensePolicy).filter(ExpensePolicy.id == policy_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="费用标准不存在")
@@ -155,7 +240,11 @@ def update_policy(policy_id: int, data: ExpensePolicyCreate, db: Session = Depen
 
 
 @router.delete("/policies/{policy_id}")
-def delete_policy(policy_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def delete_policy(
+    policy_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     item = db.query(ExpensePolicy).filter(ExpensePolicy.id == policy_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="费用标准不存在")
@@ -165,6 +254,7 @@ def delete_policy(policy_id: int, db: Session = Depends(get_db), user: User = De
 
 
 # ═══════════ 报销单 CRUD ═══════════
+
 
 @router.get("/reports", response_model=list[ExpenseReportResponse])
 def list_reports(
@@ -180,7 +270,11 @@ def list_reports(
 
 
 @router.post("/reports", response_model=ExpenseReportResponse)
-def create_report(data: ExpenseReportCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_report(
+    data: ExpenseReportCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     total = sum(item.amount for item in data.items)
     report = ExpenseReport(
         company_id=data.company_id,
@@ -213,7 +307,11 @@ def create_report(data: ExpenseReportCreate, db: Session = Depends(get_db), user
 
 
 @router.get("/reports/{report_id}", response_model=ExpenseReportResponse)
-def get_report(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def get_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     report = db.query(ExpenseReport).filter(ExpenseReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
@@ -221,7 +319,12 @@ def get_report(report_id: int, db: Session = Depends(get_db), user: User = Depen
 
 
 @router.put("/reports/{report_id}", response_model=ExpenseReportResponse)
-def update_report(report_id: int, data: ExpenseReportUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_report(
+    report_id: int,
+    data: ExpenseReportUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     report = db.query(ExpenseReport).filter(ExpenseReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
@@ -236,7 +339,9 @@ def update_report(report_id: int, data: ExpenseReportUpdate, db: Session = Depen
         report.notes = data.notes
 
     if data.items is not None:
-        db.query(ExpenseReportItem).filter(ExpenseReportItem.report_id == report.id).delete()
+        db.query(ExpenseReportItem).filter(
+            ExpenseReportItem.report_id == report.id
+        ).delete()
         total = 0
         for it in data.items:
             detail = ExpenseReportItem(
@@ -258,17 +363,31 @@ def update_report(report_id: int, data: ExpenseReportUpdate, db: Session = Depen
     return report
 
 
-@router.get("/reports/{report_id}/items", response_model=list[ExpenseReportItemResponse])
-def get_report_items(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(ExpenseReportItem).filter(
-        ExpenseReportItem.report_id == report_id
-    ).order_by(ExpenseReportItem.row_seq).all()
+@router.get(
+    "/reports/{report_id}/items", response_model=list[ExpenseReportItemResponse]
+)
+def get_report_items(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return (
+        db.query(ExpenseReportItem)
+        .filter(ExpenseReportItem.report_id == report_id)
+        .order_by(ExpenseReportItem.row_seq)
+        .all()
+    )
 
 
 # ═══════════ 审批操作 ═══════════
 
+
 @router.post("/reports/{report_id}/submit", response_model=ExpenseReportResponse)
-def submit_report(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def submit_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     report = db.query(ExpenseReport).filter(ExpenseReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
@@ -279,24 +398,34 @@ def submit_report(report_id: int, db: Session = Depends(get_db), user: User = De
 
     # 费用标准检查
     warnings = []
-    items = db.query(ExpenseReportItem).filter(ExpenseReportItem.report_id == report.id).all()
+    items = (
+        db.query(ExpenseReportItem)
+        .filter(ExpenseReportItem.report_id == report.id)
+        .all()
+    )
     for item in items:
         if item.expense_item_id:
-            check = _check_policy(report.company_id, item.expense_item_id, item.amount, db)
+            check = _check_policy(
+                report.company_id, item.expense_item_id, item.amount, db
+            )
             item.policy_check = check
             if check["exceeded"]:
-                warnings.append({
-                    "row_seq": item.row_seq,
-                    "description": item.description,
-                    "amount": item.amount,
-                    "limit": check["limit"],
-                    "message": check["message"],
-                })
+                warnings.append(
+                    {
+                        "row_seq": item.row_seq,
+                        "description": item.description,
+                        "amount": item.amount,
+                        "limit": check["limit"],
+                        "message": check["message"],
+                    }
+                )
 
     # 构建审批链
     chain = _build_approval_chain(report.total_amount, user, db)
     if not chain:
-        raise HTTPException(status_code=500, detail="无法构建审批链，请检查部门设置和人员配置")
+        raise HTTPException(
+            status_code=500, detail="无法构建审批链，请检查部门设置和人员配置"
+        )
 
     report.approval_chain = chain
     report.policy_warnings = warnings if warnings else None
@@ -309,7 +438,12 @@ def submit_report(report_id: int, db: Session = Depends(get_db), user: User = De
 
 
 @router.post("/reports/{report_id}/approve", response_model=ExpenseReportResponse)
-def approve_report(report_id: int, action: ApprovalAction, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def approve_report(
+    report_id: int,
+    action: ApprovalAction,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     report = db.query(ExpenseReport).filter(ExpenseReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
@@ -354,7 +488,12 @@ def approve_report(report_id: int, action: ApprovalAction, db: Session = Depends
 
 
 @router.post("/reports/{report_id}/reject", response_model=ExpenseReportResponse)
-def reject_report(report_id: int, action: ApprovalAction, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def reject_report(
+    report_id: int,
+    action: ApprovalAction,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     report = db.query(ExpenseReport).filter(ExpenseReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
@@ -380,19 +519,32 @@ def reject_report(report_id: int, action: ApprovalAction, db: Session = Depends(
 
 
 @router.post("/reports/{report_id}/pay", response_model=ExpenseReportResponse)
-def pay_report(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def pay_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     report = db.query(ExpenseReport).filter(ExpenseReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
-    if report.status not in ("dept_approved", "finance_approved", "director_approved", "unit_head_approved"):
+    if report.status not in (
+        "dept_approved",
+        "finance_approved",
+        "director_approved",
+        "unit_head_approved",
+    ):
         raise HTTPException(status_code=400, detail="当前状态不可付款")
 
     # 处理借款冲销
     if report.loan_offset_amount > 0:
-        loans = db.query(ExpenseLoan).filter(
-            ExpenseLoan.applicant_id == report.applicant_id,
-            ExpenseLoan.status.in_(["approved", "partial_repaid"]),
-        ).all()
+        loans = (
+            db.query(ExpenseLoan)
+            .filter(
+                ExpenseLoan.applicant_id == report.applicant_id,
+                ExpenseLoan.status.in_(["approved", "partial_repaid"]),
+            )
+            .all()
+        )
         remaining = report.loan_offset_amount
         for loan in loans:
             if remaining <= 0:
@@ -400,7 +552,11 @@ def pay_report(report_id: int, db: Session = Depends(get_db), user: User = Depen
             due = loan.amount - loan.repaid_amount
             deduct = min(remaining, due)
             loan.repaid_amount += deduct
-            loan.status = "fully_repaid" if loan.repaid_amount >= loan.amount else "partial_repaid"
+            loan.status = (
+                "fully_repaid"
+                if loan.repaid_amount >= loan.amount
+                else "partial_repaid"
+            )
             remaining -= deduct
 
     report.status = "paid"
@@ -410,7 +566,11 @@ def pay_report(report_id: int, db: Session = Depends(get_db), user: User = Depen
 
 
 @router.post("/reports/{report_id}/cancel", response_model=ExpenseReportResponse)
-def cancel_report(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def cancel_report(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     report = db.query(ExpenseReport).filter(ExpenseReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
@@ -429,7 +589,12 @@ def cancel_report(report_id: int, db: Session = Depends(get_db), user: User = De
 
 
 @router.post("/reports/{report_id}/bypass", response_model=ExpenseReportResponse)
-def bypass_report_approval(report_id: int, action: BypassAction, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def bypass_report_approval(
+    report_id: int,
+    action: BypassAction,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """强制跳过当前审批节点（仅管理员/财务总监）"""
     report = db.query(ExpenseReport).filter(ExpenseReport.id == report_id).first()
     if not report:
@@ -465,12 +630,17 @@ def bypass_report_approval(report_id: int, action: BypassAction, db: Session = D
 
     report.approval_chain = chain
 
-    db.add(AuditLog(
-        company_id=report.company_id, user_id=user.id,
-        action="bypass_approval", target_type="expense_report",
-        target_id=report.id, reason=action.reason,
-        details=json.dumps({"bypassed_node": bypassed_node}),
-    ))
+    db.add(
+        AuditLog(
+            company_id=report.company_id,
+            user_id=user.id,
+            action="bypass_approval",
+            target_type="expense_report",
+            target_id=report.id,
+            reason=action.reason,
+            details=json.dumps({"bypassed_node": bypassed_node}),
+        )
+    )
 
     db.commit()
     db.refresh(report)
@@ -479,15 +649,27 @@ def bypass_report_approval(report_id: int, action: BypassAction, db: Session = D
 
 # ═══════════ 借款管理 ═══════════
 
+
 @router.get("/loans", response_model=list[ExpenseLoanResponse])
-def list_loans(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(ExpenseLoan).filter(
-        ExpenseLoan.company_id == company_id
-    ).order_by(ExpenseLoan.id.desc()).all()
+def list_loans(
+    company_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return (
+        db.query(ExpenseLoan)
+        .filter(ExpenseLoan.company_id == company_id)
+        .order_by(ExpenseLoan.id.desc())
+        .all()
+    )
 
 
 @router.post("/loans", response_model=ExpenseLoanResponse)
-def create_loan(data: ExpenseLoanCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_loan(
+    data: ExpenseLoanCreate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     loan = ExpenseLoan(
         company_id=data.company_id,
         loan_no=_generate_loan_no(data.company_id, db),
@@ -506,7 +688,9 @@ def create_loan(data: ExpenseLoanCreate, db: Session = Depends(get_db), user: Us
 
 
 @router.post("/loans/{loan_id}/approve", response_model=ExpenseLoanResponse)
-def approve_loan(loan_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def approve_loan(
+    loan_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     loan = db.query(ExpenseLoan).filter(ExpenseLoan.id == loan_id).first()
     if not loan:
         raise HTTPException(status_code=404, detail="借款单不存在")
@@ -519,7 +703,12 @@ def approve_loan(loan_id: int, db: Session = Depends(get_db), user: User = Depen
 
 
 @router.post("/loans/{loan_id}/bypass", response_model=ExpenseLoanResponse)
-def bypass_loan_approval(loan_id: int, action: BypassAction, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def bypass_loan_approval(
+    loan_id: int,
+    action: BypassAction,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """强制跳过借款审批（仅管理员/财务总监）"""
     loan = db.query(ExpenseLoan).filter(ExpenseLoan.id == loan_id).first()
     if not loan:
@@ -534,11 +723,16 @@ def bypass_loan_approval(loan_id: int, action: BypassAction, db: Session = Depen
 
     loan.status = "approved"
 
-    db.add(AuditLog(
-        company_id=loan.company_id, user_id=user.id,
-        action="bypass_approval", target_type="expense_loan",
-        target_id=loan.id, reason=action.reason,
-    ))
+    db.add(
+        AuditLog(
+            company_id=loan.company_id,
+            user_id=user.id,
+            action="bypass_approval",
+            target_type="expense_loan",
+            target_id=loan.id,
+            reason=action.reason,
+        )
+    )
 
     db.commit()
     db.refresh(loan)
@@ -546,14 +740,21 @@ def bypass_loan_approval(loan_id: int, action: BypassAction, db: Session = Depen
 
 
 @router.post("/loans/{loan_id}/repay", response_model=ExpenseLoanResponse)
-def repay_loan(loan_id: int, data: RepayAction, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def repay_loan(
+    loan_id: int,
+    data: RepayAction,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     loan = db.query(ExpenseLoan).filter(ExpenseLoan.id == loan_id).first()
     if not loan:
         raise HTTPException(status_code=404, detail="借款单不存在")
     if loan.status not in ("approved", "partial_repaid"):
         raise HTTPException(status_code=400, detail="当前状态不可还款")
     loan.repaid_amount += data.amount
-    loan.status = "fully_repaid" if loan.repaid_amount >= loan.amount else "partial_repaid"
+    loan.status = (
+        "fully_repaid" if loan.repaid_amount >= loan.amount else "partial_repaid"
+    )
     db.commit()
     db.refresh(loan)
     return loan
@@ -564,11 +765,20 @@ def repay_loan(loan_id: int, data: RepayAction, db: Session = Depends(get_db), u
 UPLOAD_DIR = "uploads/expenses"
 
 
-@router.get("/reports/{report_id}/attachments", response_model=list[ExpenseAttachmentResponse])
-def list_attachments(report_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(ExpenseAttachment).filter(
-        ExpenseAttachment.report_id == report_id
-    ).order_by(ExpenseAttachment.file_name).all()
+@router.get(
+    "/reports/{report_id}/attachments", response_model=list[ExpenseAttachmentResponse]
+)
+def list_attachments(
+    report_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    return (
+        db.query(ExpenseAttachment)
+        .filter(ExpenseAttachment.report_id == report_id)
+        .order_by(ExpenseAttachment.file_name)
+        .all()
+    )
 
 
 @router.post("/attachments", response_model=ExpenseAttachmentResponse)
@@ -584,13 +794,17 @@ def upload_attachment(
     if not report:
         raise HTTPException(status_code=404, detail="报销单不存在")
 
-    count = db.query(ExpenseAttachment).filter(
-        ExpenseAttachment.report_id == report_id
-    ).count()
+    count = (
+        db.query(ExpenseAttachment)
+        .filter(ExpenseAttachment.report_id == report_id)
+        .count()
+    )
     seq = f"{count + 1:02d}"
 
-    name_without_ext = file.filename.rsplit('.', 1)[0] if '.' in file.filename else file.filename
-    safe_name = f"{seq}-{category}-{doc_number}-{name_without_ext}.{file.filename.rsplit('.', 1)[-1] if '.' in file.filename else 'bin'}"
+    name_without_ext = (
+        file.filename.rsplit(".", 1)[0] if "." in file.filename else file.filename
+    )
+    safe_name = f"{seq}-{category}-{doc_number}-{name_without_ext}.{file.filename.rsplit('.', 1)[-1] if '.' in file.filename else 'bin'}"  # noqa: E501
 
     dir_path = os.path.join(UPLOAD_DIR, str(report.company_id), str(report_id))
     os.makedirs(dir_path, exist_ok=True)
@@ -615,8 +829,16 @@ def upload_attachment(
 
 
 @router.delete("/attachments/{attachment_id}")
-def delete_attachment(attachment_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    att = db.query(ExpenseAttachment).filter(ExpenseAttachment.id == attachment_id).first()
+def delete_attachment(
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    att = (
+        db.query(ExpenseAttachment)
+        .filter(ExpenseAttachment.id == attachment_id)
+        .first()
+    )
     if not att:
         raise HTTPException(status_code=404, detail="附件不存在")
     if os.path.exists(att.file_path):
@@ -627,6 +849,7 @@ def delete_attachment(attachment_id: int, db: Session = Depends(get_db), user: U
 
 
 # ═══════════ 查询统计 ═══════════
+
 
 @router.get("/stats")
 def expense_stats(

@@ -24,7 +24,7 @@ import {
 
 const toast = useToast()
 const confirm = useConfirm()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 
 // ── Tab state ──
 const activeTab = ref<'servers' | 'services'>('servers')

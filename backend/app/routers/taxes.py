@@ -1,4 +1,5 @@
 """税务管理 — 申报 + 发票."""
+
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -8,8 +9,14 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.models import User, TaxDeclaration, TaxInvoice
 from app.schemas.taxes import (
-    TaxDeclarationCreate, TaxDeclarationUpdate, TaxDeclarationResponse, TaxDeclarationSummary,
-    TaxInvoiceCreate, TaxInvoiceUpdate, TaxInvoiceResponse, TaxInvoiceSummary,
+    TaxDeclarationCreate,
+    TaxDeclarationUpdate,
+    TaxDeclarationResponse,
+    TaxDeclarationSummary,
+    TaxInvoiceCreate,
+    TaxInvoiceUpdate,
+    TaxInvoiceResponse,
+    TaxInvoiceSummary,
     TAX_TYPE_LABELS,
 )
 
@@ -17,6 +24,7 @@ router = APIRouter()
 
 
 # ── TaxDeclaration CRUD ──
+
 
 @router.get("/declarations", response_model=list[TaxDeclarationResponse])
 def list_declarations(
@@ -151,6 +159,7 @@ def delete_declaration(
 
 
 # ── TaxInvoice CRUD ──
+
 
 @router.get("/invoices", response_model=list[TaxInvoiceResponse])
 def list_invoices(

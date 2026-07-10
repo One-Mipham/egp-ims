@@ -1,4 +1,5 @@
 """应收账款管理 — 发票 CRUD + 收款 + 账龄 + 审计 + 凭证 + CSV."""
+
 import csv as csv_mod
 import io
 from datetime import date, datetime
@@ -10,28 +11,37 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.models import Receivable, ReceivablePayment, Counterparty, Voucher, VoucherEntry, AuditLog, User
 from app.schemas import (
-    ReceivableCreate, ReceivableResponse,
-    ReceivablePaymentCreate, ReceivablePaymentResponse,
+    ReceivableCreate,
+    ReceivableResponse,
+    ReceivablePaymentCreate,
+    ReceivablePaymentResponse,
 )
+import contextlib
 
 router = APIRouter()
 
 
 # ═══════════ 审计辅助 ═══════════
 
-def _audit(db: Session, user: User, action: str, target_type: str, target_id: int | None = None, details: dict | None = None):
-    db.add(AuditLog(
-        company_id=getattr(user, 'company_id', 1),
-        user_id=user.id,
-        action=action,
-        target_type=target_type,
-        target_id=target_id,
-        details=details,
-        created_at=datetime.utcnow(),
-    ))
+
+def _audit(
+    db: Session, user: User, action: str, target_type: str, target_id: int | None = None, details: dict | None = None
+):
+    db.add(
+        AuditLog(
+            company_id=getattr(user, "company_id", 1),
+            user_id=user.id,
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            details=details,
+            created_at=datetime.utcnow(),
+        )
+    )
 
 
 # ═══════════ 凭证生成 ═══════════
+
 
 def _generate_voucher(db: Session, company_id: int, user_id: int, vtype: str, summary: str, entries: list[dict]):
     vdate = datetime.utcnow().strftime("%Y-%m-%d")
@@ -48,17 +58,20 @@ def _generate_voucher(db: Session, company_id: int, user_id: int, vtype: str, su
     db.add(voucher)
     db.flush()
     for e in entries:
-        db.add(VoucherEntry(
-            voucher_id=voucher.id,
-            account_code=e["account_code"],
-            debit=e.get("debit", 0),
-            credit=e.get("credit", 0),
-            description=e.get("description", ""),
-        ))
+        db.add(
+            VoucherEntry(
+                voucher_id=voucher.id,
+                account_code=e["account_code"],
+                debit=e.get("debit", 0),
+                credit=e.get("credit", 0),
+                description=e.get("description", ""),
+            )
+        )
     return voucher
 
 
 # ═══════════ 应收发票 CRUD ═══════════
+
 
 @router.get("/invoices", response_model=list[ReceivableResponse])
 def list_receivables(
@@ -81,10 +94,7 @@ def list_receivables(
         q = q.filter(Receivable.invoice_date <= end_date)
     if search:
         pattern = f"%{search}%"
-        q = q.filter(
-            (Receivable.customer_name.ilike(pattern)) |
-            (Receivable.invoice_no.ilike(pattern))
-        )
+        q = q.filter((Receivable.customer_name.ilike(pattern)) | (Receivable.invoice_no.ilike(pattern)))
     return q.order_by(Receivable.id.desc()).offset(offset).limit(limit).all()
 
 
@@ -98,11 +108,30 @@ def export_receivables_csv(
     items = db.query(Receivable).filter(Receivable.company_id == company_id).order_by(Receivable.id.desc()).all()
     output = io.StringIO()
     writer = csv_mod.writer(output)
-    writer.writerow(["客户名称", "发票号", "发票日期", "金额", "已收金额", "余额", "到期日", "账龄(天)", "状态", "备注"])
+    writer.writerow(
+        ["客户名称", "发票号", "发票日期", "金额", "已收金额", "余额", "到期日", "账龄(天)", "状态", "备注"]
+    )
     for i in items:
-        writer.writerow([i.customer_name, i.invoice_no, i.invoice_date or "", i.amount, i.received_amount, i.balance, i.due_date or "", i.aging_days, i.status, i.notes or ""])
+        writer.writerow(
+            [
+                i.customer_name,
+                i.invoice_no,
+                i.invoice_date or "",
+                i.amount,
+                i.received_amount,
+                i.balance,
+                i.due_date or "",
+                i.aging_days,
+                i.status,
+                i.notes or "",
+            ]
+        )
     output.seek(0)
-    return StreamingResponse(io.BytesIO(output.getvalue().encode('utf-8-sig')), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=receivables.csv"})
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode("utf-8-sig")),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=receivables.csv"},
+    )
 
 
 @router.post("/invoices", response_model=ReceivableResponse)
@@ -120,13 +149,22 @@ def create_receivable(data: ReceivableCreate, db: Session = Depends(get_db), use
     db.add(item)
     db.commit()
     db.refresh(item)
-    _audit(db, user, "create", "receivable", item.id, {"customer": item.customer_name, "invoice_no": item.invoice_no, "amount": item.amount})
+    _audit(
+        db,
+        user,
+        "create",
+        "receivable",
+        item.id,
+        {"customer": item.customer_name, "invoice_no": item.invoice_no, "amount": item.amount},
+    )
     db.commit()
     return item
 
 
 @router.put("/invoices/{inv_id}", response_model=ReceivableResponse)
-def update_receivable(inv_id: int, data: ReceivableCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_receivable(
+    inv_id: int, data: ReceivableCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(Receivable).filter(Receivable.id == inv_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="应收记录不存在")
@@ -134,10 +172,8 @@ def update_receivable(inv_id: int, data: ReceivableCreate, db: Session = Depends
         setattr(item, k, v)
     item.balance = item.amount - item.received_amount
     if data.due_date:
-        try:
+        with contextlib.suppress(ValueError):
             item.aging_days = max(0, (date.today() - date.fromisoformat(data.due_date)).days)
-        except ValueError:
-            pass
     _audit(db, user, "update", "receivable", item.id, {"customer": item.customer_name, "invoice_no": item.invoice_no})
     db.commit()
     db.refresh(item)
@@ -157,11 +193,15 @@ def delete_receivable(inv_id: int, db: Session = Depends(get_db), user: User = D
 
 # ═══════════ 批量操作 ═══════════
 
+
 class BatchDeleteRequest(BaseModel):
     ids: list[int]
 
+
 @router.post("/invoices/batch-delete")
-def batch_delete_receivables(data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def batch_delete_receivables(
+    data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     count = db.query(Receivable).filter(Receivable.id.in_(data.ids)).delete(synchronize_session=False)
     _audit(db, user, "batch_delete", "receivable", None, {"deleted_count": count, "ids": data.ids})
     db.commit()
@@ -169,6 +209,7 @@ def batch_delete_receivables(data: BatchDeleteRequest, db: Session = Depends(get
 
 
 # ═══════════ 收款管理 ═══════════
+
 
 @router.get("/payments", response_model=list[ReceivablePaymentResponse])
 def list_payments(
@@ -186,7 +227,9 @@ def list_payments(
 
 
 @router.post("/payments", response_model=ReceivablePaymentResponse)
-def create_payment(data: ReceivablePaymentCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_payment(
+    data: ReceivablePaymentCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     if data.amount <= 0:
         raise HTTPException(status_code=400, detail="收款金额必须大于0")
     inv = db.query(Receivable).filter(Receivable.id == data.receivable_id).first()
@@ -200,17 +243,42 @@ def create_payment(data: ReceivablePaymentCreate, db: Session = Depends(get_db),
     inv.balance = inv.amount - inv.received_amount
     inv.status = "已收款" if inv.balance <= 0 else ("部分收款" if inv.received_amount > 0 else "未收款")
     # 自动生成会计凭证：借记银行存款 / 贷记应收账款
-    _generate_voucher(db, inv.company_id, user.id, "receipt", f"收款 {inv.customer_name} {inv.invoice_no} 金额{data.amount}", [
-        {"account_code": "1002", "debit": data.amount, "credit": 0, "description": f"银行存款 收{inv.customer_name}"},
-        {"account_code": "1122", "debit": 0, "credit": data.amount, "description": f"应收账款 {inv.customer_name} {inv.invoice_no}"},
-    ])
-    _audit(db, user, "payment", "receivable", inv.id, {"amount": data.amount, "method": data.payment_method, "customer": inv.customer_name})
+    _generate_voucher(
+        db,
+        inv.company_id,
+        user.id,
+        "receipt",
+        f"收款 {inv.customer_name} {inv.invoice_no} 金额{data.amount}",
+        [
+            {
+                "account_code": "1002",
+                "debit": data.amount,
+                "credit": 0,
+                "description": f"银行存款 收{inv.customer_name}",
+            },
+            {
+                "account_code": "1122",
+                "debit": 0,
+                "credit": data.amount,
+                "description": f"应收账款 {inv.customer_name} {inv.invoice_no}",
+            },
+        ],
+    )
+    _audit(
+        db,
+        user,
+        "payment",
+        "receivable",
+        inv.id,
+        {"amount": data.amount, "method": data.payment_method, "customer": inv.customer_name},
+    )
     db.commit()
     db.refresh(item)
     return item
 
 
 # ═══════════ 仪表板摘要 ═══════════
+
 
 @router.get("/summary")
 def receivables_summary(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -241,9 +309,15 @@ def receivables_summary(company_id: int, db: Session = Depends(get_db), user: Us
 
 # ═══════════ 往来单位数据列表 ═══════════
 
+
 @router.get("/counterparties")
 def list_counterparties(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(Counterparty).filter(
-        Counterparty.company_id == company_id,
-        Counterparty.is_active,
-    ).order_by(Counterparty.code).all()
+    return (
+        db.query(Counterparty)
+        .filter(
+            Counterparty.company_id == company_id,
+            Counterparty.is_active,
+        )
+        .order_by(Counterparty.code)
+        .all()
+    )

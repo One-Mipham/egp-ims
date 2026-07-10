@@ -93,7 +93,7 @@ const submitting = ref(false)
 
 function emptyForm(): Record<string, any> {
   return {
-    company_id: Number(localStorage.getItem('company_id') || '1'),
+    company_id: Number(localStorage.getItem('companyId') || '1'),
     target_type: routeTargetType.value,
     target_id: null,
     exception_type: '',
@@ -137,7 +137,7 @@ async function load() {
   loading.value = true
   try {
     const r = await listExceptionEvents({
-      company_id: Number(localStorage.getItem('company_id') || '1'),
+      company_id: Number(localStorage.getItem('companyId') || '1'),
       target_type: routeTargetType.value,
       exception_type: fExceptionType.value,
       status: fStatus.value,
@@ -152,7 +152,7 @@ async function load() {
 async function loadRefs() {
   try {
     const [deptRes] = await Promise.all([
-      api.get('/departments', { params: { company_id: Number(localStorage.getItem('company_id') || '1') } }),
+      api.get('/departments', { params: { company_id: Number(localStorage.getItem('companyId') || '1') } }),
     ])
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
   } catch {

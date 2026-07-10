@@ -150,7 +150,7 @@ def check_company_create(user) -> str | None:
 
 def check_account_level(user, company, level: int) -> str | None:
     """检查科目级别权限：普通用户不能修改二级科目，管理员无限制。"""
-    if getattr(user, 'is_admin', False) or user.role == "super_admin":
+    if getattr(user, "is_admin", False) or user.role == "super_admin":
         return None
     if level <= 2:
         return "普通用户不能管理二级科目"
@@ -159,11 +159,12 @@ def check_account_level(user, company, level: int) -> str | None:
 
 def check_permission(user, company, permission_name: str, db=None) -> str | None:
     """细粒度权限检查。管理员拥有所有权限，非管理员查 UserPermission 表。"""
-    if getattr(user, 'is_admin', False) or user.role == "super_admin":
+    if getattr(user, "is_admin", False) or user.role == "super_admin":
         return None
     if db is None:
         return "权限表需要数据库连接"
     from app.models import UserPermission
+
     perm = db.query(UserPermission).filter_by(user_id=user.id, company_id=company.id).first()
     if perm is None:
         return "未配置权限"
@@ -226,6 +227,7 @@ def check_module_enabled(company, module: str) -> str | None:
 
 def require_module(module: str):
     """FastAPI 依赖工厂：限制路由仅允许有模块权限且公司已购买的用户访问。"""
+
     async def _check(user=Depends(get_current_user), db: Session = Depends(get_db), request: Request = None):
         err = check_module_access(user, module)
         if err:
@@ -238,6 +240,7 @@ def require_module(module: str):
             # 从 POST/PUT/PATCH body 中读取 company_id
             if not company_id_param and request.method in ("POST", "PUT", "PATCH"):
                 import json as _json
+
                 body = await request.body()
                 if body:
                     try:
@@ -253,10 +256,12 @@ def require_module(module: str):
             return user
 
         from app.models import Company
+
         company = db.query(Company).filter(Company.id == int(company_id_param)).first()
         if company and company.subscription_status != "trialing":
             module_err = check_module_enabled(company, module)
             if module_err:
                 raise HTTPException(status_code=402, detail=module_err)
         return user
+
     return _check

@@ -1,4 +1,5 @@
 """进销存管理 — 采购/销售/库存 CRUD + 主数据 + 联动 + 审计 + 凭证."""
+
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -6,19 +7,33 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.auth import get_current_user
 from app.models import (
-    InvPurchase, InvSale, InvStock,
-    Warehouse, Inventory, InventoryCategory, UnitOfMeasure,
-    Voucher, VoucherEntry, AuditLog,
+    InvPurchase,
+    InvSale,
+    InvStock,
+    Warehouse,
+    Inventory,
+    InventoryCategory,
+    UnitOfMeasure,
+    Voucher,
+    VoucherEntry,
+    AuditLog,
     User,
 )
 from app.schemas import (
-    InvPurchaseCreate, InvPurchaseResponse,
-    InvSaleCreate, InvSaleResponse,
-    InvStockCreate, InvStockResponse,
-    WarehouseCreate, WarehouseResponse,
-    InventoryCreate, InventoryResponse,
-    InventoryCategoryCreate, InventoryCategoryResponse,
-    UnitOfMeasureCreate, UnitOfMeasureResponse,
+    InvPurchaseCreate,
+    InvPurchaseResponse,
+    InvSaleCreate,
+    InvSaleResponse,
+    InvStockCreate,
+    InvStockResponse,
+    WarehouseCreate,
+    WarehouseResponse,
+    InventoryCreate,
+    InventoryResponse,
+    InventoryCategoryCreate,
+    InventoryCategoryResponse,
+    UnitOfMeasureCreate,
+    UnitOfMeasureResponse,
 )
 
 router = APIRouter()
@@ -26,19 +41,25 @@ router = APIRouter()
 
 # ═══════════ 审计辅助 ═══════════
 
-def _audit(db: Session, user: User, action: str, target_type: str, target_id: int | None = None, details: dict | None = None):
-    db.add(AuditLog(
-        company_id=user.company_id if hasattr(user, 'company_id') else 1,
-        user_id=user.id,
-        action=action,
-        target_type=target_type,
-        target_id=target_id,
-        details=details,
-        created_at=datetime.utcnow(),
-    ))
+
+def _audit(
+    db: Session, user: User, action: str, target_type: str, target_id: int | None = None, details: dict | None = None
+):
+    db.add(
+        AuditLog(
+            company_id=user.company_id if hasattr(user, "company_id") else 1,
+            user_id=user.id,
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            details=details,
+            created_at=datetime.utcnow(),
+        )
+    )
 
 
 # ═══════════ 凭证生成 ═══════════
+
 
 def _generate_voucher(db: Session, company_id: int, user_id: int, vtype: str, summary: str, entries: list[dict]):
     """生成会计凭证。entries: [{account_code, debit, credit, description}]"""
@@ -56,17 +77,20 @@ def _generate_voucher(db: Session, company_id: int, user_id: int, vtype: str, su
     db.add(voucher)
     db.flush()
     for e in entries:
-        db.add(VoucherEntry(
-            voucher_id=voucher.id,
-            account_code=e["account_code"],
-            debit=e.get("debit", 0),
-            credit=e.get("credit", 0),
-            description=e.get("description", ""),
-        ))
+        db.add(
+            VoucherEntry(
+                voucher_id=voucher.id,
+                account_code=e["account_code"],
+                debit=e.get("debit", 0),
+                credit=e.get("credit", 0),
+                description=e.get("description", ""),
+            )
+        )
     return voucher
 
 
 # ═══════════ Purchases ═══════════════════════
+
 
 @router.get("/purchases", response_model=list[InvPurchaseResponse])
 def list_purchases(
@@ -90,9 +114,9 @@ def list_purchases(
     if search:
         pattern = f"%{search}%"
         q = q.filter(
-            (InvPurchase.order_no.ilike(pattern)) |
-            (InvPurchase.supplier_name.ilike(pattern)) |
-            (InvPurchase.product_name.ilike(pattern))
+            (InvPurchase.order_no.ilike(pattern))
+            | (InvPurchase.supplier_name.ilike(pattern))
+            | (InvPurchase.product_name.ilike(pattern))
         )
     return q.order_by(InvPurchase.id.desc()).offset(offset).limit(limit).all()
 
@@ -113,7 +137,9 @@ def create_purchase(data: InvPurchaseCreate, db: Session = Depends(get_db), user
 
 
 @router.put("/purchases/{id}", response_model=InvPurchaseResponse)
-def update_purchase(id: int, data: InvPurchaseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_purchase(
+    id: int, data: InvPurchaseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(InvPurchase).filter(InvPurchase.id == id).first()
     if not item:
         raise HTTPException(status_code=404, detail="采购单不存在")
@@ -123,11 +149,35 @@ def update_purchase(id: int, data: InvPurchaseCreate, db: Session = Depends(get_
     # 入库联动 + 生成凭证
     if old_status != "已入库" and item.status == "已入库":
         _purchase_to_stock(item, db)
-        _generate_voucher(db, item.company_id, user.id, "transfer", f"采购入库 {item.order_no} {item.product_name}", [
-            {"account_code": "1405", "debit": item.total_amount, "credit": 0, "description": f"库存商品 {item.product_name}"},
-            {"account_code": "2202", "debit": 0, "credit": item.total_amount, "description": f"应付账款 {item.supplier_name}"},
-        ])
-        _audit(db, user, "post", "purchase_inbound", item.id, {"order_no": item.order_no, "amount": item.total_amount, "product": item.product_name})
+        _generate_voucher(
+            db,
+            item.company_id,
+            user.id,
+            "transfer",
+            f"采购入库 {item.order_no} {item.product_name}",
+            [
+                {
+                    "account_code": "1405",
+                    "debit": item.total_amount,
+                    "credit": 0,
+                    "description": f"库存商品 {item.product_name}",
+                },
+                {
+                    "account_code": "2202",
+                    "debit": 0,
+                    "credit": item.total_amount,
+                    "description": f"应付账款 {item.supplier_name}",
+                },
+            ],
+        )
+        _audit(
+            db,
+            user,
+            "post",
+            "purchase_inbound",
+            item.id,
+            {"order_no": item.order_no, "amount": item.total_amount, "product": item.product_name},
+        )
     _audit(db, user, "update", "purchase", item.id, {"order_no": item.order_no})
     db.commit()
     db.refresh(item)
@@ -146,6 +196,7 @@ def delete_purchase(id: int, db: Session = Depends(get_db), user: User = Depends
 
 
 # ═══════════ Sales ═══════════════════════════
+
 
 @router.get("/sales", response_model=list[InvSaleResponse])
 def list_sales(
@@ -169,9 +220,9 @@ def list_sales(
     if search:
         pattern = f"%{search}%"
         q = q.filter(
-            (InvSale.order_no.ilike(pattern)) |
-            (InvSale.customer_name.ilike(pattern)) |
-            (InvSale.product_name.ilike(pattern))
+            (InvSale.order_no.ilike(pattern))
+            | (InvSale.customer_name.ilike(pattern))
+            | (InvSale.product_name.ilike(pattern))
         )
     return q.order_by(InvSale.id.desc()).offset(offset).limit(limit).all()
 
@@ -187,7 +238,14 @@ def create_sale(data: InvSaleCreate, db: Session = Depends(get_db), user: User =
     db.add(item)
     db.commit()
     db.refresh(item)
-    _audit(db, user, "create", "sale", item.id, {"order_no": item.order_no, "amount": item.total_amount, "profit": item.profit})
+    _audit(
+        db,
+        user,
+        "create",
+        "sale",
+        item.id,
+        {"order_no": item.order_no, "amount": item.total_amount, "profit": item.profit},
+    )
     db.commit()
     return item
 
@@ -204,16 +262,57 @@ def update_sale(id: int, data: InvSaleCreate, db: Session = Depends(get_db), use
     # 出库联动 + 生成凭证
     if old_status != "已出库" and item.status == "已出库":
         _sale_to_stock(item, db)
-        _generate_voucher(db, item.company_id, user.id, "transfer", f"销售出库 {item.order_no} {item.product_name}", [
-            {"account_code": "1122", "debit": item.total_amount, "credit": 0, "description": f"应收账款 {item.customer_name}"},
-            {"account_code": "6001", "debit": 0, "credit": item.total_amount, "description": f"主营业务收入 {item.product_name}"},
-        ])
+        _generate_voucher(
+            db,
+            item.company_id,
+            user.id,
+            "transfer",
+            f"销售出库 {item.order_no} {item.product_name}",
+            [
+                {
+                    "account_code": "1122",
+                    "debit": item.total_amount,
+                    "credit": 0,
+                    "description": f"应收账款 {item.customer_name}",
+                },
+                {
+                    "account_code": "6001",
+                    "debit": 0,
+                    "credit": item.total_amount,
+                    "description": f"主营业务收入 {item.product_name}",
+                },
+            ],
+        )
         if item.cost_amount > 0:
-            _generate_voucher(db, item.company_id, user.id, "transfer", f"结转成本 {item.order_no} {item.product_name}", [
-                {"account_code": "6401", "debit": item.cost_amount, "credit": 0, "description": f"主营业务成本 {item.product_name}"},
-                {"account_code": "1405", "debit": 0, "credit": item.cost_amount, "description": f"库存商品 {item.product_name}"},
-            ])
-        _audit(db, user, "post", "sale_outbound", item.id, {"order_no": item.order_no, "amount": item.total_amount, "profit": item.profit})
+            _generate_voucher(
+                db,
+                item.company_id,
+                user.id,
+                "transfer",
+                f"结转成本 {item.order_no} {item.product_name}",
+                [
+                    {
+                        "account_code": "6401",
+                        "debit": item.cost_amount,
+                        "credit": 0,
+                        "description": f"主营业务成本 {item.product_name}",
+                    },
+                    {
+                        "account_code": "1405",
+                        "debit": 0,
+                        "credit": item.cost_amount,
+                        "description": f"库存商品 {item.product_name}",
+                    },
+                ],
+            )
+        _audit(
+            db,
+            user,
+            "post",
+            "sale_outbound",
+            item.id,
+            {"order_no": item.order_no, "amount": item.total_amount, "profit": item.profit},
+        )
     _audit(db, user, "update", "sale", item.id, {"order_no": item.order_no})
     db.commit()
     db.refresh(item)
@@ -233,13 +332,19 @@ def delete_sale(id: int, db: Session = Depends(get_db), user: User = Depends(get
 
 # ═══════════ Stock ═══════════════════════════
 
+
 @router.get("/stock/low-stock-alerts", response_model=list[InvStockResponse])
 def list_low_stock_alerts(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(InvStock).filter(
-        InvStock.company_id == company_id,
-        InvStock.quantity <= InvStock.min_stock,
-        InvStock.min_stock > 0,
-    ).order_by(InvStock.quantity - InvStock.min_stock).all()
+    return (
+        db.query(InvStock)
+        .filter(
+            InvStock.company_id == company_id,
+            InvStock.quantity <= InvStock.min_stock,
+            InvStock.min_stock > 0,
+        )
+        .order_by(InvStock.quantity - InvStock.min_stock)
+        .all()
+    )
 
 
 @router.get("/stock", response_model=list[InvStockResponse])
@@ -264,9 +369,9 @@ def list_stock(
     if search:
         pattern = f"%{search}%"
         q = q.filter(
-            (InvStock.product_code.ilike(pattern)) |
-            (InvStock.product_name.ilike(pattern)) |
-            (InvStock.category.ilike(pattern))
+            (InvStock.product_code.ilike(pattern))
+            | (InvStock.product_name.ilike(pattern))
+            | (InvStock.category.ilike(pattern))
         )
     return q.order_by(InvStock.id.desc()).offset(offset).limit(limit).all()
 
@@ -288,7 +393,9 @@ def create_stock_item(data: InvStockCreate, db: Session = Depends(get_db), user:
 
 
 @router.put("/stock/{id}", response_model=InvStockResponse)
-def update_stock_item(id: int, data: InvStockCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_stock_item(
+    id: int, data: InvStockCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(InvStock).filter(InvStock.id == id).first()
     if not item:
         raise HTTPException(status_code=404, detail="库存记录不存在")
@@ -314,41 +421,59 @@ def delete_stock_item(id: int, db: Session = Depends(get_db), user: User = Depen
 
 # ═══════════ 联动辅助函数 ═══════════════════
 
+
 def _purchase_to_stock(purchase: InvPurchase, db: Session):
     """采购入库 → 增加或创建库存记录。按产品名称+仓库匹配。"""
-    stock = db.query(InvStock).filter(
-        InvStock.company_id == purchase.company_id,
-        InvStock.product_name == purchase.product_name,
-        InvStock.warehouse == (purchase.notes or ""),
-    ).first()
+    stock = (
+        db.query(InvStock)
+        .filter(
+            InvStock.company_id == purchase.company_id,
+            InvStock.product_name == purchase.product_name,
+            InvStock.warehouse == (purchase.notes or ""),
+        )
+        .first()
+    )
     if stock:
         total_qty = stock.quantity + purchase.quantity
-        stock.unit_cost = round(
-            (stock.total_cost + purchase.total_amount) / total_qty, 2
-        ) if total_qty > 0 else stock.unit_cost
+        stock.unit_cost = (
+            round((stock.total_cost + purchase.total_amount) / total_qty, 2) if total_qty > 0 else stock.unit_cost
+        )
         stock.quantity = total_qty
         stock.total_cost = round(stock.quantity * stock.unit_cost, 2)
     else:
-        unit_cost = purchase.unit_price if purchase.unit_price > 0 else round(purchase.total_amount / purchase.quantity, 2) if purchase.quantity > 0 else 0
-        db.add(InvStock(
-            company_id=purchase.company_id,
-            product_code=purchase.order_no,
-            product_name=purchase.product_name,
-            category="",
-            quantity=purchase.quantity,
-            unit=purchase.unit,
-            unit_cost=unit_cost,
-            total_cost=purchase.total_amount,
-            warehouse=purchase.notes or "",
-        ))
+        unit_cost = (
+            purchase.unit_price
+            if purchase.unit_price > 0
+            else round(purchase.total_amount / purchase.quantity, 2)
+            if purchase.quantity > 0
+            else 0
+        )
+        db.add(
+            InvStock(
+                company_id=purchase.company_id,
+                product_code=purchase.order_no,
+                product_name=purchase.product_name,
+                category="",
+                quantity=purchase.quantity,
+                unit=purchase.unit,
+                unit_cost=unit_cost,
+                total_cost=purchase.total_amount,
+                warehouse=purchase.notes or "",
+            )
+        )
 
 
 def _sale_to_stock(sale: InvSale, db: Session):
     """销售出库 → 减少库存。按产品名称匹配，优先扣减有库存的仓库。"""
-    stocks = db.query(InvStock).filter(
-        InvStock.company_id == sale.company_id,
-        InvStock.product_name == sale.product_name,
-    ).order_by(InvStock.quantity.desc()).all()
+    stocks = (
+        db.query(InvStock)
+        .filter(
+            InvStock.company_id == sale.company_id,
+            InvStock.product_name == sale.product_name,
+        )
+        .order_by(InvStock.quantity.desc())
+        .all()
+    )
     remaining = sale.quantity
     for stock in stocks:
         if remaining <= 0:
@@ -361,20 +486,26 @@ def _sale_to_stock(sale: InvSale, db: Session):
 
 # ═══════════ 批量操作 ═══════════════════════
 
+
 class BatchDeleteRequest(BaseModel):
     ids: list[int]
 
+
 @router.post("/purchases/batch-delete")
-def batch_delete_purchases(data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def batch_delete_purchases(
+    data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     count = db.query(InvPurchase).filter(InvPurchase.id.in_(data.ids)).delete(synchronize_session=False)
     db.commit()
     return {"deleted": count}
+
 
 @router.post("/sales/batch-delete")
 def batch_delete_sales(data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     count = db.query(InvSale).filter(InvSale.id.in_(data.ids)).delete(synchronize_session=False)
     db.commit()
     return {"deleted": count}
+
 
 @router.post("/stock/batch-delete")
 def batch_delete_stock(data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -385,9 +516,16 @@ def batch_delete_stock(data: BatchDeleteRequest, db: Session = Depends(get_db), 
 
 # ═══════════ 主数据: 仓库 ═══════════════════
 
+
 @router.get("/warehouses", response_model=list[WarehouseResponse])
 def list_warehouses(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(Warehouse).filter(Warehouse.company_id == company_id, Warehouse.is_active).order_by(Warehouse.code).all()
+    return (
+        db.query(Warehouse)
+        .filter(Warehouse.company_id == company_id, Warehouse.is_active)
+        .order_by(Warehouse.code)
+        .all()
+    )
+
 
 @router.post("/warehouses", response_model=WarehouseResponse)
 def create_warehouse(data: WarehouseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -399,8 +537,11 @@ def create_warehouse(data: WarehouseCreate, db: Session = Depends(get_db), user:
     db.commit()
     return item
 
+
 @router.put("/warehouses/{id}", response_model=WarehouseResponse)
-def update_warehouse(id: int, data: WarehouseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_warehouse(
+    id: int, data: WarehouseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(Warehouse).filter(Warehouse.id == id).first()
     if not item:
         raise HTTPException(status_code=404, detail="仓库不存在")
@@ -413,20 +554,32 @@ def update_warehouse(id: int, data: WarehouseCreate, db: Session = Depends(get_d
 
 # ═══════════ 主数据: 存货分类 ═══════════════
 
+
 @router.get("/categories", response_model=list[InventoryCategoryResponse])
 def list_inventory_categories(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(InventoryCategory).filter(InventoryCategory.company_id == company_id).order_by(InventoryCategory.code).all()
+    return (
+        db.query(InventoryCategory)
+        .filter(InventoryCategory.company_id == company_id)
+        .order_by(InventoryCategory.code)
+        .all()
+    )
+
 
 @router.post("/categories", response_model=InventoryCategoryResponse)
-def create_inventory_category(data: InventoryCategoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_inventory_category(
+    data: InventoryCategoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = InventoryCategory(**data.model_dump())
     db.add(item)
     db.commit()
     db.refresh(item)
     return item
 
+
 @router.put("/categories/{id}", response_model=InventoryCategoryResponse)
-def update_inventory_category(id: int, data: InventoryCategoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_inventory_category(
+    id: int, data: InventoryCategoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(InventoryCategory).filter(InventoryCategory.id == id).first()
     if not item:
         raise HTTPException(status_code=404, detail="分类不存在")
@@ -439,9 +592,16 @@ def update_inventory_category(id: int, data: InventoryCategoryCreate, db: Sessio
 
 # ═══════════ 主数据: 存货 ═══════════
 
+
 @router.get("/inventory", response_model=list[InventoryResponse])
 def list_inventory(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(Inventory).filter(Inventory.company_id == company_id, Inventory.is_active).order_by(Inventory.code).all()
+    return (
+        db.query(Inventory)
+        .filter(Inventory.company_id == company_id, Inventory.is_active)
+        .order_by(Inventory.code)
+        .all()
+    )
+
 
 @router.post("/inventory", response_model=InventoryResponse)
 def create_inventory(data: InventoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -451,8 +611,11 @@ def create_inventory(data: InventoryCreate, db: Session = Depends(get_db), user:
     db.refresh(item)
     return item
 
+
 @router.put("/inventory/{id}", response_model=InventoryResponse)
-def update_inventory(id: int, data: InventoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_inventory(
+    id: int, data: InventoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(Inventory).filter(Inventory.id == id).first()
     if not item:
         raise HTTPException(status_code=404, detail="存货不存在")
@@ -465,20 +628,32 @@ def update_inventory(id: int, data: InventoryCreate, db: Session = Depends(get_d
 
 # ═══════════ 主数据: 计量单位 ═══════════
 
+
 @router.get("/units", response_model=list[UnitOfMeasureResponse])
 def list_units_of_measure(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    return db.query(UnitOfMeasure).filter(UnitOfMeasure.company_id == company_id).order_by(UnitOfMeasure.group_name, UnitOfMeasure.unit_name).all()
+    return (
+        db.query(UnitOfMeasure)
+        .filter(UnitOfMeasure.company_id == company_id)
+        .order_by(UnitOfMeasure.group_name, UnitOfMeasure.unit_name)
+        .all()
+    )
+
 
 @router.post("/units", response_model=UnitOfMeasureResponse)
-def create_unit_of_measure(data: UnitOfMeasureCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_unit_of_measure(
+    data: UnitOfMeasureCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = UnitOfMeasure(**data.model_dump())
     db.add(item)
     db.commit()
     db.refresh(item)
     return item
 
+
 @router.put("/units/{id}", response_model=UnitOfMeasureResponse)
-def update_unit_of_measure(id: int, data: UnitOfMeasureCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_unit_of_measure(
+    id: int, data: UnitOfMeasureCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(UnitOfMeasure).filter(UnitOfMeasure.id == id).first()
     if not item:
         raise HTTPException(status_code=404, detail="计量单位不存在")

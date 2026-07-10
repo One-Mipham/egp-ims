@@ -1,4 +1,5 @@
 """招投标管理路由."""
+
 from datetime import date, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -11,13 +12,26 @@ from app.models import TenderProject, BidSubmission, BidExceptionEvent, User, Au
 from app.schemas import BypassAction
 from app.permissions import check_approval_bypass
 from app.schemas.bids import (
-    TENDER_TYPES, PROCUREMENT_CATEGORIES, EVALUATION_METHODS, TENDER_STATUSES,
-    BID_TYPES, BOND_STATUSES, BID_STATUSES,
-    TENDER_EXCEPTION_TYPES, BID_EXCEPTION_TYPES,
-    EXCEPTION_STATUSES, TARGET_TYPES,
-    TenderProjectCreate, TenderProjectUpdate, TenderProjectResponse,
-    BidSubmissionCreate, BidSubmissionUpdate, BidSubmissionResponse,
-    BidExceptionCreate, BidExceptionUpdate, BidExceptionResponse,
+    TENDER_TYPES,
+    PROCUREMENT_CATEGORIES,
+    EVALUATION_METHODS,
+    TENDER_STATUSES,
+    BID_TYPES,
+    BOND_STATUSES,
+    BID_STATUSES,
+    TENDER_EXCEPTION_TYPES,
+    BID_EXCEPTION_TYPES,
+    EXCEPTION_STATUSES,
+    TARGET_TYPES,
+    TenderProjectCreate,
+    TenderProjectUpdate,
+    TenderProjectResponse,
+    BidSubmissionCreate,
+    BidSubmissionUpdate,
+    BidSubmissionResponse,
+    BidExceptionCreate,
+    BidExceptionUpdate,
+    BidExceptionResponse,
     BidStatsResponse,
 )
 
@@ -32,27 +46,37 @@ def _can_view_all(user: User) -> bool:
 
 # ── 编号生成 ──
 
+
 def _generate_tender_no(company_id: int, db: Session) -> str:
     today = date.today().strftime("%Y%m%d")
-    count = db.query(TenderProject).filter(
-        TenderProject.company_id == company_id,
-        TenderProject.project_no.like(f"ZB-{today}-%"),
-    ).count()
+    count = (
+        db.query(TenderProject)
+        .filter(
+            TenderProject.company_id == company_id,
+            TenderProject.project_no.like(f"ZB-{today}-%"),
+        )
+        .count()
+    )
     return f"ZB-{today}-{count + 1:03d}"
 
 
 def _generate_bid_no(company_id: int, db: Session) -> str:
     today = date.today().strftime("%Y%m%d")
-    count = db.query(BidSubmission).filter(
-        BidSubmission.company_id == company_id,
-        BidSubmission.bid_no.like(f"TB-{today}-%"),
-    ).count()
+    count = (
+        db.query(BidSubmission)
+        .filter(
+            BidSubmission.company_id == company_id,
+            BidSubmission.bid_no.like(f"TB-{today}-%"),
+        )
+        .count()
+    )
     return f"TB-{today}-{count + 1:03d}"
 
 
 # ═══════════════════════════════════════════
 # 招标项目 — 选项（必须在 /{id} 之前注册）
 # ═══════════════════════════════════════════
+
 
 @router.get("/tender-projects/options")
 def get_tender_options(user=Depends(get_current_user)):
@@ -67,6 +91,7 @@ def get_tender_options(user=Depends(get_current_user)):
 # ═══════════════════════════════════════════
 # 招标项目 — CRUD
 # ═══════════════════════════════════════════
+
 
 @router.get("/tender-projects", response_model=list[TenderProjectResponse])
 def list_tender_projects(
@@ -94,10 +119,7 @@ def list_tender_projects(
         q = q.filter(TenderProject.status == status)
     if search:
         like = f"%{search}%"
-        q = q.filter(
-            TenderProject.project_no.like(like) |
-            TenderProject.project_name.like(like)
-        )
+        q = q.filter(TenderProject.project_no.like(like) | TenderProject.project_name.like(like))
     return q.order_by(TenderProject.id.desc()).all()
 
 
@@ -159,6 +181,7 @@ def delete_tender_project(
 
 # ── 审批流程 ──
 
+
 @router.post("/tender-projects/{project_id}/review")
 def review_tender_project(
     project_id: int,
@@ -212,11 +235,16 @@ def bypass_tender_project(
     if p.status == "draft":
         p.status = "approved"
 
-    db.add(AuditLog(
-        company_id=getattr(p, "company_id", 0), user_id=user.id,
-        action="bypass_approval", target_type="tender_project",
-        target_id=p.id, reason=action.reason,
-    ))
+    db.add(
+        AuditLog(
+            company_id=getattr(p, "company_id", 0),
+            user_id=user.id,
+            action="bypass_approval",
+            target_type="tender_project",
+            target_id=p.id,
+            reason=action.reason,
+        )
+    )
     db.commit()
     return {"ok": True, "bypassed": True}
 
@@ -224,6 +252,7 @@ def bypass_tender_project(
 # ═══════════════════════════════════════════
 # 投标登记 — 选项（必须在 /{id} 之前注册）
 # ═══════════════════════════════════════════
+
 
 @router.get("/submissions/options")
 def get_bid_options(user=Depends(get_current_user)):
@@ -237,6 +266,7 @@ def get_bid_options(user=Depends(get_current_user)):
 # ═══════════════════════════════════════════
 # 投标登记 — CRUD
 # ═══════════════════════════════════════════
+
 
 @router.get("/submissions", response_model=list[BidSubmissionResponse])
 def list_bid_submissions(
@@ -265,9 +295,9 @@ def list_bid_submissions(
     if search:
         like = f"%{search}%"
         q = q.filter(
-            BidSubmission.bid_no.like(like) |
-            BidSubmission.project_name.like(like) |
-            BidSubmission.tendering_party.like(like)
+            BidSubmission.bid_no.like(like)
+            | BidSubmission.project_name.like(like)
+            | BidSubmission.tendering_party.like(like)
         )
     return q.order_by(BidSubmission.id.desc()).all()
 
@@ -332,6 +362,7 @@ def delete_bid_submission(
 # 统计
 # ═══════════════════════════════════════════
 
+
 @router.get("/stats", response_model=BidStatsResponse)
 def get_stats(
     company_id: int = Query(...),
@@ -342,13 +373,17 @@ def get_stats(
     tq = db.query(TenderProject).filter(TenderProject.company_id == company_id)
     tender_count = tq.count()
     tender_amount = tq.with_entities(func.coalesce(func.sum(TenderProject.estimated_amount), 0)).scalar()
-    tender_status = {r[0]: r[1] for r in tq.with_entities(TenderProject.status, func.count()).group_by(TenderProject.status).all()}
+    tender_status = {
+        r[0]: r[1] for r in tq.with_entities(TenderProject.status, func.count()).group_by(TenderProject.status).all()
+    }
 
     # 投标统计
     bq = db.query(BidSubmission).filter(BidSubmission.company_id == company_id)
     bid_count = bq.count()
     bid_amount = bq.with_entities(func.coalesce(func.sum(BidSubmission.bid_amount), 0)).scalar()
-    bid_status = {r[0]: r[1] for r in bq.with_entities(BidSubmission.status, func.count()).group_by(BidSubmission.status).all()}
+    bid_status = {
+        r[0]: r[1] for r in bq.with_entities(BidSubmission.status, func.count()).group_by(BidSubmission.status).all()
+    }
     won = bq.filter(BidSubmission.status == "won").count()
 
     return BidStatsResponse(
@@ -370,6 +405,7 @@ def get_stats(
 # 例外事项 — 选项（必须在 /{id} 之前注册）
 # ═══════════════════════════════════════════
 
+
 @router.get("/exceptions/options")
 def get_exception_options(
     target_type: str | None = Query(None),
@@ -387,6 +423,7 @@ def get_exception_options(
 # ═══════════════════════════════════════════
 # 例外事项 — CRUD
 # ═══════════════════════════════════════════
+
 
 @router.get("/exceptions", response_model=list[BidExceptionResponse])
 def list_exception_events(
@@ -412,10 +449,7 @@ def list_exception_events(
         q = q.filter(BidExceptionEvent.status == status)
     if search:
         like = f"%{search}%"
-        q = q.filter(
-            BidExceptionEvent.title.like(like) |
-            BidExceptionEvent.reason.like(like)
-        )
+        q = q.filter(BidExceptionEvent.title.like(like) | BidExceptionEvent.reason.like(like))
     return q.order_by(BidExceptionEvent.id.desc()).all()
 
 
@@ -476,6 +510,7 @@ def delete_exception_event(
 
 
 # ── 例外事项审批 ──
+
 
 @router.post("/exceptions/{event_id}/review")
 def review_exception_event(
@@ -559,11 +594,16 @@ def bypass_exception_event(
     e.approved_at = datetime.utcnow()
     e.status = "approved"
 
-    db.add(AuditLog(
-        company_id=getattr(e, "company_id", 0), user_id=user.id,
-        action="bypass_approval", target_type="exception_event",
-        target_id=e.id, reason=action.reason,
-    ))
+    db.add(
+        AuditLog(
+            company_id=getattr(e, "company_id", 0),
+            user_id=user.id,
+            action="bypass_approval",
+            target_type="exception_event",
+            target_id=e.id,
+            reason=action.reason,
+        )
+    )
     db.commit()
     return {"ok": True, "bypassed": True}
 

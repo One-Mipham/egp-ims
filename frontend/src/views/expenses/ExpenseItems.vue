@@ -13,7 +13,7 @@ import { listExpenseItems, createExpenseItem, updateExpenseItem } from '@/api/ex
 
 const { t } = useI18n()
 const toast = useToast()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 const items = ref<any[]>([])
 const dialog = ref(false)
 const isEdit = ref(false)

@@ -1,4 +1,5 @@
 """报表中心路由：资产负债表、利润表、现金流量表。"""
+
 import calendar
 
 from fastapi import APIRouter, Depends
@@ -12,6 +13,7 @@ router = APIRouter()
 
 
 # ──────────────── 日期辅助函数 ────────────────
+
 
 def _period_end_date(period: str) -> str:
     y, m = int(period[:4]), int(period[5:7])
@@ -35,11 +37,16 @@ def _prev_year_end(period: str) -> str:
 
 # ──────────────── 余额计算 ────────────────
 
+
 def _calc_ending(acct: Account, db: Session, company_id: int, end_date: str | None = None) -> float:
-    q = db.query(VoucherEntry).join(Voucher).filter(
-        Voucher.company_id == company_id,
-        VoucherEntry.account_code == acct.code,
-        Voucher.status == "posted",
+    q = (
+        db.query(VoucherEntry)
+        .join(Voucher)
+        .filter(
+            Voucher.company_id == company_id,
+            VoucherEntry.account_code == acct.code,
+            Voucher.status.in_(["posted", "closed"]),
+        )
     )
     if end_date:
         q = q.filter(Voucher.date <= end_date)
@@ -51,13 +58,19 @@ def _calc_ending(acct: Account, db: Session, company_id: int, end_date: str | No
     return acct.initial_balance + credit - debit
 
 
-def _occurrence(acct: Account, db: Session, company_id: int, start: str, end: str, exclude_transfer: bool = False) -> tuple[float, float]:
-    q = db.query(VoucherEntry).join(Voucher).filter(
-        Voucher.company_id == company_id,
-        VoucherEntry.account_code == acct.code,
-        Voucher.status == "posted",
-        Voucher.date >= start,
-        Voucher.date <= end,
+def _occurrence(
+    acct: Account, db: Session, company_id: int, start: str, end: str, exclude_transfer: bool = False
+) -> tuple[float, float]:
+    q = (
+        db.query(VoucherEntry)
+        .join(Voucher)
+        .filter(
+            Voucher.company_id == company_id,
+            VoucherEntry.account_code == acct.code,
+            Voucher.status.in_(["posted", "closed"]),
+            Voucher.date >= start,
+            Voucher.date <= end,
+        )
     )
     if exclude_transfer:
         q = q.filter(~Voucher.summary.contains("结转"))
@@ -85,70 +98,70 @@ def _sum_occurrence(codes: list[str], db: Session, company_id: int, start: str, 
 
 BS_ROWS = [
     # 资产（左侧）
-    ("货币资金",         "left",  "1001,1002,1012"),
-    ("交易性金融资产",     "left",  "1101"),
-    ("应收票据",           "left",  "1121"),
-    ("应收账款",           "left",  "1122"),
-    ("预付款项",           "left",  "1123"),
-    ("应收利息",           "left",  "1132"),
-    ("应收股利",           "left",  "1131"),
-    ("其他应收款",         "left",  "1221"),
-    ("存货",              "left",  "1405,1406"),
-    ("一年内到期的非流动资产","left",  "1501"),  # 需按科目明细拆分：长期债权/长期应收等一年内到期部分
-    ("其他流动资产",        "left",  "1901"),  # 待处理财产损溢等
-    ("流动资产合计",        "left",  "CURRENT_TOTAL"),
-    ("可供出售金融资产",     "left",  "1503"),
-    ("持有至到期投资",       "left",  "1502"),  # 与1501区分：1502=持有至到期投资，1501=一年内到期
-    ("长期应收款",          "left",  "1531"),
-    ("长期股权投资",        "left",  "1511"),
-    ("投资性房地产",        "left",  "1521"),
-    ("固定资产",            "left",  "1601"),
-    ("在建工程",            "left",  "1604"),
-    ("工程物资",            "left",  "1605"),
-    ("固定资产清理",        "left",  "1606"),
-    ("生产性生物资产",       "left",  "1621"),
-    ("油气资产",            "left",  "1631"),
-    ("无形资产",            "left",  "1701"),
-    ("开发支出",            "left",  "1702"),
-    ("商誉",               "left",  "1711"),
-    ("长期待摊费用",        "left",  "1801"),
-    ("递延所得税资产",       "left",  "1811"),
-    ("其他非流动资产",       "left",  "1902"),  # 长期待摊/递延之外的其他非流动资产
-    ("非流动资产合计",       "left",  "NCURRENT_TOTAL"),
-    ("资产总计",            "left",  "ASSET_TOTAL"),
+    ("货币资金", "left", "1001,1002,1012"),
+    ("交易性金融资产", "left", "1101"),
+    ("应收票据", "left", "1121"),
+    ("应收账款", "left", "1122"),
+    ("预付款项", "left", "1123"),
+    ("应收利息", "left", "1132"),
+    ("应收股利", "left", "1131"),
+    ("其他应收款", "left", "1221"),
+    ("存货", "left", "1405,1406"),
+    ("一年内到期的非流动资产", "left", "1501"),  # 需按科目明细拆分：长期债权/长期应收等一年内到期部分
+    ("其他流动资产", "left", "1901"),  # 待处理财产损溢等
+    ("流动资产合计", "left", "CURRENT_TOTAL"),
+    ("可供出售金融资产", "left", "1503"),
+    ("持有至到期投资", "left", "1502"),  # 与1501区分：1502=持有至到期投资，1501=一年内到期
+    ("长期应收款", "left", "1531"),
+    ("长期股权投资", "left", "1511"),
+    ("投资性房地产", "left", "1521"),
+    ("固定资产", "left", "1601"),
+    ("在建工程", "left", "1604"),
+    ("工程物资", "left", "1605"),
+    ("固定资产清理", "left", "1606"),
+    ("生产性生物资产", "left", "1621"),
+    ("油气资产", "left", "1631"),
+    ("无形资产", "left", "1701"),
+    ("开发支出", "left", "1702"),
+    ("商誉", "left", "1711"),
+    ("长期待摊费用", "left", "1801"),
+    ("递延所得税资产", "left", "1811"),
+    ("其他非流动资产", "left", "1902"),  # 长期待摊/递延之外的其他非流动资产
+    ("非流动资产合计", "left", "NCURRENT_TOTAL"),
+    ("资产总计", "left", "ASSET_TOTAL"),
     # 负债（右侧上半）
-    ("短期借款",            "right", "2001"),
-    ("交易性金融负债",       "right", "2101"),
-    ("应付票据",            "right", "2201"),
-    ("应付账款",            "right", "2202"),
-    ("预收款项",            "right", "2203"),
-    ("应付职工薪酬",         "right", "2211"),
-    ("应交税费",            "right", "2221"),
-    ("应付利息",            "right", "2231"),
-    ("应付股利",            "right", "2232"),
-    ("其他应付款",           "right", "2241"),
-    ("一年内到期的非流动负债","right", "2501"),  # 长期借款等一年内到期部分，需按明细分析
-    ("其他流动负债",         "right", "2251"),  # 其他流动负债
-    ("流动负债合计",         "right", "CURRENT_TOTAL"),
-    ("非流动负债",           "right", ""),  # 节标题，非数据行
-    ("长期借款",            "right", "2501"),
-    ("应付债券",            "right", "2502"),
-    ("长期应付款",           "right", "2701"),
-    ("专项应付款",           "right", "2711"),
-    ("预计负债",            "right", "2801"),
-    ("递延所得税负债",        "right", "2901"),
-    ("其他非流动负债",        "right", "2902"),  # 其他非流动负债
-    ("非流动负债合计",        "right", "NCURRENT_TOTAL"),
-    ("负债合计",            "right", "LIABILITY_TOTAL"),
-    ("",                   "right", ""),  # 对齐占位行
+    ("短期借款", "right", "2001"),
+    ("交易性金融负债", "right", "2101"),
+    ("应付票据", "right", "2201"),
+    ("应付账款", "right", "2202"),
+    ("预收款项", "right", "2203"),
+    ("应付职工薪酬", "right", "2211"),
+    ("应交税费", "right", "2221"),
+    ("应付利息", "right", "2231"),
+    ("应付股利", "right", "2232"),
+    ("其他应付款", "right", "2241"),
+    ("一年内到期的非流动负债", "right", "2501"),  # 长期借款等一年内到期部分，需按明细分析
+    ("其他流动负债", "right", "2251"),  # 其他流动负债
+    ("流动负债合计", "right", "CURRENT_TOTAL"),
+    ("非流动负债", "right", ""),  # 节标题，非数据行
+    ("长期借款", "right", "2501"),
+    ("应付债券", "right", "2502"),
+    ("长期应付款", "right", "2701"),
+    ("专项应付款", "right", "2711"),
+    ("预计负债", "right", "2801"),
+    ("递延所得税负债", "right", "2901"),
+    ("其他非流动负债", "right", "2902"),  # 其他非流动负债
+    ("非流动负债合计", "right", "NCURRENT_TOTAL"),
+    ("负债合计", "right", "LIABILITY_TOTAL"),
+    ("", "right", ""),  # 对齐占位行
     # 所有者权益（右侧下半）
-    ("实收资本（或股本）",    "right", "4001"),
-    ("资本公积",            "right", "4002"),
-    ("减：库存股",           "right", "4003"),  # 库存股（备抵项）
-    ("盈余公积",            "right", "4101"),
-    ("未分配利润",           "right", "4104,4103"),  # 4104利润分配 + 4103本年利润
-    ("所有者权益合计",        "right", "EQUITY_TOTAL"),
-    ("负债和所有者权益总计",   "right", "TOTAL"),
+    ("实收资本（或股本）", "right", "4001"),
+    ("资本公积", "right", "4002"),
+    ("减：库存股", "right", "4003"),  # 库存股（备抵项）
+    ("盈余公积", "right", "4101"),
+    ("未分配利润", "right", "4104,4103"),  # 4104利润分配 + 4103本年利润
+    ("所有者权益合计", "right", "EQUITY_TOTAL"),
+    ("负债和所有者权益总计", "right", "TOTAL"),
 ]
 
 
@@ -166,7 +179,15 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
             parent_codes.add(a.parent_code)
 
     def _calc(code_str: str, ref_date: str | None = None):
-        if not code_str or code_str in ("CURRENT_TOTAL", "NCURRENT_TOTAL", "ASSET_TOTAL", "LIABILITY_TOTAL", "EQUITY_TOTAL", "TOTAL", "TOTAL_CHECK"):
+        if not code_str or code_str in (
+            "CURRENT_TOTAL",
+            "NCURRENT_TOTAL",
+            "ASSET_TOTAL",
+            "LIABILITY_TOTAL",
+            "EQUITY_TOTAL",
+            "TOTAL",
+            "TOTAL_CHECK",
+        ):
             return 0.0
         codes = [c.strip() for c in code_str.split(",") if c.strip()]
         total = 0.0
@@ -235,13 +256,12 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
                     item[key] = round(sum(i[key] for i in right_items[24:29]), 2)
                 elif item["name"] == "负债和所有者权益总计":
                     item[key] = round(right_items[22][key] + right_items[29][key], 2)
+
     _force_balance("ending")
     _force_balance("beginning")
 
     y, m = int(period[:4]), int(period[5:7])
-    if m == 12:
-        last_day = 31
-    elif m in (1, 3, 5, 7, 8, 10):
+    if m == 12 or m in (1, 3, 5, 7, 8, 10):
         last_day = 31
     elif m in (4, 6, 9, 11):
         last_day = 30
@@ -263,21 +283,21 @@ def balance_sheet(company_id: int, period: str, db: Session = Depends(get_db), u
 # ──────────────── 利润表 ────────────────
 
 IS_ROWS = [
-    ("一、营业收入",                   "6001"),
-    ("    减：营业成本",               "6401"),
-    ("        税金及附加",             "6403"),
-    ("        销售费用",               "6601"),
-    ("        管理费用",               "6602"),
-    ("        财务费用",               "6603"),
-    ("        资产减值损失",           "6701"),
-    ("    加：公允价值变动收益",        "6101"),
-    ("        投资收益",              "6111"),
-    ("二、营业利润",                   "OP_PROFIT"),
-    ("    加：营业外收入",             "6301"),
-    ("    减：营业外支出",             "6711"),
-    ("三、利润总额",                   "TOTAL_PROFIT"),
-    ("    减：所得税费用",             "6801"),
-    ("四、净利润",                     "NET_PROFIT"),
+    ("一、营业收入", "6001"),
+    ("    减：营业成本", "6401"),
+    ("        税金及附加", "6403"),
+    ("        销售费用", "6601"),
+    ("        管理费用", "6602"),
+    ("        财务费用", "6603"),
+    ("        资产减值损失", "6701"),
+    ("    加：公允价值变动收益", "6101"),
+    ("        投资收益", "6111"),
+    ("二、营业利润", "OP_PROFIT"),
+    ("    加：营业外收入", "6301"),
+    ("    减：营业外支出", "6711"),
+    ("三、利润总额", "TOTAL_PROFIT"),
+    ("    减：所得税费用", "6801"),
+    ("四、净利润", "NET_PROFIT"),
 ]
 
 
@@ -292,7 +312,9 @@ def _sum_occ(codes: list[str], db: Session, company_id: int, start: str, end: st
 
 
 @router.get("/income")
-def income_statement(company_id: int, period: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def income_statement(
+    company_id: int, period: str, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     end_date = _period_end_date(period)
     ys = _year_start(period)
     py_end = _period_end_date(_prev_year_period(period))
@@ -319,7 +341,7 @@ def income_statement(company_id: int, period: str, db: Session = Depends(get_db)
                 leaf_children = [accts[code]]
             for a in leaf_children:
                 # For P&L accounts, exclude closing entries to get actual occurrence
-                exclude_xfer = (a.category == "profit_loss")
+                exclude_xfer = a.category == "profit_loss"
                 d, c = _occurrence(a, db, company_id, start, end, exclude_transfer=exclude_xfer)
                 if a.category == "profit_loss":
                     # 6xxx 费用类（64xx, 66xx, 67xx, 68xx）只看借方（发生额）
@@ -336,18 +358,28 @@ def income_statement(company_id: int, period: str, db: Session = Depends(get_db)
             if codes in ("OP_PROFIT", "TOTAL_PROFIT", "NET_PROFIT"):
                 items.append({"name": name, "curr": 0, "ytd": 0, "prev": 0, "formula": codes})
             else:
-                items.append({
-                    "name": name,
-                    "curr": round(_calc(codes, start, end), 2),
-                    "ytd": round(_calc(codes, ys, end), 2),
-                    "prev": round(_calc(codes, py_ys, py_end), 2),
-                    "formula": "",
-                })
+                items.append(
+                    {
+                        "name": name,
+                        "curr": round(_calc(codes, start, end), 2),
+                        "ytd": round(_calc(codes, ys, end), 2),
+                        "prev": round(_calc(codes, py_ys, py_end), 2),
+                        "formula": "",
+                    }
+                )
         # 计算营业利润
         for item in items:
             f = item.get("formula", "")
             if f == "OP_PROFIT":
-                op = items[0]["curr"] - items[1]["curr"] - items[2]["curr"] - items[3]["curr"] - items[4]["curr"] - items[5]["curr"] - items[6]["curr"]
+                op = (
+                    items[0]["curr"]
+                    - items[1]["curr"]
+                    - items[2]["curr"]
+                    - items[3]["curr"]
+                    - items[4]["curr"]
+                    - items[5]["curr"]
+                    - items[6]["curr"]
+                )
                 item["curr"] = round(op, 2)
             elif f == "TOTAL_PROFIT":
                 op = next(i["curr"] for i in items if i.get("formula") == "OP_PROFIT")
@@ -375,7 +407,16 @@ def income_statement(company_id: int, period: str, db: Session = Depends(get_db)
             for item in items:
                 f = item.get("formula", "")
                 if f == "OP_PROFIT":
-                    item[col] = round(vals["一、营业收入"] - vals["    减：营业成本"] - vals["        税金及附加"] - vals["        销售费用"] - vals["        管理费用"] - vals["        财务费用"] - vals["        资产减值损失"], 2)
+                    item[col] = round(
+                        vals["一、营业收入"]
+                        - vals["    减：营业成本"]
+                        - vals["        税金及附加"]
+                        - vals["        销售费用"]
+                        - vals["        管理费用"]
+                        - vals["        财务费用"]
+                        - vals["        资产减值损失"],
+                        2,
+                    )
                 elif f == "TOTAL_PROFIT":
                     op = next(i[col] for i in items if i.get("formula") == "OP_PROFIT")
                     item[col] = round(op + vals["    加：营业外收入"] - vals["    减：营业外支出"], 2)
@@ -418,20 +459,14 @@ def _code_matches(code: str, code_set: set) -> bool:
         return False
     if code in code_set:
         return True
-    for c in code_set:
-        if code.startswith(c) or c.startswith(code):
-            return True
-    return False
+    return any(code.startswith(c) or c.startswith(code) for c in code_set)
 
 
 def _is_cash_account(code: str, cash_codes: set) -> bool:
     """判断科目是否为现金类（精确匹配或前缀匹配）。"""
     if code in cash_codes:
         return True
-    for cc in cash_codes:
-        if code.startswith(cc) and len(code) > len(cc):
-            return True
-    return False
+    return any(code.startswith(cc) and len(code) > len(cc) for cc in cash_codes)
 
 
 def _compute_cash_flows(db: Session, company_id: int, start: str, end: str) -> dict[str, float]:
@@ -444,25 +479,36 @@ def _compute_cash_flows(db: Session, company_id: int, start: str, end: str) -> d
 
     Returns: dict keyed by CashFlowItem.code, values = rounded amounts
     """
-    cf_items = db.query(CashFlowItem).filter(
-        CashFlowItem.company_id == company_id,
-        CashFlowItem.is_active,
-    ).all()
+    cf_items = (
+        db.query(CashFlowItem)
+        .filter(
+            CashFlowItem.company_id == company_id,
+            CashFlowItem.is_active,
+        )
+        .all()
+    )
 
     if not cf_items:
         # Fallback: return empty dict, endpoint will show zeros
         return {}
 
     # Pre-parse all CF item configs
-    cf_configs = [(cfi.code, cfi.direction, _parse_code_set(cfi.debit_accounts), _parse_code_set(cfi.credit_accounts)) for cfi in cf_items]
+    cf_configs = [
+        (cfi.code, cfi.direction, _parse_code_set(cfi.debit_accounts), _parse_code_set(cfi.credit_accounts))
+        for cfi in cf_items
+    ]
     result = {cfi.code: 0.0 for cfi in cf_items}
 
-    vouchers = db.query(Voucher).filter(
-        Voucher.company_id == company_id,
-        Voucher.status == "posted",
-        Voucher.date >= start,
-        Voucher.date < end,
-    ).all()
+    vouchers = (
+        db.query(Voucher)
+        .filter(
+            Voucher.company_id == company_id,
+            Voucher.status.in_(["posted", "closed"]),
+            Voucher.date >= start,
+            Voucher.date < end,
+        )
+        .all()
+    )
 
     for v in vouchers:
         entries = v.entries
@@ -512,9 +558,7 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
 
     y, m = int(period[:4]), int(period[5:7])
     period_display = f"{y} 年 {m:02d} 月"
-    if m == 12:
-        last_day = 31
-    elif m in (1, 3, 5, 7, 8, 10):
+    if m == 12 or m in (1, 3, 5, 7, 8, 10):
         last_day = 31
     elif m in (4, 6, 9, 11):
         last_day = 30
@@ -529,9 +573,10 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
     prev_items = _compute_cash_flows(db, company_id, py_ys, py_end)
 
     # Build lookup: row_key → (curr_amount, ytd_amount, prev_amount)
-    cf_items = {cfi.code: cfi for cfi in db.query(CashFlowItem).filter(
-        CashFlowItem.company_id == company_id, CashFlowItem.is_active
-    ).all()}
+    cf_items = {
+        cfi.code: cfi
+        for cfi in db.query(CashFlowItem).filter(CashFlowItem.company_id == company_id, CashFlowItem.is_active).all()
+    }
 
     def _cf_val(row_key: str, period_data: dict) -> float:
         """Sum amounts from all CashFlowItems that map to this row key."""
@@ -554,9 +599,7 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
     # --- Build 会企03表 rows ---
     def R(key, label, flow_type=None):
         """Build a row tuple. flow_type: 'inflow', 'outflow', 'subtotal', 'net', None(header/fixed)."""
-        if flow_type == "inflow":
-            c, y, p = _cf_all(key)
-        elif flow_type == "outflow":
+        if flow_type == "inflow" or flow_type == "outflow":
             c, y, p = _cf_all(key)
         elif flow_type in ("subtotal",):
             # Computed below after we have subtotals
@@ -651,9 +694,14 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
                 result.append((label, round(cv, 2), round(yv, 2), round(pv, 2)))
             elif flow_type == "subtotal":
                 is_inflow_sub = "_in_sub" in key
-                result.append((label, round(sec_in_c, 2) if is_inflow_sub else round(sec_out_c, 2),
-                               round(sec_in_y, 2) if is_inflow_sub else round(sec_out_y, 2),
-                               round(sec_in_p, 2) if is_inflow_sub else round(sec_out_p, 2)))
+                result.append(
+                    (
+                        label,
+                        round(sec_in_c, 2) if is_inflow_sub else round(sec_out_c, 2),
+                        round(sec_in_y, 2) if is_inflow_sub else round(sec_out_y, 2),
+                        round(sec_in_p, 2) if is_inflow_sub else round(sec_out_p, 2),
+                    )
+                )
             elif flow_type == "net":
                 net_c = round(sec_in_c - sec_out_c, 2)
                 net_y = round(sec_in_y - sec_out_y, 2)
@@ -668,7 +716,9 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
 
         return result, overall_in_c, overall_in_y, overall_in_p, overall_out_c, overall_out_y, overall_out_p
 
-    rows_final, total_in_c, total_in_y, total_in_p, total_out_c, total_out_y, total_out_p = _finalize_rows(rows_computed)
+    rows_final, total_in_c, total_in_y, total_in_p, total_out_c, total_out_y, total_out_p = _finalize_rows(
+        rows_computed
+    )
 
     # Compute final summary values
     net_change_c = round(total_in_c - total_out_c, 2)
@@ -681,7 +731,14 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
     # Append final rows (四~六)
     rows_final.append(("四、汇率变动对现金及现金等价物的影响", 0.0, 0.0, 0.0))
     rows_final.append(("五、现金及现金等价物净增加额", net_change_c, net_change_y, net_change_p))
-    rows_final.append(("        加：期初现金及现金等价物余额", round(beginning_balance, 2), round(beginning_balance, 2), round(beginning_balance, 2)))
+    rows_final.append(
+        (
+            "        加：期初现金及现金等价物余额",
+            round(beginning_balance, 2),
+            round(beginning_balance, 2),
+            round(beginning_balance, 2),
+        )
+    )
     rows_final.append(("六、期末现金及现金等价物余额", ending_c, ending_y, ending_p))
 
     return {

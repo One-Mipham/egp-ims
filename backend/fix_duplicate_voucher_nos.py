@@ -10,6 +10,7 @@
     - 同步更新 voucher_sequences 表，确保后续新增凭证接着最大序号递增
     - 删除的凭证号留空，永不递补
 """
+
 from app.database import SessionLocal, init_db
 from app.models import Voucher, VoucherSequence
 
@@ -58,12 +59,14 @@ def fix():
             if seq_row:
                 seq_row.last_seq = max_seq
             else:
-                db.add(VoucherSequence(
-                    company_id=company_id,
-                    voucher_type=vtype,
-                    period=month_prefix,
-                    last_seq=max_seq,
-                ))
+                db.add(
+                    VoucherSequence(
+                        company_id=company_id,
+                        voucher_type=vtype,
+                        period=month_prefix,
+                        last_seq=max_seq,
+                    )
+                )
 
         if fixed == 0:
             print("所有凭证号码已正确，无需修复。")

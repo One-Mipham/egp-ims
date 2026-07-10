@@ -1,10 +1,12 @@
 """费用报销 Pydantic Schema."""
+
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
 
 # ── 费用项目 ──
+
 
 class ExpenseItemCreate(BaseModel):
     company_id: int
@@ -28,6 +30,7 @@ class ExpenseItemResponse(BaseModel):
 
 
 # ── 费用标准 ──
+
 
 class ExpensePolicyCreate(BaseModel):
     company_id: int
@@ -64,6 +67,7 @@ class ExpensePolicyResponse(BaseModel):
 
 # ── 报销单明细 ──
 
+
 class ExpenseReportItemCreate(BaseModel):
     row_seq: int = 1
     expense_item_id: Optional[int] = None
@@ -88,6 +92,7 @@ class ExpenseReportItemResponse(BaseModel):
 
 
 # ── 报销单 ──
+
 
 class ExpenseReportCreate(BaseModel):
     company_id: int
@@ -127,6 +132,7 @@ class ExpenseReportResponse(BaseModel):
 
 # ── 借款单 ──
 
+
 class ExpenseLoanCreate(BaseModel):
     company_id: int
     loan_date: str
@@ -158,6 +164,7 @@ class ExpenseLoanResponse(BaseModel):
 
 # ── 附件 ──
 
+
 class ExpenseAttachmentResponse(BaseModel):
     id: int
     report_id: Optional[int] = None
@@ -174,11 +181,13 @@ class ExpenseAttachmentResponse(BaseModel):
 
 # ── 审批操作 ──
 
+
 class ApprovalAction(BaseModel):
     comment: Optional[str] = None
 
 
 # ── 还款操作 ──
+
 
 class RepayAction(BaseModel):
     amount: float

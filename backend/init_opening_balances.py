@@ -2,6 +2,7 @@
 直接以2026年4月30日期末余额作为系统初始化数据（5月1日切换上线）。
 无需补录历史凭证，所有科目期初余额 = 4月30日确认报表的期末数。
 """
+
 from app.database import SessionLocal
 from app.models import Voucher, VoucherEntry, Account, Company
 
@@ -42,7 +43,7 @@ BALANCES = {
     # 货币资金 = 1,079,530.99
     # 年初: 100201=1,024,654.70, 100210=45,564.68 → ratio 95.74% / 4.26%
     "100201": 1079530.99 * (1024654.70 / 1070219.38),  # 招商银行
-    "100210": 1079530.99 * (45564.68 / 1070219.38),      # 微众银行
+    "100210": 1079530.99 * (45564.68 / 1070219.38),  # 微众银行
     # 应收账款 = 145,714.00 (全部在 112201)
     "112201": 145714.00,
     # 预付款项 = 1,008,000.00
@@ -59,7 +60,6 @@ BALANCES = {
     "1503": 30000000.00,
     # 长期股权投资 = 16,900,000.00
     "1511": 16900000.00,
-
     # ── 负债类 ──
     # 应付职工薪酬 = 807,440.00
     # 年初: 221101=791,540.00, 221102=10,900.00
@@ -78,18 +78,14 @@ BALANCES = {
     "224104": 369427.96 * (20000.00 / 348177.96),
     "224105": 369427.96 * (153347.99 / 348177.96),
     "224106": 369427.96 * (128139.94 / 348177.96),
-
     # ── 权益类 ──
-    "4001": 49975000.00,     # 实收资本
-    "4104": -854406.24,      # 利润分配-未分配利润
+    "4001": 49975000.00,  # 实收资本
+    "4104": -854406.24,  # 利润分配-未分配利润
 }
 
 # Apply balances
 for code, val in BALANCES.items():
-    acct = db.query(Account).filter(
-        Account.code == code,
-        Account.company_id == company.id
-    ).first()
+    acct = db.query(Account).filter(Account.code == code, Account.company_id == company.id).first()
     if acct:
         acct.initial_balance = round(val, 2)
         print(f"  {code} {acct.name}: {acct.initial_balance:,.2f}")
@@ -107,12 +103,9 @@ for a in all_accts:
     if a.parent_code:
         parent_codes.add(a.code)
 
-assets = sum(a.initial_balance for a in all_accts
-             if a.category == "asset" and a.code not in parent_codes)
-liabilities = sum(a.initial_balance for a in all_accts
-                  if a.category == "liability" and a.code not in parent_codes)
-equity = sum(a.initial_balance for a in all_accts
-             if a.category == "equity" and a.code not in parent_codes)
+assets = sum(a.initial_balance for a in all_accts if a.category == "asset" and a.code not in parent_codes)
+liabilities = sum(a.initial_balance for a in all_accts if a.category == "liability" and a.code not in parent_codes)
+equity = sum(a.initial_balance for a in all_accts if a.category == "equity" and a.code not in parent_codes)
 
 print(f"  资产总计: {assets:,.2f}")
 print(f"  负债总计: {liabilities:,.2f}")
@@ -123,18 +116,54 @@ print(f"  差异: {assets - (liabilities + equity):,.2f}")
 # Verify against confirmed totals
 print("\n=== 与确认报表4月30日数据对照 ===\n")
 checks = {
-    "货币资金 (1001+1002)": (1079530.99, sum(a.initial_balance for a in all_accts if a.code.startswith("100") and a.code not in parent_codes)),
-    "应收账款 (1122)": (145714.00, sum(a.initial_balance for a in all_accts if a.code.startswith("1122") and a.code not in parent_codes)),
-    "预付账款 (1123)": (1008000.00, sum(a.initial_balance for a in all_accts if a.code.startswith("1123") and a.code not in parent_codes)),
-    "其他应收款 (1221)": (663979.10, sum(a.initial_balance for a in all_accts if a.code.startswith("1221") and a.code not in parent_codes)),
-    "存货 (1405)": (500000.00, sum(a.initial_balance for a in all_accts if a.code.startswith("1405") and a.code not in parent_codes)),
-    "可供出售 (1503)": (30000000.00, sum(a.initial_balance for a in all_accts if a.code.startswith("1503") and a.code not in parent_codes)),
-    "长期股权投资 (1511)": (16900000.00, sum(a.initial_balance for a in all_accts if a.code.startswith("1511") and a.code not in parent_codes)),
-    "应付职工薪酬 (2211)": (807440.00, sum(a.initial_balance for a in all_accts if a.code.startswith("2211") and a.code not in parent_codes)),
-    "应交税费 (2221)": (-237.63, sum(a.initial_balance for a in all_accts if a.code.startswith("2221") and a.code not in parent_codes)),
-    "其他应付款 (2241)": (369427.96, sum(a.initial_balance for a in all_accts if a.code.startswith("2241") and a.code not in parent_codes)),
-    "实收资本 (4001)": (49975000.00, sum(a.initial_balance for a in all_accts if a.code.startswith("4001") and a.code not in parent_codes)),
-    "未分配利润 (4104)": (-854406.24, sum(a.initial_balance for a in all_accts if a.code.startswith("4104") and a.code not in parent_codes)),
+    "货币资金 (1001+1002)": (
+        1079530.99,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("100") and a.code not in parent_codes),
+    ),
+    "应收账款 (1122)": (
+        145714.00,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("1122") and a.code not in parent_codes),
+    ),
+    "预付账款 (1123)": (
+        1008000.00,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("1123") and a.code not in parent_codes),
+    ),
+    "其他应收款 (1221)": (
+        663979.10,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("1221") and a.code not in parent_codes),
+    ),
+    "存货 (1405)": (
+        500000.00,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("1405") and a.code not in parent_codes),
+    ),
+    "可供出售 (1503)": (
+        30000000.00,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("1503") and a.code not in parent_codes),
+    ),
+    "长期股权投资 (1511)": (
+        16900000.00,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("1511") and a.code not in parent_codes),
+    ),
+    "应付职工薪酬 (2211)": (
+        807440.00,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("2211") and a.code not in parent_codes),
+    ),
+    "应交税费 (2221)": (
+        -237.63,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("2221") and a.code not in parent_codes),
+    ),
+    "其他应付款 (2241)": (
+        369427.96,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("2241") and a.code not in parent_codes),
+    ),
+    "实收资本 (4001)": (
+        49975000.00,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("4001") and a.code not in parent_codes),
+    ),
+    "未分配利润 (4104)": (
+        -854406.24,
+        sum(a.initial_balance for a in all_accts if a.code.startswith("4104") and a.code not in parent_codes),
+    ),
 }
 
 all_ok = True

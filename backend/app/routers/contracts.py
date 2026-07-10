@@ -1,4 +1,5 @@
 """合同管理路由."""
+
 import os
 import shutil
 from datetime import date, datetime
@@ -11,8 +12,11 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.models import Contract, Department, User
 from app.schemas.contracts import (
-    CONTRACT_CATEGORIES, LEGAL_BASIS_OPTIONS,
-    ContractCreate, ContractUpdate, ContractResponse,
+    CONTRACT_CATEGORIES,
+    LEGAL_BASIS_OPTIONS,
+    ContractCreate,
+    ContractUpdate,
+    ContractResponse,
     ContractStatsResponse,
 )
 
@@ -21,10 +25,14 @@ router = APIRouter()
 
 def _generate_contract_no(company_id: int, db: Session) -> str:
     today = date.today().strftime("%Y%m%d")
-    count = db.query(Contract).filter(
-        Contract.company_id == company_id,
-        Contract.contract_no.like(f"CT-{today}-%"),
-    ).count()
+    count = (
+        db.query(Contract)
+        .filter(
+            Contract.company_id == company_id,
+            Contract.contract_no.like(f"CT-{today}-%"),
+        )
+        .count()
+    )
     return f"CT-{today}-{count + 1:03d}"
 
 
@@ -42,9 +50,7 @@ def _apply_permission_filter(q, user: User):
     if _can_view_all(user):
         return q
     return q.filter(
-        (Contract.owner_id == user.id) |
-        (Contract.reviewer_id == user.id) |
-        (Contract.approver_id == user.id)
+        (Contract.owner_id == user.id) | (Contract.reviewer_id == user.id) | (Contract.approver_id == user.id)
     )
 
 
@@ -62,6 +68,7 @@ def _check_single_permission(contract: Contract, user: User):
 
 
 # ── 合同 CRUD ──
+
 
 @router.get("", response_model=list[ContractResponse])
 def list_contracts(
@@ -87,11 +94,11 @@ def list_contracts(
     if search:
         like = f"%{search}%"
         q = q.filter(
-            Contract.contract_no.like(like) |
-            Contract.contract_name.like(like) |
-            Contract.subject.like(like) |
-            Contract.party_a.like(like) |
-            Contract.party_b.like(like)
+            Contract.contract_no.like(like)
+            | Contract.contract_name.like(like)
+            | Contract.subject.like(like)
+            | Contract.party_a.like(like)
+            | Contract.party_b.like(like)
         )
     return q.order_by(Contract.id.desc()).all()
 
@@ -118,6 +125,7 @@ def get_legal_basis(
 
 # ── 统计（必须在 /{contract_id} 之前注册） ──
 
+
 @router.get("/stats", response_model=ContractStatsResponse)
 def get_stats(
     company_id: int = Query(...),
@@ -138,9 +146,12 @@ def get_stats(
     by_status = {r[0]: r[1] for r in by_status}
 
     # 按部门
-    dept_rows = base.with_entities(
-        Department.name, func.count(), func.coalesce(func.sum(Contract.amount), 0)
-    ).outerjoin(Department, Contract.department_id == Department.id).group_by(Department.name).all()
+    dept_rows = (
+        base.with_entities(Department.name, func.count(), func.coalesce(func.sum(Contract.amount), 0))
+        .outerjoin(Department, Contract.department_id == Department.id)
+        .group_by(Department.name)
+        .all()
+    )
     by_department = {r[0] or "未分配": {"count": r[1], "amount": round(r[2], 2)} for r in dept_rows}
 
     return ContractStatsResponse(
@@ -154,6 +165,7 @@ def get_stats(
 
 
 # ── 单条 CRUD ──
+
 
 @router.get("/{contract_id}", response_model=ContractResponse)
 def get_contract(
@@ -214,6 +226,7 @@ def delete_contract(
 
 # ── 审批流程（非强制） ──
 
+
 @router.post("/{contract_id}/review")
 def review_contract(
     contract_id: int,
@@ -264,6 +277,7 @@ def seal_contract(
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "contracts")
 
+
 @router.post("/{contract_id}/scan")
 def upload_scan(
     contract_id: int,
@@ -288,6 +302,7 @@ def upload_scan(
 
 
 # ── 闭环确认 ──
+
 
 @router.post("/{contract_id}/closure-confirm")
 def confirm_closure(

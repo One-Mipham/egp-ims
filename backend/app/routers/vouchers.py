@@ -1,4 +1,5 @@
 """凭证管理路由：创建/编辑/审核/记账/反记账。"""
+
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -10,9 +11,13 @@ from app.models import User, Voucher, VoucherEntry, BankSettlement, AccountingPe
 from app.schemas import VoucherCreate, VoucherUpdate, VoucherResponse, ReverseVoucherRequest
 from app.auth import get_current_user
 from app.permissions import (
-    check_voucher_create, check_voucher_update, check_voucher_approve,
-    check_voucher_post, check_voucher_reverse,
+    check_voucher_create,
+    check_voucher_update,
+    check_voucher_approve,
+    check_voucher_post,
+    check_voucher_reverse,
 )
+import contextlib
 
 router = APIRouter()
 
@@ -20,11 +25,15 @@ router = APIRouter()
 def _check_period_open(db: Session, company_id: int, date_str: str):
     """检查凭证日期所在期间是否已关帐。关帐期间禁止新增/修改/审核/记账。"""
     period_str = date_str[:7]  # yyyy-MM-dd → yyyy-MM
-    closed = db.query(AccountingPeriod).filter(
-        AccountingPeriod.company_id == company_id,
-        AccountingPeriod.period == period_str,
-        AccountingPeriod.is_closed,
-    ).first()
+    closed = (
+        db.query(AccountingPeriod)
+        .filter(
+            AccountingPeriod.company_id == company_id,
+            AccountingPeriod.period == period_str,
+            AccountingPeriod.is_closed,
+        )
+        .first()
+    )
     if closed:
         raise HTTPException(
             status_code=400,
@@ -77,10 +86,8 @@ def _generate_voucher_no(db: Session, company_id: int, voucher_type: str, date_s
         )
         start_seq = 0
         if existing_max and existing_max.voucher_no:
-            try:
+            with contextlib.suppress(ValueError, IndexError):
                 start_seq = int(existing_max.voucher_no.rsplit("-", 1)[-1])
-            except (ValueError, IndexError):
-                pass
         seq_row = VoucherSequence(
             company_id=company_id,
             voucher_type=voucher_type,
@@ -132,19 +139,44 @@ def create_voucher(data: VoucherCreate, db: Session = Depends(get_db), user: Use
         raise HTTPException(status_code=400, detail="借贷不平衡")
 
     voucher = Voucher(
-        company_id=data.company_id, date=data.date, voucher_no=_generate_voucher_no(db, data.company_id, data.voucher_type, data.date),
-        voucher_type=data.voucher_type, summary=data.summary, creator_id=user.id,
+        company_id=data.company_id,
+        date=data.date,
+        voucher_no=_generate_voucher_no(db, data.company_id, data.voucher_type, data.date),
+        voucher_type=data.voucher_type,
+        summary=data.summary,
+        creator_id=user.id,
     )
     db.add(voucher)
     db.flush()
 
     for entry in data.entries:
-        e = VoucherEntry(voucher_id=voucher.id, account_code=entry.account_code, department_id=entry.department_id, counterparty_id=entry.counterparty_id, person_id=entry.person_id, project_id=entry.project_id, debit=entry.debit, credit=entry.credit, description=entry.description)
+        e = VoucherEntry(
+            voucher_id=voucher.id,
+            account_code=entry.account_code,
+            department_id=entry.department_id,
+            counterparty_id=entry.counterparty_id,
+            person_id=entry.person_id,
+            project_id=entry.project_id,
+            debit=entry.debit,
+            credit=entry.credit,
+            description=entry.description,
+        )
         db.add(e)
         db.flush()
         if entry.settlements:
             for s in entry.settlements:
-                db.add(BankSettlement(voucher_entry_id=e.id, seq=s.seq, settlement_method=s.settlement_method, account_name=s.account_name, instrument_no=s.instrument_no, instrument_date=s.instrument_date, direction=s.direction, amount=s.amount))
+                db.add(
+                    BankSettlement(
+                        voucher_entry_id=e.id,
+                        seq=s.seq,
+                        settlement_method=s.settlement_method,
+                        account_name=s.account_name,
+                        instrument_no=s.instrument_no,
+                        instrument_date=s.instrument_date,
+                        direction=s.direction,
+                        amount=s.amount,
+                    )
+                )
 
     db.commit()
     db.refresh(voucher)
@@ -152,7 +184,9 @@ def create_voucher(data: VoucherCreate, db: Session = Depends(get_db), user: Use
 
 
 @router.put("/{voucher_id}", response_model=VoucherResponse)
-def update_voucher(voucher_id: int, data: VoucherUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_voucher(
+    voucher_id: int, data: VoucherUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
@@ -185,12 +219,33 @@ def update_voucher(voucher_id: int, data: VoucherUpdate, db: Session = Depends(g
             db.query(BankSettlement).filter(BankSettlement.voucher_entry_id == oe.id).delete()
         db.query(VoucherEntry).filter(VoucherEntry.voucher_id == voucher_id).delete()
         for entry in data.entries:
-            e = VoucherEntry(voucher_id=voucher_id, account_code=entry.account_code, department_id=entry.department_id, counterparty_id=entry.counterparty_id, person_id=entry.person_id, project_id=entry.project_id, debit=entry.debit, credit=entry.credit, description=entry.description)
+            e = VoucherEntry(
+                voucher_id=voucher_id,
+                account_code=entry.account_code,
+                department_id=entry.department_id,
+                counterparty_id=entry.counterparty_id,
+                person_id=entry.person_id,
+                project_id=entry.project_id,
+                debit=entry.debit,
+                credit=entry.credit,
+                description=entry.description,
+            )
             db.add(e)
             db.flush()
             if entry.settlements:
                 for s in entry.settlements:
-                    db.add(BankSettlement(voucher_entry_id=e.id, seq=s.seq, settlement_method=s.settlement_method, account_name=s.account_name, instrument_no=s.instrument_no, instrument_date=s.instrument_date, direction=s.direction, amount=s.amount))
+                    db.add(
+                        BankSettlement(
+                            voucher_entry_id=e.id,
+                            seq=s.seq,
+                            settlement_method=s.settlement_method,
+                            account_name=s.account_name,
+                            instrument_no=s.instrument_no,
+                            instrument_date=s.instrument_date,
+                            direction=s.direction,
+                            amount=s.amount,
+                        )
+                    )
 
     db.commit()
     db.refresh(voucher)
@@ -246,7 +301,9 @@ def post_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = De
 
 
 @router.post("/{voucher_id}/reverse", response_model=VoucherResponse)
-def reverse_voucher(voucher_id: int, req: ReverseVoucherRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def reverse_voucher(
+    voucher_id: int, req: ReverseVoucherRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     """反记账：需填写原因。"""
     voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
     if not voucher:
@@ -261,11 +318,15 @@ def reverse_voucher(voucher_id: int, req: ReverseVoucherRequest, db: Session = D
 
     # 检查是否已结账
     period_str = voucher.date[:7]
-    period = db.query(AccountingPeriod).filter(
-        AccountingPeriod.company_id == voucher.company_id,
-        AccountingPeriod.period == period_str,
-        AccountingPeriod.is_closed,
-    ).first()
+    period = (
+        db.query(AccountingPeriod)
+        .filter(
+            AccountingPeriod.company_id == voucher.company_id,
+            AccountingPeriod.period == period_str,
+            AccountingPeriod.is_closed,
+        )
+        .first()
+    )
     if period:
         raise HTTPException(status_code=400, detail="该期间已结账，需先反结账")
 
@@ -274,13 +335,23 @@ def reverse_voucher(voucher_id: int, req: ReverseVoucherRequest, db: Session = D
     voucher.reversed_at = datetime.now(timezone.utc)
     voucher.reverse_reason = req.reason
 
-    db.add(AuditLog(company_id=voucher.company_id, user_id=user.id, action="reverse_post", target_type="voucher", target_id=voucher_id, reason=req.reason))
+    db.add(
+        AuditLog(
+            company_id=voucher.company_id,
+            user_id=user.id,
+            action="reverse_post",
+            target_type="voucher",
+            target_id=voucher_id,
+            reason=req.reason,
+        )
+    )
     db.commit()
     db.refresh(voucher)
     return voucher
 
 
 # ── 历史凭证批量导入 ──
+
 
 @router.post("/batch-import")
 def batch_import_vouchers(
@@ -329,23 +400,30 @@ def list_archive_vouchers(
     user: User = Depends(get_current_user),
 ):
     """查询某年度的所有凭证（含历史导入）。"""
-    vouchers = db.query(Voucher).filter(
-        Voucher.company_id == company_id,
-        Voucher.date >= f"{year}-01-01",
-        Voucher.date <= f"{year}-12-31",
-    ).order_by(Voucher.date).all()
+    vouchers = (
+        db.query(Voucher)
+        .filter(
+            Voucher.company_id == company_id,
+            Voucher.date >= f"{year}-01-01",
+            Voucher.date <= f"{year}-12-31",
+        )
+        .order_by(Voucher.date)
+        .all()
+    )
     result = []
     for v in vouchers:
         entries = db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).all()
         total_debit = sum(e.debit for e in entries)
-        result.append({
-            "id": v.id,
-            "date": v.date,
-            "voucher_no": v.voucher_no,
-            "voucher_type": v.voucher_type,
-            "summary": v.summary,
-            "status": v.status,
-            "total_debit": total_debit,
-            "entry_count": len(entries),
-        })
+        result.append(
+            {
+                "id": v.id,
+                "date": v.date,
+                "voucher_no": v.voucher_no,
+                "voucher_type": v.voucher_type,
+                "summary": v.summary,
+                "status": v.status,
+                "total_debit": total_debit,
+                "entry_count": len(entries),
+            }
+        )
     return result

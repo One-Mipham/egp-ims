@@ -1,4 +1,5 @@
 """项目管理路由 — 支持研发项目、临时项目组、产品等。"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -54,11 +55,12 @@ def project_statuses():
 @router.post("/", response_model=ProjectResponse)
 def create_project(company_id: int, data: ProjectUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     import random
+
     code = str(random.randint(1000, 9999))
     while db.query(Project).filter(Project.company_id == company_id, Project.code == code).first():
         code = str(random.randint(1000, 9999))
     p = Project(company_id=company_id, code=code, name=data.name or "", project_type=data.project_type or "product")
-    for field in ['status', 'department_id', 'manager', 'start_date', 'end_date', 'budget']:
+    for field in ["status", "department_id", "manager", "start_date", "end_date", "budget"]:
         val = getattr(data, field, None)
         if val is not None:
             setattr(p, field, val)
@@ -73,7 +75,7 @@ def update_project(project_id: int, data: ProjectUpdate, db: Session = Depends(g
     p = db.query(Project).filter(Project.id == project_id).first()
     if not p:
         raise HTTPException(status_code=404, detail="项目不存在")
-    for field in ['name', 'project_type', 'status', 'department_id', 'manager', 'start_date', 'end_date', 'budget']:
+    for field in ["name", "project_type", "status", "department_id", "manager", "start_date", "end_date", "budget"]:
         val = getattr(data, field, None)
         if val is not None:
             setattr(p, field, val)

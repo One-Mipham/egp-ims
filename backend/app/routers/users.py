@@ -1,4 +1,5 @@
 """用户管理路由：super_admin 专用，按公司隔离。"""
+
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -11,6 +12,7 @@ from app.auth import hash_password, get_current_user
 
 class ResetPasswordBody(BaseModel):
     new_password: str
+
 
 router = APIRouter()
 
@@ -26,10 +28,7 @@ def _require_same_company(current: User, target: User):
     """校验目标用户与当前用户同属一个公司。"""
     scope = _get_company_scope(current)
     if scope is not None and target.company_id != scope:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="无权操作其他公司的用户"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权操作其他公司的用户")
 
 
 @router.get("/", response_model=list[UserResponse])
@@ -55,8 +54,10 @@ def create_user(user_data: UserCreate, current: User = Depends(get_current_user)
     if company_id is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="当前用户未关联公司，无法创建子用户")
     user = User(
-        username=user_data.username, email=user_data.email,
-        password_hash=hash_password(user_data.password), role=user_data.role,
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=hash_password(user_data.password),
+        role=user_data.role,
         company_id=company_id,
     )
     db.add(user)
@@ -66,8 +67,13 @@ def create_user(user_data: UserCreate, current: User = Depends(get_current_user)
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-def update_user(user_id: int, role: str = None, is_active: bool = None,
-                current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def update_user(
+    user_id: int,
+    role: str = None,
+    is_active: bool = None,
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """更新用户角色/状态（需 super_admin，仅限同公司用户）。"""
     if current.role != "super_admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅系统管理员可修改用户")
@@ -101,8 +107,9 @@ def delete_user(user_id: int, current: User = Depends(get_current_user), db: Ses
 
 
 @router.post("/{user_id}/reset-password")
-def reset_password(user_id: int, body: ResetPasswordBody,
-                   current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def reset_password(
+    user_id: int, body: ResetPasswordBody, current: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     """管理员重置用户密码（仅限同公司用户）。"""
     if current.role != "super_admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅系统管理员可重置密码")

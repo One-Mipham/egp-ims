@@ -1,4 +1,5 @@
 """科目管理路由。"""
+
 from pydantic import BaseModel
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -35,10 +36,11 @@ def list_accounts(company_id: int, db: Session = Depends(get_db), user=Depends(g
 def import_aux_config(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     """从 basic_master_data/科目.xlsx 导入辅助核算配置。"""
     from pathlib import Path
+
     try:
         import openpyxl
-    except ImportError:
-        raise HTTPException(status_code=500, detail="需要安装 openpyxl")
+    except ImportError as err:
+        raise HTTPException(status_code=500, detail="需要安装 openpyxl") from err
 
     data_dir = Path(__file__).parent.parent.parent.parent / "basic_master_data"
     wb_path = data_dir / "科目.xlsx"
@@ -72,11 +74,16 @@ def account_balance(company_id: int, db: Session = Depends(get_db), user=Depends
     result = []
     for acct in accounts:
         # 计算已记账凭证的借贷方发生额
-        entries = db.query(VoucherEntry).join(Voucher).filter(
-            Voucher.company_id == company_id,
-            VoucherEntry.account_code == acct.code,
-            Voucher.status == "posted",
-        ).all()
+        entries = (
+            db.query(VoucherEntry)
+            .join(Voucher)
+            .filter(
+                Voucher.company_id == company_id,
+                VoucherEntry.account_code == acct.code,
+                Voucher.status.in_(["posted", "closed"]),
+            )
+            .all()
+        )
         debit_total = sum(e.debit for e in entries)
         credit_total = sum(e.credit for e in entries)
 
@@ -85,17 +92,19 @@ def account_balance(company_id: int, db: Session = Depends(get_db), user=Depends
         else:
             ending_balance = acct.initial_balance + credit_total - debit_total
 
-        result.append({
-            "code": acct.code,
-            "name": acct.name,
-            "level": acct.level,
-            "category": acct.category,
-            "balance_direction": acct.balance_direction,
-            "initial_balance": acct.initial_balance,
-            "debit_total": debit_total,
-            "credit_total": credit_total,
-            "ending_balance": round(ending_balance, 2),
-        })
+        result.append(
+            {
+                "code": acct.code,
+                "name": acct.name,
+                "level": acct.level,
+                "category": acct.category,
+                "balance_direction": acct.balance_direction,
+                "initial_balance": acct.initial_balance,
+                "debit_total": debit_total,
+                "credit_total": credit_total,
+                "ending_balance": round(ending_balance, 2),
+            }
+        )
     return result
 
 
@@ -108,15 +117,24 @@ def create_account(data: AccountCreate, db: Session = Depends(get_db), user=Depe
     if err:
         raise HTTPException(status_code=403, detail=err)
     if data.parent_code:
-        parent = db.query(Account).filter(
-            Account.company_id == data.company_id,
-            Account.code == data.parent_code,
-        ).first()
+        parent = (
+            db.query(Account)
+            .filter(
+                Account.company_id == data.company_id,
+                Account.code == data.parent_code,
+            )
+            .first()
+        )
         if not parent:
             raise HTTPException(status_code=400, detail="父科目不存在")
     account = Account(
-        company_id=data.company_id, code=data.code, name=data.name, level=data.level,
-        parent_code=data.parent_code, category=data.category, balance_direction=data.balance_direction,
+        company_id=data.company_id,
+        code=data.code,
+        name=data.name,
+        level=data.level,
+        parent_code=data.parent_code,
+        category=data.category,
+        balance_direction=data.balance_direction,
         initial_balance=data.initial_balance,
     )
     db.add(account)
@@ -146,7 +164,9 @@ def update_account(account_id: int, data: AccountUpdate, db: Session = Depends(g
 
 
 @router.patch("/{account_id}/initial-balance")
-def set_initial_balance(account_id: int, data: InitialBalanceUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def set_initial_balance(
+    account_id: int, data: InitialBalanceUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     """设置科目期初余额。"""
     account = db.query(Account).filter(Account.id == account_id).first()
     if not account:
@@ -157,14 +177,20 @@ def set_initial_balance(account_id: int, data: InitialBalanceUpdate, db: Session
 
 
 @router.post("/bulk-initial-balance")
-def bulk_set_initial_balance(data: BulkInitialBalanceRequest, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def bulk_set_initial_balance(
+    data: BulkInitialBalanceRequest, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     """批量设置科目期初余额。"""
     updated = 0
     for item in data.accounts:
-        account = db.query(Account).filter(
-            Account.company_id == data.company_id,
-            Account.code == item.code,
-        ).first()
+        account = (
+            db.query(Account)
+            .filter(
+                Account.company_id == data.company_id,
+                Account.code == item.code,
+            )
+            .first()
+        )
         if account:
             account.initial_balance = item.initial_balance
             updated += 1
@@ -186,10 +212,14 @@ def delete_account(account_id: int, db: Session = Depends(get_db), user=Depends(
     if err:
         raise HTTPException(status_code=403, detail=err)
 
-    child = db.query(Account).filter(
-        Account.company_id == account.company_id,
-        Account.parent_code == account.code,
-    ).first()
+    child = (
+        db.query(Account)
+        .filter(
+            Account.company_id == account.company_id,
+            Account.parent_code == account.code,
+        )
+        .first()
+    )
     if child:
         raise HTTPException(status_code=400, detail="该科目下存在子科目，请先删除子科目")
 

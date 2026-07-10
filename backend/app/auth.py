@@ -1,4 +1,5 @@
 """JWT 认证与密码加密."""
+
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -20,9 +21,8 @@ elif os.environ.get("ENV", "dev") == "production":
 else:
     SECRET_KEY = secrets.token_urlsafe(48)
     import logging
-    logging.getLogger("uvicorn").warning(
-        "SECRET_KEY not set — using random key for dev (tokens invalid after restart)"
-    )
+
+    logging.getLogger("uvicorn").warning("SECRET_KEY not set — using random key for dev (tokens invalid after restart)")
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
@@ -54,8 +54,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if user_id_str is None:
             raise credentials_exception
         user_id = int(user_id_str)
-    except (JWTError, ValueError):
-        raise credentials_exception
+    except (JWTError, ValueError) as err:
+        raise credentials_exception from err
     user = db.query(User).filter(User.id == user_id).first()
     if user is None or not user.is_active:
         raise credentials_exception
@@ -64,10 +64,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 def require_role(*roles: str):
     """依赖注入：检查当前用户是否具有指定角色之一。"""
+
     def _check(user: User = Depends(get_current_user)):
         if user.role not in roles:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="权限不足")
         return user
+
     return _check
 
 
@@ -76,8 +78,8 @@ def get_jwt_payload(token: str = Depends(oauth2_scheme)) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="无效的认证凭证")
+    except JWTError as err:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="无效的认证凭证") from err
 
 
 def get_current_company_id(payload: dict = Depends(get_jwt_payload)) -> int:
@@ -91,10 +93,7 @@ def get_current_company_id(payload: dict = Depends(get_jwt_payload)) -> int:
 def require_company_scope(requested_cid: int, jwt_cid: int = Depends(get_current_company_id)) -> None:
     """验证请求中的 company_id 与 JWT 中的一致，防止跨公司数据访问。"""
     if requested_cid != jwt_cid:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="无权访问其他公司的数据"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="无权访问其他公司的数据")
 
 
 def verify_company_isolation(token_str: str, requested_company_id: int) -> None:

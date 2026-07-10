@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Initialize the SaaS (mipham.ai) database with English defaults and company ID starting from 1004."""
+
 import os, sys
+
 sys.path.insert(0, os.path.dirname(__file__))
 
 from app.database import SessionLocal, init_db
@@ -17,7 +19,8 @@ seed_subscription_plans(db)
 print("Subscription plans seeded.")
 
 # 3. Set company auto-increment to start from 1004 (SQLite only)
-import sqlite3
+import sqlite3  # noqa: E402
+
 db_url = os.environ.get("DATABASE_URL", "sqlite:///./finance.db")
 db_path = db_url.replace("sqlite:///", "")
 conn = sqlite3.connect(db_path)

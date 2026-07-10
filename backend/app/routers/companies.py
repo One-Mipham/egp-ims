@@ -1,4 +1,5 @@
 """公司/账套管理路由。"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -10,8 +11,6 @@ from app.auth import get_current_user, User
 from app.permissions import check_company_create
 
 router = APIRouter()
-
-
 
 
 @router.get("/", response_model=list[CompanyResponse])
@@ -42,7 +41,13 @@ def create_company(data: CompanyCreate, db: Session = Depends(get_db), user: Use
     err = check_company_create(user)
     if err:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=err)
-    company = Company(name=data.name, short_name=data.short_name, industry=data.industry, internal_control_mode=data.internal_control_mode, currency=data.currency)
+    company = Company(
+        name=data.name,
+        short_name=data.short_name,
+        industry=data.industry,
+        internal_control_mode=data.internal_control_mode,
+        currency=data.currency,
+    )
     db.add(company)
     db.commit()
     db.refresh(company)
@@ -53,7 +58,9 @@ def create_company(data: CompanyCreate, db: Session = Depends(get_db), user: Use
 
 
 @router.put("/{company_id}", response_model=CompanyResponse)
-def update_company(company_id: int, data: CompanyUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_company(
+    company_id: int, data: CompanyUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     if not user.is_admin:
         raise HTTPException(status_code=403, detail="仅管理员可编辑公司信息")
     company = db.query(Company).filter(Company.id == company_id).first()

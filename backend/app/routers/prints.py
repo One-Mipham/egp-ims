@@ -1,4 +1,5 @@
 """打印模块路由：公司信息、部门、科目表、科目余额表、总账、凭证、月/季/年报。"""
+
 import calendar
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -10,10 +11,16 @@ from app.database import get_db
 from app.models import User, Company, Department, Account, Voucher, VoucherEntry, Counterparty, Person, Project
 from app.auth import get_current_user
 from app.routers.reports import (
-    _period_end_date, _year_start, _prev_year_period, _prev_year_end,
-    _calc_ending, _occurrence,
-    BS_ROWS, IS_ROWS,
-    _compute_cash_flows, _is_cash_account,
+    _period_end_date,
+    _year_start,
+    _prev_year_period,
+    _prev_year_end,
+    _calc_ending,
+    _occurrence,
+    BS_ROWS,
+    IS_ROWS,
+    _compute_cash_flows,
+    _is_cash_account,
     CASH_CODES,
 )
 
@@ -28,6 +35,7 @@ def _get_company(db: Session, company_id: int) -> Company:
 
 
 # ──────────────── 公司信息 ────────────────
+
 
 @router.get("/company")
 def print_company(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -44,19 +52,23 @@ def print_company(company_id: int, db: Session = Depends(get_db), user: User = D
 
 # ──────────────── 部门信息 ────────────────
 
+
 @router.get("/departments")
 def print_departments(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     _get_company(db, company_id)
-    depts = db.query(Department).filter(
-        Department.company_id == company_id,
-    ).order_by(Department.code).all()
-    return [
-        {"code": d.code, "name": d.name, "manager": d.manager, "is_active": d.is_active}
-        for d in depts
-    ]
+    depts = (
+        db.query(Department)
+        .filter(
+            Department.company_id == company_id,
+        )
+        .order_by(Department.code)
+        .all()
+    )
+    return [{"code": d.code, "name": d.name, "manager": d.manager, "is_active": d.is_active} for d in depts]
 
 
 # ──────────────── 科目表 ────────────────
+
 
 @router.get("/subjects")
 def print_subjects(
@@ -86,6 +98,7 @@ def print_subjects(
 
 # ──────────────── 科目余额表 ────────────────
 
+
 @router.get("/subject-balance")
 def print_subject_balance(
     company_id: int,
@@ -95,12 +108,19 @@ def print_subject_balance(
 ):
     _get_company(db, company_id)
     end_date = _period_end_date(period)
-    _period_end_date(f"{int(period[:4])}-{int(period[5:7]) - 1:02d}" if int(period[5:7]) > 1 else f"{int(period[:4]) - 1}-12")
+    _period_end_date(
+        f"{int(period[:4])}-{int(period[5:7]) - 1:02d}" if int(period[5:7]) > 1 else f"{int(period[:4]) - 1}-12"
+    )
 
-    accts = db.query(Account).filter(
-        Account.company_id == company_id,
-        Account.is_active,
-    ).order_by(Account.code).all()
+    accts = (
+        db.query(Account)
+        .filter(
+            Account.company_id == company_id,
+            Account.is_active,
+        )
+        .order_by(Account.code)
+        .all()
+    )
 
     # 构建父科目集合，用于判断是否汇总叶子后代
     parent_codes = {a.parent_code for a in accts if a.parent_code}
@@ -109,8 +129,7 @@ def print_subject_balance(
     for a in accts:
         if a.code in parent_codes:
             # 父科目：汇总其下所有叶子后代
-            children = [c for c in accts
-                        if c.code.startswith(a.code) and c.code not in parent_codes]
+            children = [c for c in accts if c.code.startswith(a.code) and c.code not in parent_codes]
             if not children:
                 children = [a]
             beginning, d, c_sum, ending = 0.0, 0.0, 0.0, 0.0
@@ -127,19 +146,22 @@ def print_subject_balance(
             d, c_sum = _occurrence(a, db, company_id, period + "-01", end_date)
             ending = _calc_ending(a, db, company_id, end_date)
             beginning, d, c_sum, ending = round(beginning, 2), round(d, 2), round(c_sum, 2), round(ending, 2)
-        rows.append({
-            "code": a.code,
-            "name": a.name,
-            "beginning": beginning,
-            "debit": d,
-            "credit": c_sum,
-            "ending": ending,
-        })
+        rows.append(
+            {
+                "code": a.code,
+                "name": a.name,
+                "beginning": beginning,
+                "debit": d,
+                "credit": c_sum,
+                "ending": ending,
+            }
+        )
 
     return {"period": period, "rows": rows}
 
 
 # ──────────────── 总账余额表 ────────────────
+
 
 @router.get("/general-ledger")
 def print_general_ledger(
@@ -152,22 +174,25 @@ def print_general_ledger(
     end_date = _period_end_date(period)
 
     # 加载全部科目，构建叶子查找
-    all_accts = {a.code: a for a in db.query(Account).filter(
-        Account.company_id == company_id, Account.is_active).all()}
+    all_accts = {a.code: a for a in db.query(Account).filter(Account.company_id == company_id, Account.is_active).all()}
     parent_codes = {a.parent_code for a in all_accts.values() if a.parent_code}
 
     # 只取一级科目
-    accts = db.query(Account).filter(
-        Account.company_id == company_id,
-        Account.level == 1,
-        Account.is_active,
-    ).order_by(Account.code).all()
+    accts = (
+        db.query(Account)
+        .filter(
+            Account.company_id == company_id,
+            Account.level == 1,
+            Account.is_active,
+        )
+        .order_by(Account.code)
+        .all()
+    )
 
     rows = []
     for a in accts:
         # 找到以该一级科目编码开头的所有叶子科目（自身不是父级）
-        children = [c for c in all_accts.values()
-                    if c.code.startswith(a.code) and c.code not in parent_codes]
+        children = [c for c in all_accts.values() if c.code.startswith(a.code) and c.code not in parent_codes]
         if not children and a.code not in parent_codes:
             children = [a]
         beginning, d, c_sum, ending = 0.0, 0.0, 0.0, 0.0
@@ -177,19 +202,22 @@ def print_general_ledger(
             d += dc
             c_sum += cc
             ending += _calc_ending(child, db, company_id, end_date)
-        rows.append({
-            "code": a.code,
-            "name": a.name,
-            "beginning": round(beginning, 2),
-            "debit": round(d, 2),
-            "credit": round(c_sum, 2),
-            "ending": round(ending, 2),
-        })
+        rows.append(
+            {
+                "code": a.code,
+                "name": a.name,
+                "beginning": round(beginning, 2),
+                "debit": round(d, 2),
+                "credit": round(c_sum, 2),
+                "ending": round(ending, 2),
+            }
+        )
 
     return {"period": period, "rows": rows}
 
 
 # ──────────────── 凭证打印 ────────────────
+
 
 @router.get("/vouchers")
 def print_vouchers(
@@ -233,33 +261,44 @@ def print_vouchers(
         entries = db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).all()
         entry_data = []
         for e in entries:
-            dept_name = db.query(Department).filter(Department.id == e.department_id).first() if e.department_id else None
-            cp_name = db.query(Counterparty).filter(Counterparty.id == e.counterparty_id).first() if e.counterparty_id else None
+            dept_name = (
+                db.query(Department).filter(Department.id == e.department_id).first() if e.department_id else None
+            )
+            cp_name = (
+                db.query(Counterparty).filter(Counterparty.id == e.counterparty_id).first()
+                if e.counterparty_id
+                else None
+            )
             p_name = db.query(Person).filter(Person.id == e.person_id).first() if e.person_id else None
             pr_name = db.query(Project).filter(Project.id == e.project_id).first() if e.project_id else None
-            entry_data.append({
-                "account_code": e.account_code,
-                "debit": e.debit,
-                "credit": e.credit,
-                "description": e.description,
-                "department_name": dept_name.name if dept_name else None,
-                "counterparty_name": cp_name.name if cp_name else None,
-                "person_name": p_name.name if p_name else None,
-                "project_name": pr_name.name if pr_name else None,
-            })
-        result.append({
-            "id": v.id,
-            "date": v.date,
-            "voucher_no": v.voucher_no,
-            "voucher_type": v.voucher_type,
-            "summary": v.summary,
-            "status": v.status,
-            "entries": entry_data,
-        })
+            entry_data.append(
+                {
+                    "account_code": e.account_code,
+                    "debit": e.debit,
+                    "credit": e.credit,
+                    "description": e.description,
+                    "department_name": dept_name.name if dept_name else None,
+                    "counterparty_name": cp_name.name if cp_name else None,
+                    "person_name": p_name.name if p_name else None,
+                    "project_name": pr_name.name if pr_name else None,
+                }
+            )
+        result.append(
+            {
+                "id": v.id,
+                "date": v.date,
+                "voucher_no": v.voucher_no,
+                "voucher_type": v.voucher_type,
+                "summary": v.summary,
+                "status": v.status,
+                "entries": entry_data,
+            }
+        )
     return {"range": range, "start": start, "end": end, "vouchers": result}
 
 
 # ──────────────── 月报/季报/年报 ────────────────
+
 
 def _period_range(period: str, rtype: str) -> tuple[str, str]:
     """Return (curr_start, prev_start) based on period type.
@@ -282,6 +321,7 @@ def _prev_day(date_str: str) -> str:
     e.g. '2026-05-01' → '2026-04-30' (last day of previous month).
     Used to get period-beginning balance (balance at end of prior day = start of this day)."""
     from datetime import timedelta as _td
+
     y, m, d = int(date_str[:4]), int(date_str[5:7]), int(date_str[8:10])
     dt = datetime(y, m, d) - _td(days=1)
     return dt.strftime("%Y-%m-%d")
@@ -303,8 +343,16 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             parent_codes.add(a.parent_code)
 
     if report == "balance":
+
         def _calc(code_str, ref_date=None):
-            if not code_str or code_str in ("CURRENT_TOTAL", "NCURRENT_TOTAL", "ASSET_TOTAL", "LIABILITY_TOTAL", "EQUITY_TOTAL", "TOTAL"):
+            if not code_str or code_str in (
+                "CURRENT_TOTAL",
+                "NCURRENT_TOTAL",
+                "ASSET_TOTAL",
+                "LIABILITY_TOTAL",
+                "EQUITY_TOTAL",
+                "TOTAL",
+            ):
                 return 0.0
             codes = [c.strip() for c in code_str.split(",") if c.strip()]
             total = 0.0
@@ -370,6 +418,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
                         item[key] = round(sum(i[key] for i in right_items[24:29]), 2)
                     elif item["name"] == "负债和所有者权益总计":
                         item[key] = round(right_items[22][key] + right_items[29][key], 2)
+
         _force_balance("ending")
         _force_balance("beginning")
 
@@ -386,6 +435,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
         return {"type": "balance", "date_display": date_display, "left_items": left_items, "right_items": right_items}
 
     elif report == "income":
+
         def _calc(code_str, start, end):
             if not code_str:
                 return 0.0
@@ -396,7 +446,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
                 if not children and code in accts and code not in parent_codes:
                     children = [accts[code]]
                 for a in children:
-                    exclude_xfer = (a.category == "profit_loss")
+                    exclude_xfer = a.category == "profit_loss"
                     d, c = _occurrence(a, db, company_id, start, end, exclude_transfer=exclude_xfer)
                     if a.category == "profit_loss":
                         if a.code.startswith(("64", "66", "67", "68")):
@@ -411,18 +461,28 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             if codes in ("OP_PROFIT", "TOTAL_PROFIT", "NET_PROFIT"):
                 items.append({"name": name, "curr": 0, "ytd": 0, "prev": 0, "formula": codes})
             else:
-                items.append({
-                    "name": name,
-                    "curr": round(_calc(codes, curr_start, end_date), 2),
-                    "ytd": round(_calc(codes, ys, end_date), 2),
-                    "prev": round(_calc(codes, prev_curr_start, py_end), 2),
-                    "formula": "",
-                })
+                items.append(
+                    {
+                        "name": name,
+                        "curr": round(_calc(codes, curr_start, end_date), 2),
+                        "ytd": round(_calc(codes, ys, end_date), 2),
+                        "prev": round(_calc(codes, prev_curr_start, py_end), 2),
+                        "formula": "",
+                    }
+                )
 
         for item in items:
             f = item.get("formula", "")
             if f == "OP_PROFIT":
-                op = items[0]["curr"] - items[1]["curr"] - items[2]["curr"] - items[3]["curr"] - items[4]["curr"] - items[5]["curr"] - items[6]["curr"]
+                op = (
+                    items[0]["curr"]
+                    - items[1]["curr"]
+                    - items[2]["curr"]
+                    - items[3]["curr"]
+                    - items[4]["curr"]
+                    - items[5]["curr"]
+                    - items[6]["curr"]
+                )
                 item["curr"] = round(op, 2)
             elif f == "TOTAL_PROFIT":
                 op = next(i["curr"] for i in items if i.get("formula") == "OP_PROFIT")
@@ -435,10 +495,12 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
         for col in ("ytd", "prev"):
             s = ys if col == "ytd" else prev_curr_start
             e = end_date if col == "ytd" else py_end
+
             def _calc_col(code_str):
                 if not code_str:
                     return 0.0
                 return _calc(code_str, s, e)
+
             vals = {}
             for item in items:
                 if item.get("formula", "") in ("OP_PROFIT", "TOTAL_PROFIT", "NET_PROFIT"):
@@ -447,7 +509,16 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
             for item in items:
                 f = item.get("formula", "")
                 if f == "OP_PROFIT":
-                    item[col] = round(vals["一、营业收入"] - vals["    减：营业成本"] - vals["        税金及附加"] - vals["        销售费用"] - vals["        管理费用"] - vals["        财务费用"] - vals["        资产减值损失"], 2)
+                    item[col] = round(
+                        vals["一、营业收入"]
+                        - vals["    减：营业成本"]
+                        - vals["        税金及附加"]
+                        - vals["        销售费用"]
+                        - vals["        管理费用"]
+                        - vals["        财务费用"]
+                        - vals["        资产减值损失"],
+                        2,
+                    )
                 elif f == "TOTAL_PROFIT":
                     op = next(i[col] for i in items if i.get("formula") == "OP_PROFIT")
                     item[col] = round(op + vals["    加：营业外收入"] - vals["    减：营业外支出"], 2)
@@ -468,17 +539,26 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
     elif report == "cashflow":
         from app.models import CashFlowItem
 
-        cf_items = {cfi.code: cfi for cfi in db.query(CashFlowItem).filter(
-            CashFlowItem.company_id == company_id, CashFlowItem.is_active
-        ).all()}
+        cf_items = {
+            cfi.code: cfi
+            for cfi in db.query(CashFlowItem)
+            .filter(CashFlowItem.company_id == company_id, CashFlowItem.is_active)
+            .all()
+        }
 
         curr_items = _compute_cash_flows(db, company_id, curr_start, end_date)  # 本期(月度/季度/年度)
         ytd_items = _compute_cash_flows(db, company_id, ys, end_date)  # 本年累计
         prev_items = _compute_cash_flows(db, company_id, prev_curr_start, py_end)  # 上年同期
 
         def _cat_sum(data: dict, prefix: str, direction: str) -> float:
-            return sum(v for k, v in data.items() if cf_items.get(k) and cf_items[k].category_code
-                       and cf_items[k].category_code.startswith(prefix) and cf_items[k].direction == direction)
+            return sum(
+                v
+                for k, v in data.items()
+                if cf_items.get(k)
+                and cf_items[k].category_code
+                and cf_items[k].category_code.startswith(prefix)
+                and cf_items[k].direction == direction
+            )
 
         # Curr period
         op_in_c = round(_cat_sum(curr_items, "op_", "inflow"), 2)
@@ -522,7 +602,9 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
         beg_p = _cash_balance(_prev_day(prev_curr_start))
         end_p = _cash_balance(py_end)
 
-        def _net(inc, outc): return round(inc - outc, 2)
+        def _net(inc, outc):
+            return round(inc - outc, 2)
+
         net_op_c = _net(op_in_c, op_out_c)
         net_op_y = _net(op_in_y, op_out_y)
         net_op_p = _net(op_in_p, op_out_p)
@@ -615,8 +697,10 @@ def export_periodic(
     header_font = Font(name="微软雅黑", size=10, bold=True)
     normal_font = Font(name="微软雅黑", size=10)
     thin_border = Border(
-        left=Side(style="thin"), right=Side(style="thin"),
-        top=Side(style="thin"), bottom=Side(style="thin"),
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
     )
     header_fill = PatternFill(start_color="F5F5F4", end_color="F5F5F4", fill_type="solid")
     center_align = Alignment(horizontal="center", vertical="center")
@@ -657,8 +741,9 @@ def export_periodic(
                 ws.cell(row=row, column=ci).font = normal_font
             left = data["left_items"][i] if i < len(data["left_items"]) else None
             right = data["right_items"][i] if i < len(data["right_items"]) else None
-            is_bold = (left and ("合计" in left["name"] or "总计" in left["name"])) or \
-                      (right and ("合计" in right["name"] or "总计" in right["name"]))
+            is_bold = (left and ("合计" in left["name"] or "总计" in left["name"])) or (
+                right and ("合计" in right["name"] or "总计" in right["name"])
+            )
 
             if left:
                 ws.cell(row=row, column=1, value=left["name"]).alignment = text_align
@@ -750,7 +835,9 @@ def export_periodic(
             ws.cell(row=row, column=1, value=r[0]).alignment = text_align
             for ci in range(1, 4):
                 val = r[ci]
-                ws.cell(row=row, column=ci + 1, value=val if isinstance(val, (int, float)) else 0).alignment = number_align
+                ws.cell(
+                    row=row, column=ci + 1, value=val if isinstance(val, (int, float)) else 0
+                ).alignment = number_align
             row += 1
 
         ws.column_dimensions["A"].width = 50
@@ -764,6 +851,7 @@ def export_periodic(
     buf.seek(0)
 
     from urllib.parse import quote
+
     report_cn = {"balance": "资产负债表", "income": "利润表", "cashflow": "现金流量表"}[report]
     filename_cn = f"{type_label}{report_cn}_{period}.xlsx"
     filename_ascii = f"report_{report}_{period}.xlsx"

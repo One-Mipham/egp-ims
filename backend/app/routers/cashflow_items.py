@@ -1,4 +1,5 @@
 """现金流量表项目映射管理路由。"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -13,18 +14,20 @@ router = APIRouter()
 @router.get("/", response_model=list[CashFlowItemResponse])
 def list_cashflow_items(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     """列出某公司的全部现金流量项目映射。"""
-    return db.query(CashFlowItem).filter(
-        CashFlowItem.company_id == company_id
-    ).order_by(CashFlowItem.code).all()
+    return db.query(CashFlowItem).filter(CashFlowItem.company_id == company_id).order_by(CashFlowItem.code).all()
 
 
 @router.post("/", response_model=CashFlowItemResponse)
 def create_cashflow_item(data: CashFlowItemCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
     """新增现金流量项目映射。"""
-    existing = db.query(CashFlowItem).filter(
-        CashFlowItem.company_id == data.company_id,
-        CashFlowItem.code == data.code,
-    ).first()
+    existing = (
+        db.query(CashFlowItem)
+        .filter(
+            CashFlowItem.company_id == data.company_id,
+            CashFlowItem.code == data.code,
+        )
+        .first()
+    )
     if existing:
         raise HTTPException(status_code=400, detail=f"项目编码 {data.code} 已存在")
 
@@ -36,7 +39,9 @@ def create_cashflow_item(data: CashFlowItemCreate, db: Session = Depends(get_db)
 
 
 @router.put("/{item_id}", response_model=CashFlowItemResponse)
-def update_cashflow_item(item_id: int, data: CashFlowItemUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_cashflow_item(
+    item_id: int, data: CashFlowItemUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     """更新现金流量项目映射（如修改对方科目范围）。"""
     item = db.query(CashFlowItem).filter(CashFlowItem.id == item_id).first()
     if not item:
@@ -65,5 +70,6 @@ def delete_cashflow_item(item_id: int, db: Session = Depends(get_db), user=Depen
 def seed_default_items(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     """为指定公司重置/补齐国标预设的现金流量项目映射。"""
     from app.seed import seed_cashflow_items
+
     seed_cashflow_items(db, company_id)
     return {"ok": True, "message": "已补齐国标预设项目"}

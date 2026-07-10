@@ -205,7 +205,7 @@ function handleLogout() {
         class="h-10 bg-white/80 backdrop-blur-sm border-b border-zinc-200/50 flex items-center justify-between px-6 shrink-0 no-print"
       >
         <h1 class="text-sm font-light text-zinc-700 tracking-tight">
-          {{ menuItems.find(i => i.to === route.path)?.label || (route.path === '/init' ? '初始化导航' : t('app.dashboard')) }}
+          {{ menuItems.find(i => i.to === route.path)?.label ? t(menuItems.find(i => i.to === route.path)!.label) : (route.path === '/init' ? '初始化导航' : t('app.dashboard')) }}
         </h1>
         <div class="flex items-center gap-4">
           <a

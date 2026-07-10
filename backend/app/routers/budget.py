@@ -1,4 +1,5 @@
 """预算管理路由."""
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
@@ -7,13 +8,16 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.models import Budget, BudgetItem, User
 from app.schemas import (
-    BudgetCreate, BudgetUpdate, BudgetResponse,
+    BudgetCreate,
+    BudgetUpdate,
+    BudgetResponse,
 )
 
 router = APIRouter()
 
 
 # ── 预算 CRUD ──
+
 
 @router.get("/budgets", response_model=List[BudgetResponse])
 def list_budgets(
@@ -50,7 +54,7 @@ def create_budget(
     db.add(budget)
     db.flush()
 
-    for item_data in (data.items or []):
+    for item_data in data.items or []:
         item = BudgetItem(
             budget_id=budget.id,
             account_code=item_data.account_code,
@@ -92,8 +96,14 @@ def update_budget(
         budget.name = data.name
     if data.status is not None:
         budget.status = data.status
-    for field in ("revenue_growth_rate", "manual_adjustment", "cost_rate",
-                  "operating_exp_rate", "admin_exp_rate", "finance_exp_rate"):
+    for field in (
+        "revenue_growth_rate",
+        "manual_adjustment",
+        "cost_rate",
+        "operating_exp_rate",
+        "admin_exp_rate",
+        "finance_exp_rate",
+    ):
         val = getattr(data, field, None)
         if val is not None:
             setattr(budget, field, val)

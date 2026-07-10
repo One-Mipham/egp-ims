@@ -10,7 +10,7 @@ import InputText from 'primevue/inputtext'
 
 const { t } = useI18n()
 const toast = useToast()
-const companyId = Number(localStorage.getItem('company_id') || '1')
+const companyId = Number(localStorage.getItem('companyId') || '1')
 const reports = ref<any[]>([])
 const stats = ref<any>(null)
 const loading = ref(false)

@@ -1,4 +1,5 @@
 """服务器与服务管理路由。"""
+
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -7,8 +8,12 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Server, ServerService
 from app.schemas import (
-    ServerCreate, ServerUpdate, ServerResponse,
-    ServerServiceCreate, ServerServiceUpdate, ServerServiceResponse,
+    ServerCreate,
+    ServerUpdate,
+    ServerResponse,
+    ServerServiceCreate,
+    ServerServiceUpdate,
+    ServerServiceResponse,
     ServerServiceStatusUpdate,
 )
 from app.auth import get_current_user
@@ -16,6 +21,7 @@ from app.auth import get_current_user
 router = APIRouter()
 
 # ═══════════ 服务器 CRUD ═══════════
+
 
 @router.get("/", response_model=list[ServerResponse])
 def list_servers(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
@@ -64,13 +70,16 @@ def get_server(server_id: int, db: Session = Depends(get_db), user=Depends(get_c
 
 # ═══════════ 服务管理 CRUD ═══════════
 
+
 @router.get("/{server_id}/services", response_model=list[ServerServiceResponse])
 def list_services(server_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
     return db.query(ServerService).filter(ServerService.server_id == server_id).order_by(ServerService.name).all()
 
 
 @router.post("/{server_id}/services", response_model=ServerServiceResponse)
-def create_service(server_id: int, data: ServerServiceCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_service(
+    server_id: int, data: ServerServiceCreate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     svc = ServerService(server_id=server_id, **data.model_dump(exclude={"server_id"}))
     db.add(svc)
     db.commit()
@@ -79,7 +88,9 @@ def create_service(server_id: int, data: ServerServiceCreate, db: Session = Depe
 
 
 @router.put("/services/{service_id}", response_model=ServerServiceResponse)
-def update_service(service_id: int, data: ServerServiceUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_service(
+    service_id: int, data: ServerServiceUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     svc = db.query(ServerService).filter(ServerService.id == service_id).first()
     if not svc:
         raise HTTPException(status_code=404, detail="服务不存在")
@@ -103,8 +114,11 @@ def delete_service(service_id: int, db: Session = Depends(get_db), user=Depends(
 
 # ═══════════ 服务控制（启动/停止/重启） ═══════════
 
+
 @router.post("/services/{service_id}/control", response_model=ServerServiceResponse)
-def control_service(service_id: int, data: ServerServiceStatusUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def control_service(
+    service_id: int, data: ServerServiceStatusUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     svc = db.query(ServerService).filter(ServerService.id == service_id).first()
     if not svc:
         raise HTTPException(status_code=404, detail="服务不存在")
@@ -130,6 +144,7 @@ def control_service(service_id: int, data: ServerServiceStatusUpdate, db: Sessio
 
 
 # ═══════════ 跨服务器：全部服务列表 ═══════════
+
 
 @router.get("/all/services", response_model=list[ServerServiceResponse])
 def list_all_services(company_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):

@@ -1,4 +1,5 @@
 """订阅管理路由 — 套餐列表 + 订阅 + 试用激活."""
+
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -35,9 +36,13 @@ def list_plans(db: Session = Depends(get_db)):
     plans = db.query(SubscriptionPlan).filter(SubscriptionPlan.is_active).order_by(SubscriptionPlan.sort_order).all()
     return [
         {
-            "id": p.id, "name": p.name, "slug": p.slug,
-            "description": p.description, "billing_cycle": p.billing_cycle,
-            "price_cny": p.price_cny, "price_usd": p.price_usd,
+            "id": p.id,
+            "name": p.name,
+            "slug": p.slug,
+            "description": p.description,
+            "billing_cycle": p.billing_cycle,
+            "price_cny": p.price_cny,
+            "price_usd": p.price_usd,
             "modules": p.modules,
         }
         for p in plans
@@ -50,10 +55,15 @@ def current_subscription(company_id: int, db: Session = Depends(get_db), user: U
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="公司不存在")
-    sub = db.query(CompanySubscription).filter(
-        CompanySubscription.company_id == company_id,
-        CompanySubscription.status.in_(["trialing", "active"]),
-    ).order_by(CompanySubscription.id.desc()).first()
+    sub = (
+        db.query(CompanySubscription)
+        .filter(
+            CompanySubscription.company_id == company_id,
+            CompanySubscription.status.in_(["trialing", "active"]),
+        )
+        .order_by(CompanySubscription.id.desc())
+        .first()
+    )
     return {
         "company_id": company.id,
         "module_set": company.module_set,
@@ -76,9 +86,23 @@ def activate_trial(company_id: int, db: Session = Depends(get_db), user: User = 
     if company.subscription_status == "active":
         raise HTTPException(status_code=400, detail="公司已有有效订阅")
 
-    all_modules = ["accounting", "reports", "receivables", "payables", "expenses",
-                    "finance", "assets", "inventory", "contracts",
-                    "investments", "hr", "board", "admin", "bids", "knowledge"]
+    all_modules = [
+        "accounting",
+        "reports",
+        "receivables",
+        "payables",
+        "expenses",
+        "finance",
+        "assets",
+        "inventory",
+        "contracts",
+        "investments",
+        "hr",
+        "board",
+        "admin",
+        "bids",
+        "knowledge",
+    ]
 
     company.module_set = "trial"
     company.enabled_modules = all_modules
@@ -160,10 +184,15 @@ def renew_subscription(company_id: int, db: Session = Depends(get_db), user: Use
     if not company:
         raise HTTPException(status_code=404, detail="公司不存在")
 
-    sub = db.query(CompanySubscription).filter(
-        CompanySubscription.company_id == company_id,
-        CompanySubscription.status.in_(["active", "past_due"]),
-    ).order_by(CompanySubscription.id.desc()).first()
+    sub = (
+        db.query(CompanySubscription)
+        .filter(
+            CompanySubscription.company_id == company_id,
+            CompanySubscription.status.in_(["active", "past_due"]),
+        )
+        .order_by(CompanySubscription.id.desc())
+        .first()
+    )
 
     if not sub:
         raise HTTPException(status_code=404, detail="无有效订阅")
@@ -197,10 +226,15 @@ def cancel_subscription(company_id: int, db: Session = Depends(get_db), user: Us
     company = db.query(Company).filter(Company.id == company_id).first()
     if not company:
         raise HTTPException(status_code=404, detail="公司不存在")
-    sub = db.query(CompanySubscription).filter(
-        CompanySubscription.company_id == company_id,
-        CompanySubscription.status.in_(["trialing", "active", "past_due"]),
-    ).order_by(CompanySubscription.id.desc()).first()
+    sub = (
+        db.query(CompanySubscription)
+        .filter(
+            CompanySubscription.company_id == company_id,
+            CompanySubscription.status.in_(["trialing", "active", "past_due"]),
+        )
+        .order_by(CompanySubscription.id.desc())
+        .first()
+    )
     if sub:
         sub.status = "cancelled"
     company.subscription_status = "cancelled"
@@ -212,19 +246,31 @@ def cancel_subscription(company_id: int, db: Session = Depends(get_db), user: Us
 @router.get("/history")
 def subscription_history(company_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """获取公司的订阅和支付历史。"""
-    subs = db.query(CompanySubscription).filter(
-        CompanySubscription.company_id == company_id,
-    ).order_by(CompanySubscription.id.desc()).all()
+    subs = (
+        db.query(CompanySubscription)
+        .filter(
+            CompanySubscription.company_id == company_id,
+        )
+        .order_by(CompanySubscription.id.desc())
+        .all()
+    )
 
-    payments = db.query(PaymentTransaction).filter(
-        PaymentTransaction.company_id == company_id,
-    ).order_by(PaymentTransaction.id.desc()).all()
+    payments = (
+        db.query(PaymentTransaction)
+        .filter(
+            PaymentTransaction.company_id == company_id,
+        )
+        .order_by(PaymentTransaction.id.desc())
+        .all()
+    )
 
     return {
         "subscriptions": [
             {
-                "id": s.id, "plan_name": s.plan.name if s.plan else "-",
-                "billing_cycle": s.billing_cycle, "status": s.status,
+                "id": s.id,
+                "plan_name": s.plan.name if s.plan else "-",
+                "billing_cycle": s.billing_cycle,
+                "status": s.status,
                 "period_start": s.current_period_start.isoformat() if s.current_period_start else None,
                 "period_end": s.current_period_end.isoformat() if s.current_period_end else None,
                 "created_at": s.created_at.isoformat() if s.created_at else None,
@@ -233,8 +279,11 @@ def subscription_history(company_id: int, db: Session = Depends(get_db), user: U
         ],
         "payments": [
             {
-                "id": p.id, "amount": p.amount, "currency": p.currency,
-                "payment_method": p.payment_method, "status": p.status,
+                "id": p.id,
+                "amount": p.amount,
+                "currency": p.currency,
+                "payment_method": p.payment_method,
+                "status": p.status,
                 "paid_at": p.paid_at.isoformat() if p.paid_at else None,
             }
             for p in payments
@@ -246,9 +295,13 @@ def subscription_history(company_id: int, db: Session = Depends(get_db), user: U
 def check_expiry(db: Session = Depends(get_db)):
     """定时任务：检查所有订阅是否过期，自动切换状态。"""
     now = datetime.utcnow()
-    companies = db.query(Company).filter(
-        Company.subscription_status.in_(["trialing", "active"]),
-    ).all()
+    companies = (
+        db.query(Company)
+        .filter(
+            Company.subscription_status.in_(["trialing", "active"]),
+        )
+        .all()
+    )
 
     expired = 0
     for c in companies:
@@ -257,10 +310,15 @@ def check_expiry(db: Session = Depends(get_db)):
             c.enabled_modules = ["knowledge"]
             expired += 1
         elif c.subscription_status == "active":
-            sub = db.query(CompanySubscription).filter(
-                CompanySubscription.company_id == c.id,
-                CompanySubscription.status == "active",
-            ).order_by(CompanySubscription.id.desc()).first()
+            sub = (
+                db.query(CompanySubscription)
+                .filter(
+                    CompanySubscription.company_id == c.id,
+                    CompanySubscription.status == "active",
+                )
+                .order_by(CompanySubscription.id.desc())
+                .first()
+            )
             if sub and sub.current_period_end and sub.current_period_end < now:
                 sub.status = "past_due"
                 c.subscription_status = "past_due"

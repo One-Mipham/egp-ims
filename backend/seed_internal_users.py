@@ -8,6 +8,7 @@
     cd backend
     uv run python seed_internal_users.py
 """
+
 import os
 import sys
 import sqlite3
@@ -109,31 +110,52 @@ def seed_companies(conn):
         existing = cur.fetchone()
         if existing:
             # 更新
-            cur.execute("""
+            cur.execute(
+                """
                 UPDATE companies
                 SET name = ?, short_name = ?, english_name = ?, english_short_name = ?,
                     industry = ?, internal_control_mode = ?, currency = ?,
                     tax_region = ?, email = ?, website = ?
                 WHERE id = ?
-            """, (
-                c["name"], c["short_name"], c["english_name"], c["english_short_name"],
-                c["industry"], c["internal_control_mode"], c["currency"],
-                c["tax_region"], c["email"], c["website"],
-                c["id"],
-            ))
+            """,
+                (
+                    c["name"],
+                    c["short_name"],
+                    c["english_name"],
+                    c["english_short_name"],
+                    c["industry"],
+                    c["internal_control_mode"],
+                    c["currency"],
+                    c["tax_region"],
+                    c["email"],
+                    c["website"],
+                    c["id"],
+                ),
+            )
             print(f"   📝 更新公司 ID={c['id']}: {c['short_name']}")
         else:
             # 插入（使用指定 ID）
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO companies (id, name, short_name, english_name, english_short_name,
                     industry, internal_control_mode, currency, tax_region, email, website,
                     subscription_status, module_set)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 'pro')
-            """, (
-                c["id"], c["name"], c["short_name"], c["english_name"], c["english_short_name"],
-                c["industry"], c["internal_control_mode"], c["currency"],
-                c["tax_region"], c["email"], c["website"],
-            ))
+            """,
+                (
+                    c["id"],
+                    c["name"],
+                    c["short_name"],
+                    c["english_name"],
+                    c["english_short_name"],
+                    c["industry"],
+                    c["internal_control_mode"],
+                    c["currency"],
+                    c["tax_region"],
+                    c["email"],
+                    c["website"],
+                ),
+            )
             print(f"   ➕ 创建公司 ID={c['id']}: {c['short_name']}")
     conn.commit()
 
@@ -148,24 +170,38 @@ def seed_users(conn):
         existing = cur.fetchone()
         if existing:
             # 更新密码和公司关联
-            cur.execute("""
+            cur.execute(
+                """
                 UPDATE users
                 SET email = ?, password_hash = ?, role = ?, is_admin = ?, company_id = ?
                 WHERE username = ?
-            """, (
-                u["email"], password_hash, u["role"], u["is_admin"],
-                u["company_id"], u["username"],
-            ))
+            """,
+                (
+                    u["email"],
+                    password_hash,
+                    u["role"],
+                    u["is_admin"],
+                    u["company_id"],
+                    u["username"],
+                ),
+            )
             print(f"   🔄 更新用户: {u['username']} → 公司 {u['company_id']}")
         else:
             # 创建
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO users (username, email, password_hash, role, is_admin, is_active, company_id)
                 VALUES (?, ?, ?, ?, ?, 1, ?)
-            """, (
-                u["username"], u["email"], password_hash, u["role"], u["is_admin"],
-                u["company_id"],
-            ))
+            """,
+                (
+                    u["username"],
+                    u["email"],
+                    password_hash,
+                    u["role"],
+                    u["is_admin"],
+                    u["company_id"],
+                ),
+            )
             print(f"   ➕ 创建用户: {u['username']} → 公司 {u['company_id']}")
     conn.commit()
 

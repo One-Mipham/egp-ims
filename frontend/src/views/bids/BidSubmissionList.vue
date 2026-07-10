@@ -105,7 +105,7 @@ const submitting = ref(false)
 function emptyForm(): Record<string, any> {
   const now = new Date().toISOString().slice(0, 10)
   return {
-    company_id: Number(localStorage.getItem('company_id') || '1'),
+    company_id: Number(localStorage.getItem('companyId') || '1'),
     bid_no: `TB-${now.replace(/-/g, '')}-`,
     project_name: '',
     tendering_party: '',
@@ -138,7 +138,7 @@ async function load() {
   loading.value = true
   try {
     const r = await listBidSubmissions({
-      company_id: Number(localStorage.getItem('company_id') || '1'),
+      company_id: Number(localStorage.getItem('companyId') || '1'),
       bid_type: fBidType.value.length > 0 ? fBidType.value.join(',') : undefined,
       bond_status: fBondStatus.value.length > 0 ? fBondStatus.value.join(',') : undefined,
       status: fStatus.value,
@@ -153,7 +153,7 @@ async function load() {
 async function loadRefs() {
   try {
     const [deptRes] = await Promise.all([
-      api.get('/departments', { params: { company_id: Number(localStorage.getItem('company_id') || '1') } }),
+      api.get('/departments', { params: { company_id: Number(localStorage.getItem('companyId') || '1') } }),
     ])
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
   } catch {

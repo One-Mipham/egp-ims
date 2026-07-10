@@ -1,4 +1,5 @@
 """固定资产管理 — CRUD + 折旧 + 处置."""
+
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -7,9 +8,13 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.models import FixedAsset, FixedAssetDepreciation, User, Voucher, VoucherEntry
 from app.schemas import (
-    FixedAssetCreate, FixedAssetUpdate, FixedAssetResponse,
-    FixedAssetDepreciationCreate, FixedAssetDepreciationResponse,
-    FixedAssetDispose, BatchDepreciationRequest,
+    FixedAssetCreate,
+    FixedAssetUpdate,
+    FixedAssetResponse,
+    FixedAssetDepreciationCreate,
+    FixedAssetDepreciationResponse,
+    FixedAssetDispose,
+    BatchDepreciationRequest,
 )
 
 router = APIRouter()
@@ -21,7 +26,7 @@ def _generate_voucher(db: Session, company_id: int, user_id: int, vtype: str, su
     voucher = Voucher(
         company_id=company_id,
         creator_id=user_id,
-        date=datetime.utcnow().strftime('%Y-%m-%d'),
+        date=datetime.utcnow().strftime("%Y-%m-%d"),
         voucher_no=voucher_no,
         voucher_type=vtype,
         summary=summary,
@@ -30,17 +35,20 @@ def _generate_voucher(db: Session, company_id: int, user_id: int, vtype: str, su
     db.add(voucher)
     db.flush()
     for e in entries:
-        db.add(VoucherEntry(
-            voucher_id=voucher.id,
-            account_code=e["account_code"],
-            debit=e.get("debit", 0),
-            credit=e.get("credit", 0),
-            description=e.get("description", ""),
-        ))
+        db.add(
+            VoucherEntry(
+                voucher_id=voucher.id,
+                account_code=e["account_code"],
+                debit=e.get("debit", 0),
+                credit=e.get("credit", 0),
+                description=e.get("description", ""),
+            )
+        )
     return voucher
 
 
 # ═══════════ 资产 CRUD ═══════════
+
 
 @router.get("/assets", response_model=list[FixedAssetResponse])
 def list_assets(
@@ -63,9 +71,7 @@ def list_assets(
         q = q.filter(FixedAsset.location == location)
     if search:
         pattern = f"%{search}%"
-        q = q.filter(
-            (FixedAsset.name.ilike(pattern)) | (FixedAsset.asset_code.ilike(pattern))
-        )
+        q = q.filter((FixedAsset.name.ilike(pattern)) | (FixedAsset.asset_code.ilike(pattern)))
     return q.order_by(FixedAsset.id.desc()).offset(offset).limit(limit).all()
 
 
@@ -87,7 +93,9 @@ def create_asset(data: FixedAssetCreate, db: Session = Depends(get_db), user: Us
 
 
 @router.put("/assets/{asset_id}", response_model=FixedAssetResponse)
-def update_asset(asset_id: int, data: FixedAssetUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def update_asset(
+    asset_id: int, data: FixedAssetUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+):
     item = db.query(FixedAsset).filter(FixedAsset.id == asset_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="资产不存在")
@@ -109,6 +117,7 @@ def delete_asset(asset_id: int, db: Session = Depends(get_db), user: User = Depe
 
 
 # ═══════════ 处置 ═══════════
+
 
 @router.post("/assets/{asset_id}/dispose", response_model=FixedAssetResponse)
 def dispose_asset(
@@ -135,16 +144,43 @@ def dispose_asset(
 
     # 自动生成处置凭证：借累计折旧 + 借银行存款(收入) + 借营业外支出(损失) / 贷固定资产原值 + 贷营业外收入(利得)
     entries: list[dict] = []
-    entries.append({"account_code": "1602", "debit": asset.accumulated_depreciation, "credit": 0, "description": f"转销累计折旧 {asset.name}"})
-    entries.append({"account_code": "1601", "debit": 0, "credit": asset.original_value, "description": f"转销固定资产原值 {asset.name}"})
+    entries.append(
+        {
+            "account_code": "1602",
+            "debit": asset.accumulated_depreciation,
+            "credit": 0,
+            "description": f"转销累计折旧 {asset.name}",
+        }
+    )
+    entries.append(
+        {
+            "account_code": "1601",
+            "debit": 0,
+            "credit": asset.original_value,
+            "description": f"转销固定资产原值 {asset.name}",
+        }
+    )
     if data.disposal_proceeds > 0:
-        entries.append({"account_code": "1002", "debit": data.disposal_proceeds, "credit": 0, "description": f"处置收入 {asset.name}"})
+        entries.append(
+            {
+                "account_code": "1002",
+                "debit": data.disposal_proceeds,
+                "credit": 0,
+                "description": f"处置收入 {asset.name}",
+            }
+        )
     if gain_loss > 0:
-        entries.append({"account_code": "6301", "debit": 0, "credit": gain_loss, "description": f"处置利得 {asset.name}"})
+        entries.append(
+            {"account_code": "6301", "debit": 0, "credit": gain_loss, "description": f"处置利得 {asset.name}"}
+        )
     elif gain_loss < 0:
-        entries.append({"account_code": "6711", "debit": abs(gain_loss), "credit": 0, "description": f"处置损失 {asset.name}"})
+        entries.append(
+            {"account_code": "6711", "debit": abs(gain_loss), "credit": 0, "description": f"处置损失 {asset.name}"}
+        )
 
-    _generate_voucher(db, asset.company_id, user.id, "transfer", f"固定资产处置 {asset.name} ({asset.asset_code})", entries)
+    _generate_voucher(
+        db, asset.company_id, user.id, "transfer", f"固定资产处置 {asset.name} ({asset.asset_code})", entries
+    )
 
     db.commit()
     db.refresh(asset)
@@ -152,6 +188,7 @@ def dispose_asset(
 
 
 # ═══════════ 折旧 CRUD ═══════════
+
 
 @router.get("/depreciations", response_model=list[FixedAssetDepreciationResponse])
 def list_depreciations(
@@ -180,10 +217,14 @@ def create_depreciation(
     if asset.status not in ("使用中", "闲置"):
         raise HTTPException(status_code=400, detail=f"资产状态为'{asset.status}'，不可计提折旧")
 
-    existing = db.query(FixedAssetDepreciation).filter(
-        FixedAssetDepreciation.fixed_asset_id == data.fixed_asset_id,
-        FixedAssetDepreciation.period == data.period,
-    ).first()
+    existing = (
+        db.query(FixedAssetDepreciation)
+        .filter(
+            FixedAssetDepreciation.fixed_asset_id == data.fixed_asset_id,
+            FixedAssetDepreciation.period == data.period,
+        )
+        .first()
+    )
     if existing:
         raise HTTPException(status_code=400, detail=f"资产在期间{data.period}已计提折旧")
 
@@ -203,10 +244,27 @@ def create_depreciation(
     asset.net_value = asset.original_value - after
 
     # 自动生成折旧凭证：借管理费用/贷累计折旧
-    _generate_voucher(db, data.company_id, user.id, "transfer", f"计提折旧 {asset.name} ({data.period})", [
-        {"account_code": "6602", "debit": data.depreciation_amount, "credit": 0, "description": f"折旧费 {asset.name}"},
-        {"account_code": "1602", "debit": 0, "credit": data.depreciation_amount, "description": f"累计折旧 {asset.name}"},
-    ])
+    _generate_voucher(
+        db,
+        data.company_id,
+        user.id,
+        "transfer",
+        f"计提折旧 {asset.name} ({data.period})",
+        [
+            {
+                "account_code": "6602",
+                "debit": data.depreciation_amount,
+                "credit": 0,
+                "description": f"折旧费 {asset.name}",
+            },
+            {
+                "account_code": "1602",
+                "debit": 0,
+                "credit": data.depreciation_amount,
+                "description": f"累计折旧 {asset.name}",
+            },
+        ],
+    )
 
     db.commit()
     db.refresh(item)
@@ -232,7 +290,9 @@ def update_depreciation(
     after = dep.accumulated_before + new_amount
 
     if after > asset.original_value - asset.residual_value:
-        raise HTTPException(status_code=400, detail=f"折旧后累计{after}将超过可折旧上限{asset.original_value - asset.residual_value}")
+        raise HTTPException(
+            status_code=400, detail=f"折旧后累计{after}将超过可折旧上限{asset.original_value - asset.residual_value}"
+        )
 
     dep.depreciation_amount = new_amount
     dep.accumulated_after = after
@@ -265,6 +325,7 @@ def delete_depreciation(
 
 # ═══════════ 批量计提 ═══════════
 
+
 @router.post("/depreciations/batch")
 def batch_depreciate(
     data: BatchDepreciationRequest,
@@ -283,10 +344,14 @@ def batch_depreciate(
     failed = []
 
     for asset in assets:
-        existing = db.query(FixedAssetDepreciation).filter(
-            FixedAssetDepreciation.fixed_asset_id == asset.id,
-            FixedAssetDepreciation.period == data.period,
-        ).first()
+        existing = (
+            db.query(FixedAssetDepreciation)
+            .filter(
+                FixedAssetDepreciation.fixed_asset_id == asset.id,
+                FixedAssetDepreciation.period == data.period,
+            )
+            .first()
+        )
         if existing:
             failed.append({"asset_id": asset.id, "asset_name": asset.name, "reason": f"期间{data.period}已计提"})
             continue
@@ -325,10 +390,17 @@ def batch_depreciate(
     # 批量折旧汇总生成一张凭证
     total_amount = round(sum(s["amount"] for s in success), 2)
     if total_amount > 0:
-        _generate_voucher(db, data.company_id, user.id, "transfer", f"批量计提折旧 {data.period} ({len(success)}项)", [
-            {"account_code": "6602", "debit": total_amount, "credit": 0, "description": f"折旧费 {data.period}"},
-            {"account_code": "1602", "debit": 0, "credit": total_amount, "description": f"累计折旧 {data.period}"},
-        ])
+        _generate_voucher(
+            db,
+            data.company_id,
+            user.id,
+            "transfer",
+            f"批量计提折旧 {data.period} ({len(success)}项)",
+            [
+                {"account_code": "6602", "debit": total_amount, "credit": 0, "description": f"折旧费 {data.period}"},
+                {"account_code": "1602", "debit": 0, "credit": total_amount, "description": f"累计折旧 {data.period}"},
+            ],
+        )
 
     db.commit()
     return {"success": success, "failed": failed, "total": len(assets)}

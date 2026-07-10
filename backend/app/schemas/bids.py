@@ -1,4 +1,5 @@
 """招投标管理 Pydantic Schema."""
+
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
@@ -17,6 +18,7 @@ BID_STATUSES = ["draft", "submitted", "opened", "evaluated", "won", "lost", "can
 
 
 # ── 招标项目 CRUD ──
+
 
 class TenderProjectCreate(BaseModel):
     company_id: int
@@ -105,6 +107,7 @@ class TenderProjectResponse(BaseModel):
 
 
 # ── 投标登记 CRUD ──
+
 
 class BidSubmissionCreate(BaseModel):
     company_id: int
@@ -202,12 +205,16 @@ EXCEPTION_STATUSES = ["draft", "reviewed", "approved", "rejected", "closed"]
 TARGET_TYPES = ["tender_project", "bid_submission"]
 
 EXCEPTION_STATUS_LABELS = {
-    "draft": "草稿", "reviewed": "已审核", "approved": "已批准",
-    "rejected": "已驳回", "closed": "已关闭",
+    "draft": "草稿",
+    "reviewed": "已审核",
+    "approved": "已批准",
+    "rejected": "已驳回",
+    "closed": "已关闭",
 }
 
 
 # ── 例外事项 CRUD ──
+
 
 class BidExceptionCreate(BaseModel):
     company_id: int
@@ -260,6 +267,7 @@ class BidExceptionResponse(BaseModel):
 
 
 # ── 统计 ──
+
 
 class BidStatsResponse(BaseModel):
     tender: dict

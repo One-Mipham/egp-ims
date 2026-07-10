@@ -111,7 +111,7 @@ const submitting = ref(false)
 function emptyForm(): Record<string, any> {
   const now = new Date().toISOString().slice(0, 10)
   return {
-    company_id: Number(localStorage.getItem('company_id') || '1'),
+    company_id: Number(localStorage.getItem('companyId') || '1'),
     project_no: `ZB-${now.replace(/-/g, '')}-`,
     project_name: '',
     tender_type: '公开招标',
@@ -167,7 +167,7 @@ async function load() {
   loading.value = true
   try {
     const r = await listTenderProjects({
-      company_id: Number(localStorage.getItem('company_id') || '1'),
+      company_id: Number(localStorage.getItem('companyId') || '1'),
       tender_type: fTenderType.value.length > 0 ? fTenderType.value.join(',') : undefined,
       procurement_category: fProcurementCategory.value.length > 0 ? fProcurementCategory.value.join(',') : undefined,
       department_id: fDepartment.value.length === 1 ? Number(fDepartment.value[0]) : undefined,
@@ -183,7 +183,7 @@ async function load() {
 async function loadRefs() {
   try {
     const [deptRes] = await Promise.all([
-      api.get('/departments', { params: { company_id: Number(localStorage.getItem('company_id') || '1') } }),
+      api.get('/departments', { params: { company_id: Number(localStorage.getItem('companyId') || '1') } }),
     ])
     departments.value = deptRes.data.map((d: any) => ({ label: d.name, value: d.id }))
   } catch {

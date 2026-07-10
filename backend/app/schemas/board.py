@@ -1,4 +1,5 @@
 """董事办 — Pydantic schemas."""
+
 from datetime import datetime
 from typing import Optional
 
@@ -6,6 +7,7 @@ from pydantic import BaseModel
 
 
 # ── BoardFiling ──
+
 
 class BoardFilingCreate(BaseModel):
     company_id: int
@@ -71,6 +73,7 @@ class BoardFilingResponse(BaseModel):
 
 # ── BoardShareholder ──
 
+
 class BoardShareholderCreate(BaseModel):
     company_id: int
     name: str
@@ -118,6 +121,7 @@ class BoardShareholderResponse(BaseModel):
 
 
 # ── Cockpit lights ──
+
 
 class CockpitLight(BaseModel):
     label: str
