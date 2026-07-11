@@ -458,6 +458,45 @@ def unreverse_voucher(voucher_id: int, db: Session = Depends(get_db), user: User
     return voucher
 
 
+@router.delete("/{voucher_id}")
+def delete_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """删除草稿状态凭证。凭证号码不回收（VoucherSequence 只增不减）。"""
+    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    if not voucher:
+        raise HTTPException(status_code=404, detail="凭证不存在")
+    if voucher.status != "draft":
+        raise HTTPException(status_code=400, detail="只能删除草稿状态凭证")
+
+    _check_period_open(db, voucher.company_id, voucher.date)
+
+    company = _get_company(db, voucher.company_id)
+    err = check_voucher_update(user, company, voucher.creator_id)
+    if err:
+        raise HTTPException(status_code=403, detail=err)
+
+    # 删除分录的银行结算明细，再删分录，最后删凭证
+    entries = db.query(VoucherEntry).filter(VoucherEntry.voucher_id == voucher_id).all()
+    for e in entries:
+        db.query(BankSettlement).filter(BankSettlement.voucher_entry_id == e.id).delete()
+    db.query(VoucherEntry).filter(VoucherEntry.voucher_id == voucher_id).delete()
+
+    voucher_no = voucher.voucher_no
+    db.delete(voucher)
+
+    db.add(
+        AuditLog(
+            company_id=voucher.company_id,
+            user_id=user.id,
+            action="delete_voucher",
+            target_type="voucher",
+            target_id=voucher_id,
+            reason=f"删除凭证 {voucher_no}",
+        )
+    )
+    db.commit()
+    return {"message": f"凭证 {voucher_no} 已删除", "voucher_no": voucher_no}
+
+
 # ── 历史凭证批量导入 ──
 
 

@@ -18,6 +18,7 @@ import {
   unapproveVoucher,
   unpostVoucher,
   unreverseVoucher,
+  deleteVoucher,
   listAccounts,
   listDepartments,
   listCounterparties,
@@ -428,6 +429,20 @@ async function handleUnreverse(id: number) {
   }
 }
 
+async function handleDelete(id: number, voucherNo: string) {
+  if (!confirm(`确认删除凭证 ${voucherNo}？此操作不可恢复，凭证号码将留空不递补。`)) return
+  try {
+    await deleteVoucher(id)
+    if (detailVoucher.value && detailVoucher.value.id === id) {
+      showDetailDialog.value = false
+      detailVoucher.value = null
+    }
+    await loadVouchers()
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
+}
+
 function handleQuery() {
   showQueryDialog.value = false
   loadVouchers()
@@ -553,6 +568,14 @@ onMounted(() => {
               severity="info"
               size="small"
               @click="handleApprove(data.id)"
+            />
+            <Button
+              v-if="data.status === 'draft'"
+              :label="t('common.delete')"
+              text
+              severity="danger"
+              size="small"
+              @click="handleDelete(data.id, data.voucher_no)"
             />
             <Button
               v-if="data.status === 'approved'"
@@ -957,6 +980,13 @@ onMounted(() => {
               :disabled="!editBalanced || saving"
               :loading="saving"
             />
+            <Button
+              v-if="editTarget"
+              :label="t('common.delete')"
+              icon="pi pi-trash"
+              severity="danger"
+              @click="handleDelete(editTarget.id, editTarget.voucher_no)"
+            />
           </div>
         </div>
 
@@ -1101,6 +1131,13 @@ onMounted(() => {
             severity="info"
             size="small"
             @click="handleApprove(detailVoucher.id)"
+          />
+          <Button
+            v-if="detailVoucher.status === 'draft'"
+            :label="t('common.delete')"
+            severity="danger"
+            size="small"
+            @click="handleDelete(detailVoucher.id, detailVoucher.voucher_no)"
           />
           <Button
             v-if="detailVoucher.status === 'approved'"
