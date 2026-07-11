@@ -446,13 +446,14 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
                 # 使用 recursive parent_code 层级递归汇聚叶子后代
                 leaves = _get_leaf_descendants(code, accts)
                 for a in leaves:
-                    exclude_xfer = a.category == "profit_loss"
+                    # 排除结转凭证（所有损益相关类别）
+                    exclude_xfer = a.category in ("profit_loss", "revenue", "cost", "expense")
                     d, c = _occurrence(a, db, company_id, start, end, exclude_transfer=exclude_xfer)
-                    if a.category == "profit_loss":
-                        if a.code.startswith(("64", "66", "67", "68")):
-                            total += d
-                        else:
-                            total += c
+                    # 按科目余额方向取发生额：贷方科目取贷方（收入），借方科目取借方（费用）
+                    if a.balance_direction == "credit":
+                        total += c
+                    else:
+                        total += d
             return round(total, 2)
 
         # curr_start 根据 rtype 覆盖单月/季度/年度起始
@@ -471,6 +472,7 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
                     }
                 )
 
+        # IS_ROWS 索引: 0营收 1成本 2税附 3销费 4管费 5财费 6减损 7公变 8投收 9他收 10营利 11营外收 12营外支 13总利 14所税 15净利
         for item in items:
             f = item.get("formula", "")
             if f == "OP_PROFIT":
@@ -482,16 +484,20 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
                     - items[4]["curr"]
                     - items[5]["curr"]
                     - items[6]["curr"]
+                    + items[7]["curr"]
+                    + items[8]["curr"]
+                    + items[9]["curr"]
                 )
                 item["curr"] = round(op, 2)
             elif f == "TOTAL_PROFIT":
                 op = next(i["curr"] for i in items if i.get("formula") == "OP_PROFIT")
-                nonop = items[10]["curr"] - items[11]["curr"]
+                nonop = items[11]["curr"] - items[12]["curr"]
                 item["curr"] = round(op + nonop, 2)
             elif f == "NET_PROFIT":
                 tp = next(i["curr"] for i in items if i.get("formula") == "TOTAL_PROFIT")
-                item["curr"] = round(tp - items[13]["curr"], 2)
+                item["curr"] = round(tp - items[14]["curr"], 2)
 
+        # 同时算 ytd 和 prev（IS_ROWS 索引同上）
         for col in ("ytd", "prev"):
             s = ys if col == "ytd" else prev_curr_start
             e = end_date if col == "ytd" else py_end
@@ -516,7 +522,10 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
                         - vals["        销售费用"]
                         - vals["        管理费用"]
                         - vals["        财务费用"]
-                        - vals["        资产减值损失"],
+                        - vals["        资产减值损失"]
+                        + vals["    加：公允价值变动收益"]
+                        + vals["        投资收益"]
+                        + vals["        其他收益"],
                         2,
                     )
                 elif f == "TOTAL_PROFIT":

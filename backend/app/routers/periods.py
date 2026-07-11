@@ -91,7 +91,7 @@ def _auto_carry_forward(
         .filter(
             Account.company_id == company_id,
             Account.is_active,
-            Account.category.in_(["profit_loss", "cost"]),
+            Account.category.in_(["profit_loss", "cost", "revenue", "expense"]),
             Account.code != "4103",
         )
         .all()
@@ -636,7 +636,7 @@ def execute_carry_forward(
         .filter(
             Account.company_id == company_id,
             Account.is_active,
-            Account.category.in_(["profit_loss", "cost"]),
+            Account.category.in_(["profit_loss", "cost", "revenue", "expense"]),
             Account.code != "4103",
         )
         .all()
