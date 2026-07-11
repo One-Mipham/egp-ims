@@ -15,6 +15,8 @@ import {
   approveVoucher,
   postVoucher,
   reverseVoucher,
+  unapproveVoucher,
+  unpostVoucher,
   listAccounts,
   listDepartments,
   listCounterparties,
@@ -383,6 +385,34 @@ async function handleReverse() {
   }
 }
 
+async function handleUnapprove(id: number) {
+  if (!confirm('确认取消审核？凭证将恢复为草稿状态，可重新修改。')) return
+  try {
+    await unapproveVoucher(id)
+    await loadVouchers()
+    if (detailVoucher.value && detailVoucher.value.id === id) {
+      const updated = vouchers.value.find(v => v.id === id)
+      if (updated) detailVoucher.value = updated
+    }
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
+}
+
+async function handleUnpost(id: number) {
+  if (!confirm('确认取消记账？凭证将恢复为审核通过状态。')) return
+  try {
+    await unpostVoucher(id)
+    await loadVouchers()
+    if (detailVoucher.value && detailVoucher.value.id === id) {
+      const updated = vouchers.value.find(v => v.id === id)
+      if (updated) detailVoucher.value = updated
+    }
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
+}
+
 function handleQuery() {
   showQueryDialog.value = false
   loadVouchers()
@@ -491,7 +521,7 @@ onMounted(() => {
             </span>
           </template>
         </Column>
-        <Column :header="t('common.actions')" style="width: 220px">
+        <Column :header="t('common.actions')" style="width: 260px">
           <template #body="{ data }">
             <Button
               v-if="data.status === 'draft'"
@@ -509,10 +539,14 @@ onMounted(() => {
               size="small"
               @click="handleApprove(data.id)"
             />
-            <span
-              v-else-if="data.status !== 'draft'"
-              class="text-xs text-zinc-400 italic px-2"
-            >{{ t('accounting.vouchers_page.approved') }}</span>
+            <Button
+              v-if="data.status === 'approved'"
+              :label="t('accounting.vouchers_page.unapproveVoucher')"
+              text
+              severity="warning"
+              size="small"
+              @click="handleUnapprove(data.id)"
+            />
             <Button
               v-if="data.status === 'draft' || data.status === 'approved'"
               :label="t('accounting.vouchers_page.postVoucher')"
@@ -521,10 +555,14 @@ onMounted(() => {
               size="small"
               @click="handlePost(data.id)"
             />
-            <span
-              v-else-if="data.status === 'posted' || data.status === 'closed'"
-              class="text-xs text-zinc-400 italic px-2"
-            >{{ t('accounting.vouchers_page.posted') }}</span>
+            <Button
+              v-if="data.status === 'posted'"
+              :label="t('accounting.vouchers_page.unpostVoucher')"
+              text
+              severity="warning"
+              size="small"
+              @click="handleUnpost(data.id)"
+            />
             <Button
               v-if="data.status === 'posted'"
               :label="t('accounting.vouchers_page.reverseVoucher')"
@@ -533,6 +571,10 @@ onMounted(() => {
               size="small"
               @click="reverseTarget = data.id; reverseReason = ''; showReverseDialog = true"
             />
+            <span
+              v-if="data.status === 'closed' || data.status === 'reversed'"
+              class="text-xs text-zinc-400 italic px-2"
+            >{{ STATUS_LABELS[data.status] }}</span>
           </template>
         </Column>
       </DataTable>
@@ -1020,6 +1062,51 @@ onMounted(() => {
         <div class="flex justify-between mt-3 p-2 bg-stone-50 rounded font-medium">
           <span>合计</span>
           <span>借: {{ totalDetailDebit.toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }} &nbsp; 贷: {{ totalDetailCredit.toLocaleString('zh-CN', { minimumFractionDigits: 2 }) }}</span>
+        </div>
+        <!-- Detail action buttons -->
+        <div class="flex gap-2 mt-4 justify-end">
+          <Button
+            v-if="detailVoucher.status === 'draft'"
+            :label="t('common.edit')"
+            severity="secondary"
+            size="small"
+            @click="showDetailDialog = false; openEdit(detailVoucher)"
+          />
+          <Button
+            v-if="detailVoucher.status === 'draft'"
+            :label="t('accounting.vouchers_page.approveVoucher')"
+            severity="info"
+            size="small"
+            @click="handleApprove(detailVoucher.id)"
+          />
+          <Button
+            v-if="detailVoucher.status === 'approved'"
+            :label="t('accounting.vouchers_page.unapproveVoucher')"
+            severity="warning"
+            size="small"
+            @click="handleUnapprove(detailVoucher.id)"
+          />
+          <Button
+            v-if="detailVoucher.status === 'draft' || detailVoucher.status === 'approved'"
+            :label="t('accounting.vouchers_page.postVoucher')"
+            severity="success"
+            size="small"
+            @click="handlePost(detailVoucher.id)"
+          />
+          <Button
+            v-if="detailVoucher.status === 'posted'"
+            :label="t('accounting.vouchers_page.unpostVoucher')"
+            severity="warning"
+            size="small"
+            @click="handleUnpost(detailVoucher.id)"
+          />
+          <Button
+            v-if="detailVoucher.status === 'posted'"
+            :label="t('accounting.vouchers_page.reverseVoucher')"
+            severity="danger"
+            size="small"
+            @click="reverseTarget = detailVoucher.id; reverseReason = ''; showDetailDialog = false; showReverseDialog = true"
+          />
         </div>
       </div>
     </Dialog>
