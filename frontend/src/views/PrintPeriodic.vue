@@ -220,33 +220,33 @@ onMounted(fetchClosedPeriods)
       <table class="data-table border-collapse border border-stone-300">
         <thead>
           <tr class="border-b-2 border-stone-400">
-            <th class="text-left py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 30%">
+            <th class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 20%">
               {{ t('reports.assets') }}
             </th>
             <th
-              class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
-              style="width: 12%"
+              class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200"
+              style="width: 15%"
             >
               {{ t('accounting.gl_page.endingBalance') }}
             </th>
             <th
-              class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
-              style="width: 12%"
+              class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200"
+              style="width: 15%"
             >
               年初余额
             </th>
-            <th class="text-left py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 30%">
+            <th class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 20%">
               负债及所有者权益
             </th>
             <th
-              class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
-              style="width: 12%"
+              class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200"
+              style="width: 15%"
             >
               {{ t('accounting.gl_page.endingBalance') }}
             </th>
             <th
-              class="text-right py-1.5 px-2 font-bold bg-stone-50 border border-stone-200 report-number"
-              style="width: 12%"
+              class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200"
+              style="width: 15%"
             >
               年初余额
             </th>
@@ -343,10 +343,10 @@ onMounted(fetchClosedPeriods)
       <table class="data-table border-collapse border border-stone-300">
         <thead>
           <tr class="border-b-2 border-stone-400 bg-stone-50">
-            <th class="text-left py-1.5 px-2 border border-stone-200" style="width: 50%">项 目</th>
-            <th class="text-right py-1.5 px-2 border border-stone-200 report-number" style="width: 17%">本期金额</th>
-            <th class="text-right py-1.5 px-2 border border-stone-200 report-number" style="width: 17%">本年累计</th>
-            <th class="text-right py-1.5 px-2 border border-stone-200 report-number" style="width: 17%">上年同期</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 50%">项目</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 17%">本期金额</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 17%">本年累计</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 17%">上年同期</th>
           </tr>
         </thead>
         <tbody>
@@ -387,9 +387,9 @@ onMounted(fetchClosedPeriods)
         <thead>
           <tr class="border-b-2 border-stone-400 bg-stone-50">
             <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 50%">项目</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200 report-number" style="width: 17%">本月</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200 report-number" style="width: 17%">本年累计</th>
-            <th class="text-center py-1.5 px-2 border border-stone-200 report-number" style="width: 17%">去年同期</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 17%">本期</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 17%">本年累计</th>
+            <th class="text-center py-1.5 px-2 border border-stone-200" style="width: 17%">去年同期</th>
           </tr>
         </thead>
         <tbody>
