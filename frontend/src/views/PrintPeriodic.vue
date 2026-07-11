@@ -220,33 +220,33 @@ onMounted(fetchClosedPeriods)
       <table class="data-table border-collapse border border-stone-300">
         <thead>
           <tr class="border-b-2 border-stone-400">
-            <th class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 20%">
+            <th class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 24%">
               {{ t('reports.assets') }}
             </th>
             <th
               class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200"
-              style="width: 15%"
+              style="width: 13%"
             >
               {{ t('accounting.gl_page.endingBalance') }}
             </th>
             <th
               class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200"
-              style="width: 15%"
+              style="width: 13%"
             >
               年初余额
             </th>
-            <th class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 20%">
+            <th class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200" style="width: 24%">
               负债及所有者权益
             </th>
             <th
               class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200"
-              style="width: 15%"
+              style="width: 13%"
             >
               {{ t('accounting.gl_page.endingBalance') }}
             </th>
             <th
               class="text-center py-1.5 px-2 font-bold bg-stone-50 border border-stone-200"
-              style="width: 15%"
+              style="width: 13%"
             >
               年初余额
             </th>
