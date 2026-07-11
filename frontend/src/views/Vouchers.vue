@@ -19,6 +19,7 @@ import {
   unpostVoucher,
   unreverseVoucher,
   deleteVoucher,
+  restoreDraftVoucher,
   listAccounts,
   listDepartments,
   listCounterparties,
@@ -443,6 +444,20 @@ async function handleDelete(id: number, voucherNo: string) {
   }
 }
 
+async function handleRestoreDraft(id: number) {
+  if (!confirm('确认一键恢复草稿？凭证将直接回到草稿状态，可重新编辑。')) return
+  try {
+    await restoreDraftVoucher(id)
+    await loadVouchers()
+    if (detailVoucher.value && detailVoucher.value.id === id) {
+      const updated = vouchers.value.find(v => v.id === id)
+      if (updated) detailVoucher.value = updated
+    }
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
+}
+
 function handleQuery() {
   showQueryDialog.value = false
   loadVouchers()
@@ -616,6 +631,14 @@ onMounted(() => {
               severity="warning"
               size="small"
               @click="handleUnreverse(data.id)"
+            />
+            <Button
+              v-if="data.status !== 'draft' && data.status !== 'closed'"
+              :label="t('accounting.vouchers_page.restoreDraft')"
+              text
+              severity="help"
+              size="small"
+              @click="handleRestoreDraft(data.id)"
             />
             <span
               v-if="data.status === 'closed'"
@@ -1173,6 +1196,13 @@ onMounted(() => {
             severity="danger"
             size="small"
             @click="reverseTarget = detailVoucher.id; reverseReason = ''; showDetailDialog = false; showReverseDialog = true"
+          />
+          <Button
+            v-if="detailVoucher.status !== 'draft' && detailVoucher.status !== 'closed'"
+            :label="t('accounting.vouchers_page.restoreDraft')"
+            severity="help"
+            size="small"
+            @click="handleRestoreDraft(detailVoucher.id)"
           />
         </div>
       </div>

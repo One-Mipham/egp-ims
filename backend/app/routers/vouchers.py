@@ -497,6 +497,59 @@ def delete_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = 
     return {"message": f"凭证 {voucher_no} 已删除", "voucher_no": voucher_no}
 
 
+@router.post("/{voucher_id}/restore-draft", response_model=VoucherResponse)
+def restore_draft(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """一键恢复草稿：reversed→posted→approved→draft 全链路回退。"""
+    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    if not voucher:
+        raise HTTPException(status_code=404, detail="凭证不存在")
+    if voucher.status == "draft":
+        return voucher  # 已是草稿，无需操作
+
+    _check_period_open(db, voucher.company_id, voucher.date)
+
+    company = _get_company(db, voucher.company_id)
+    err = check_voucher_reverse(user, company)
+    if err:
+        raise HTTPException(status_code=403, detail=err)
+
+    steps = []
+    original_status = voucher.status
+
+    if voucher.status == "reversed":
+        voucher.status = "posted"
+        voucher.reversed_by = None
+        voucher.reversed_at = None
+        voucher.reverse_reason = None
+        steps.append("取消冲销")
+
+    if voucher.status == "posted":
+        voucher.status = "draft" if voucher.approved_by is None else "approved"
+        voucher.posted_by = None
+        voucher.posted_at = None
+        steps.append("取消记账")
+
+    if voucher.status == "approved":
+        voucher.status = "draft"
+        voucher.approved_by = None
+        voucher.approved_at = None
+        steps.append("取消审核")
+
+    db.add(
+        AuditLog(
+            company_id=voucher.company_id,
+            user_id=user.id,
+            action="restore_draft",
+            target_type="voucher",
+            target_id=voucher_id,
+            reason=f"一键恢复草稿: {original_status} → draft ({' → '.join(steps)})",
+        )
+    )
+    db.commit()
+    db.refresh(voucher)
+    return voucher
+
+
 # ── 历史凭证批量导入 ──
 
 
