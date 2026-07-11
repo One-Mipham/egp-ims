@@ -17,6 +17,7 @@ import {
   reverseVoucher,
   unapproveVoucher,
   unpostVoucher,
+  unreverseVoucher,
   listAccounts,
   listDepartments,
   listCounterparties,
@@ -413,6 +414,20 @@ async function handleUnpost(id: number) {
   }
 }
 
+async function handleUnreverse(id: number) {
+  if (!confirm('确认取消冲销？凭证将恢复为已记账状态。')) return
+  try {
+    await unreverseVoucher(id)
+    await loadVouchers()
+    if (detailVoucher.value && detailVoucher.value.id === id) {
+      const updated = vouchers.value.find(v => v.id === id)
+      if (updated) detailVoucher.value = updated
+    }
+  } catch (e: any) {
+    alert(e.response?.data?.detail)
+  }
+}
+
 function handleQuery() {
   showQueryDialog.value = false
   loadVouchers()
@@ -571,8 +586,16 @@ onMounted(() => {
               size="small"
               @click="reverseTarget = data.id; reverseReason = ''; showReverseDialog = true"
             />
+            <Button
+              v-if="data.status === 'reversed'"
+              :label="t('accounting.vouchers_page.unreverseVoucher')"
+              text
+              severity="warning"
+              size="small"
+              @click="handleUnreverse(data.id)"
+            />
             <span
-              v-if="data.status === 'closed' || data.status === 'reversed'"
+              v-if="data.status === 'closed'"
               class="text-xs text-zinc-400 italic px-2"
             >{{ STATUS_LABELS[data.status] }}</span>
           </template>
@@ -1099,6 +1122,13 @@ onMounted(() => {
             severity="warning"
             size="small"
             @click="handleUnpost(detailVoucher.id)"
+          />
+          <Button
+            v-if="detailVoucher.status === 'reversed'"
+            :label="t('accounting.vouchers_page.unreverseVoucher')"
+            severity="warning"
+            size="small"
+            @click="handleUnreverse(detailVoucher.id)"
           />
           <Button
             v-if="detailVoucher.status === 'posted'"

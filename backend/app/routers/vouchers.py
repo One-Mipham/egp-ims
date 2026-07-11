@@ -422,6 +422,42 @@ def unapprove_voucher(voucher_id: int, db: Session = Depends(get_db), user: User
     return voucher
 
 
+@router.post("/{voucher_id}/unreverse", response_model=VoucherResponse)
+def unreverse_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """取消冲销：将已冲销凭证恢复为已记账状态。"""
+    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    if not voucher:
+        raise HTTPException(status_code=404, detail="凭证不存在")
+    if voucher.status != "reversed":
+        raise HTTPException(status_code=400, detail="只能取消已冲销凭证")
+
+    _check_period_open(db, voucher.company_id, voucher.date)
+
+    company = _get_company(db, voucher.company_id)
+    err = check_voucher_reverse(user, company)
+    if err:
+        raise HTTPException(status_code=403, detail=err)
+
+    voucher.status = "posted"
+    voucher.reversed_by = None
+    voucher.reversed_at = None
+    voucher.reverse_reason = None
+
+    db.add(
+        AuditLog(
+            company_id=voucher.company_id,
+            user_id=user.id,
+            action="unreverse_voucher",
+            target_type="voucher",
+            target_id=voucher_id,
+            reason="取消冲销",
+        )
+    )
+    db.commit()
+    db.refresh(voucher)
+    return voucher
+
+
 # ── 历史凭证批量导入 ──
 
 

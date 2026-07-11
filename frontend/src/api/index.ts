@@ -129,6 +129,7 @@ export const reverseVoucher = (voucherId: number, reason: string) =>
   api.post(`/vouchers/${voucherId}/reverse`, { reason })
 export const unapproveVoucher = (voucherId: number) => api.post(`/vouchers/${voucherId}/unapprove`)
 export const unpostVoucher = (voucherId: number) => api.post(`/vouchers/${voucherId}/unpost`)
+export const unreverseVoucher = (voucherId: number) => api.post(`/vouchers/${voucherId}/unreverse`)
 
 // Periods
 export const listPeriods = (companyId: number) => api.get('/periods/', { params: { company_id: companyId } })
