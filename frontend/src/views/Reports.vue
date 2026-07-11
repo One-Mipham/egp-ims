@@ -276,15 +276,15 @@ onMounted(loadReport)
         <table class="data-table border-collapse border border-stone-300">
           <thead>
             <tr class="border-b-2 border-stone-400 bg-stone-50">
-              <th class="text-left py-1.5 px-2 font-bold border border-stone-200" style="width: 50%">项 目</th>
-              <th class="text-right py-1.5 px-2 font-bold border border-stone-200 report-number" style="width: 17%">
-                本月金额
+              <th class="text-center py-1.5 px-2 font-bold border border-stone-200" style="width: 50%">项目</th>
+              <th class="text-center py-1.5 px-2 font-bold border border-stone-200 report-number" style="width: 17%">
+                本月
               </th>
-              <th class="text-right py-1.5 px-2 font-bold border border-stone-200 report-number" style="width: 17%">
-                本年累计金额
+              <th class="text-center py-1.5 px-2 font-bold border border-stone-200 report-number" style="width: 17%">
+                本年累计
               </th>
-              <th class="text-right py-1.5 px-2 font-bold border border-stone-200 report-number" style="width: 17%">
-                上年同期累计
+              <th class="text-center py-1.5 px-2 font-bold border border-stone-200 report-number" style="width: 17%">
+                去年同期
               </th>
             </tr>
           </thead>
