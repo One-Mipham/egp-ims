@@ -96,7 +96,11 @@ def download_backup(
     user: User = Depends(get_current_user),
 ):
     """下载备份文件。"""
-    path = os.path.join(_backup_path(type), filename)
+    # 防止路径遍历攻击：拒绝包含 .. / \ 的文件名
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise HTTPException(status_code=400, detail="无效的文件名")
+    safe_name = os.path.basename(filename)
+    path = os.path.join(_backup_path(type), safe_name)
     if not os.path.isfile(path):
         raise HTTPException(status_code=404, detail="备份文件不存在")
     return FileResponse(path, media_type="application/octet-stream", filename=filename)
@@ -180,8 +184,8 @@ def export_data(
 
 @router.get("/export/full")
 def export_full_db(user: User = Depends(get_current_user)):
-    """下载完整数据库文件。"""
-    require_role(user, ["super_admin", "finance_manager", "finance_director"])
+    """下载完整数据库文件（仅限超级管理员）。"""
+    require_role(user, ["super_admin"])
     db_path = _get_db_path()
     ts = datetime.now(timezone(timedelta(hours=8))).strftime("%Y%m%d_%H%M%S")
     return FileResponse(db_path, media_type="application/octet-stream", filename=f"egp_ims_full_{ts}.db")

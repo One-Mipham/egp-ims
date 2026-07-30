@@ -7,7 +7,7 @@ from pydantic import BaseModel as PydanticBase
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import User, Voucher, VoucherEntry, Account, CashflowPlan, CashflowPlanItem
 from app.routers.reports import _get_leaf_descendants
 
@@ -128,7 +128,9 @@ def _sum_occurrence_by_prefix(prefix: str, db: Session, company_id: int, start: 
 
 def _has_data(db: Session, company_id: int) -> bool:
     """检查公司是否有已记账凭证。"""
-    return db.query(Voucher).filter(Voucher.company_id == company_id, Voucher.status.in_(["posted", "closed"])).count() > 0
+    return (
+        db.query(Voucher).filter(Voucher.company_id == company_id, Voucher.status.in_(["posted", "closed"])).count() > 0
+    )
 
 
 # ═══════════════════════════════════════════
@@ -650,8 +652,9 @@ def get_cashflow_plan(
     plan_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    p = db.query(CashflowPlan).filter(CashflowPlan.id == plan_id).first()
+    p = get_company_scoped(db, CashflowPlan, plan_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="现金流计划不存在")
     return {
@@ -690,8 +693,9 @@ def update_cashflow_plan(
     data: CFPlanUpdate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    plan = db.query(CashflowPlan).filter(CashflowPlan.id == plan_id).first()
+    plan = get_company_scoped(db, CashflowPlan, plan_id, cid)
     if not plan:
         raise HTTPException(status_code=404, detail="现金流计划不存在")
     if data.name is not None:
@@ -713,8 +717,9 @@ def delete_cashflow_plan(
     plan_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    plan = db.query(CashflowPlan).filter(CashflowPlan.id == plan_id).first()
+    plan = get_company_scoped(db, CashflowPlan, plan_id, cid)
     if not plan:
         raise HTTPException(status_code=404, detail="现金流计划不存在")
     db.delete(plan)

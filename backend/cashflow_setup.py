@@ -1,6 +1,7 @@
 """Setup cash flow mappings and generate cash flow statement for Company 1."""
 
-import sys, os
+import sys
+import os
 
 os.chdir("/opt/egp-ims/intranet/backend")
 sys.path.insert(0, ".")
@@ -98,11 +99,7 @@ print("Cash flow items seeded")
 
 # 2. Generate cash flow statement
 vouchers = db.query(Voucher).filter(Voucher.company_id == cid).all()
-cf_items = (
-    db.query(CashFlowItem)
-    .filter(CashFlowItem.company_id == cid, CashFlowItem.is_active == True)
-    .all()
-)
+cf_items = db.query(CashFlowItem).filter(CashFlowItem.company_id == cid, CashFlowItem.is_active).all()
 
 
 # Parse account code lists
@@ -157,11 +154,7 @@ for v in vouchers:
                 for cp in counterparts:
                     cp_prefix = cp.account_code[:4]
                     cp_full = cp.account_code
-                    if (
-                        cp_full in cr_set
-                        or cp_prefix in cr_set
-                        or any(cp_full.startswith(c) for c in cr_set)
-                    ):
+                    if cp_full in cr_set or cp_prefix in cr_set or any(cp_full.startswith(c) for c in cr_set):
                         cf_data[cfi.code]["ytd"] += cp.credit
                         if is_may:
                             cf_data[cfi.code]["may"] += cp.credit
@@ -172,11 +165,7 @@ for v in vouchers:
                 for cp in counterparts:
                     cp_prefix = cp.account_code[:4]
                     cp_full = cp.account_code
-                    if (
-                        cp_full in dr_set
-                        or cp_prefix in dr_set
-                        or any(cp_full.startswith(c) for c in dr_set)
-                    ):
+                    if cp_full in dr_set or cp_prefix in dr_set or any(cp_full.startswith(c) for c in dr_set):
                         cf_data[cfi.code]["ytd"] += cp.debit
                         if is_may:
                             cf_data[cfi.code]["may"] += cp.debit
@@ -187,9 +176,7 @@ for v in vouchers:
         if not matched and amount > 0:
             # Check if it looks like financing (other payables, borrowings)
             has_financing = any(
-                e.account_code.startswith("2241")
-                for e in other_entries
-                if e.credit > 0 and ce.debit > 0
+                e.account_code.startswith("2241") for e in other_entries if e.credit > 0 and ce.debit > 0
             )
             if has_financing and ce.debit > 0:
                 cf_data["CF07"]["ytd"] += amount
@@ -233,9 +220,7 @@ for code in ["CF02", "CF03", "CF04"]:
     op_out += may
     op_out_ytd += ytd
 print(f"  {'  Operating Outflow Subtotal':45s} {op_out:>14,.2f} {op_out_ytd:>14,.2f}")
-print(
-    f"  {'  Net Operating Cash Flow':45s} {op_in - op_out:>14,.2f} {op_in_ytd - op_out_ytd:>14,.2f}"
-)
+print(f"  {'  Net Operating Cash Flow':45s} {op_in - op_out:>14,.2f} {op_in_ytd - op_out_ytd:>14,.2f}")
 
 # Investing
 print("\n  [Investing Activities]")
@@ -269,25 +254,19 @@ net_ytd = op_in_ytd - op_out_ytd - inv_out_ytd + fin_in_ytd
 
 # Get cash balances from actual data
 accounts = db.query(Account).filter(Account.company_id == cid).all()
-cash_init = sum(
-    a.initial_balance for a in accounts if a.code in ("1001", "1002") and a.level == 1
-)
+cash_init = sum(a.initial_balance for a in accounts if a.code in ("1001", "1002") and a.level == 1)
 
 
 def get_ending(code):
     a = next((x for x in accounts if x.code == code and x.level == 1), None)
     if not a:
         return 0
-    children = [code] + [
-        x.code for x in accounts if x.code != code and x.code.startswith(code)
-    ]
+    children = [code] + [x.code for x in accounts if x.code != code and x.code.startswith(code)]
     d = c = 0.0
     for v in vouchers:
         for e in (
             db.query(VoucherEntry)
-            .filter(
-                VoucherEntry.voucher_id == v.id, VoucherEntry.account_code.in_(children)
-            )
+            .filter(VoucherEntry.voucher_id == v.id, VoucherEntry.account_code.in_(children))
             .all()
         ):
             d += e.debit

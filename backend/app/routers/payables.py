@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import Payable, PayablePayment, Counterparty, Voucher, VoucherEntry, AuditLog, User
 from app.schemas import (
     PayableCreate,
@@ -160,9 +160,13 @@ def create_payable(data: PayableCreate, db: Session = Depends(get_db), user: Use
 
 @router.put("/invoices/{inv_id}", response_model=PayableResponse)
 def update_payable(
-    inv_id: int, data: PayableCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    inv_id: int,
+    data: PayableCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(Payable).filter(Payable.id == inv_id).first()
+    item = get_company_scoped(db, Payable, inv_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="应付记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -178,8 +182,13 @@ def update_payable(
 
 
 @router.delete("/invoices/{inv_id}")
-def delete_payable(inv_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(Payable).filter(Payable.id == inv_id).first()
+def delete_payable(
+    inv_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    item = get_company_scoped(db, Payable, inv_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="应付记录不存在")
     _audit(db, user, "delete", "payable", item.id, {"supplier": item.supplier_name, "invoice_no": item.invoice_no})
@@ -224,10 +233,15 @@ def list_payments(
 
 
 @router.post("/payments", response_model=PayablePaymentResponse)
-def create_payment(data: PayablePaymentCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def create_payment(
+    data: PayablePaymentCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     if data.amount <= 0:
         raise HTTPException(status_code=400, detail="付款金额必须大于0")
-    inv = db.query(Payable).filter(Payable.id == data.payable_id).first()
+    inv = get_company_scoped(db, Payable, data.payable_id, cid)
     if not inv:
         raise HTTPException(status_code=404, detail="应付记录不存在")
     if data.amount > inv.balance:

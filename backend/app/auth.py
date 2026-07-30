@@ -5,8 +5,10 @@ import secrets
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.responses import Response
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.security.utils import get_authorization_scheme_param
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
@@ -26,8 +28,59 @@ else:
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480  # 8 hours
+TOKEN_COOKIE_NAME = "egp_token"
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+
+class OAuth2CookieOrBearer:
+    """从 Cookie 或 Authorization header 中提取 JWT token。
+
+    优先读取 httpOnly cookie (`egp_token`)，其次读取 `Authorization: Bearer <token>` 头。
+    """
+
+    async def __call__(self, request: Request) -> str | None:
+        # 1. 先尝试 Cookie
+        token = request.cookies.get(TOKEN_COOKIE_NAME)
+        if token:
+            return token
+
+        # 2. 再尝试 Authorization header
+        authorization = request.headers.get("Authorization")
+        if authorization:
+            scheme, param = get_authorization_scheme_param(authorization)
+            if scheme.lower() == "bearer":
+                return param
+
+        return None
+
+
+oauth2_cookie_or_bearer = OAuth2CookieOrBearer()
+
+
+def set_token_cookie(response: Response, token: str) -> None:
+    """在响应中设置 httpOnly JWT cookie。"""
+    is_prod = os.environ.get("ENV") == "production" or bool(os.environ.get("RENDER"))
+    response.set_cookie(
+        key=TOKEN_COOKIE_NAME,
+        value=token,
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        secure=is_prod,
+        samesite="lax",
+        path="/",
+    )
+
+
+def clear_token_cookie(response: Response) -> None:
+    """清除认证 cookie。"""
+    response.delete_cookie(
+        key=TOKEN_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=os.environ.get("ENV") == "production" or bool(os.environ.get("RENDER")),
+        samesite="lax",
+    )
 
 
 def hash_password(password: str) -> str:
@@ -46,8 +99,10 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
+def get_current_user(token: str | None = Depends(oauth2_cookie_or_bearer), db: Session = Depends(get_db)) -> User:
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="无效的认证凭证")
+    if token is None:
+        raise credentials_exception
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id_str: str = payload.get("sub")
@@ -73,8 +128,10 @@ def require_role(*roles: str):
     return _check
 
 
-def get_jwt_payload(token: str = Depends(oauth2_scheme)) -> dict:
+def get_jwt_payload(token: str | None = Depends(oauth2_cookie_or_bearer)) -> dict:
     """从 JWT 中提取完整 payload（含 company_id）。"""
+    if token is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="无效的认证凭证")
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
@@ -105,3 +162,23 @@ def verify_company_isolation(token_str: str, requested_company_id: int) -> None:
             raise HTTPException(status_code=403, detail="无权访问其他公司的数据")
     except JWTError:
         pass  # token 无效，交给 get_current_user 处理
+
+
+def get_company_scoped(
+    db: Session,
+    model,
+    record_id: int,
+    company_id: int,
+):
+    """获取按公司隔离的单条记录；不存在或跨公司时返回 None。
+
+    用于替代裸 `db.query(Model).filter(Model.id == record_id).first()`，
+    增加 company_id 过滤以防止 IDOR 越权访问。
+
+    Returns:
+        记录实例，或 None（调用方应返回 404）
+    """
+    query = db.query(model).filter(model.id == record_id)
+    if hasattr(model, "company_id"):
+        query = query.filter(model.company_id == company_id)
+    return query.first()

@@ -7,7 +7,8 @@ from app.database import get_db
 from app.models import Company
 from app.schemas import CompanyCreate, CompanyResponse, CompanyUpdate
 from app.seed import seed_level1_accounts, seed_level2_accounts, seed_hr_positions
-from app.auth import get_current_user, User
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
+from app.models import User
 from app.permissions import check_company_create
 
 router = APIRouter()
@@ -59,11 +60,17 @@ def create_company(data: CompanyCreate, db: Session = Depends(get_db), user: Use
 
 @router.put("/{company_id}", response_model=CompanyResponse)
 def update_company(
-    company_id: int, data: CompanyUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    company_id: int,
+    data: CompanyUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     if not user.is_admin:
         raise HTTPException(status_code=403, detail="仅管理员可编辑公司信息")
-    company = db.query(Company).filter(Company.id == company_id).first()
+    if user.role != "super_admin" and company_id != cid:
+        raise HTTPException(status_code=403, detail="只能编辑自己公司的信息")
+    company = get_company_scoped(db, Company, company_id, cid)
     if not company:
         raise HTTPException(status_code=404, detail="公司不存在")
     for field, value in data.model_dump(exclude_unset=True).items():

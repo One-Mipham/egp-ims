@@ -80,7 +80,15 @@ async def security_headers_middleware(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-    # 生产环境启用 HSTS (仅 HTTPS)
-    if os.environ.get("RENDER", ""):
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob:; "
+        "font-src 'self'; "
+        "connect-src 'self'"
+    )
+    # 生产环境启用 HSTS (仅 HTTPS) — 通过 ENABLE_HSTS 或 RENDER 环境变量控制
+    if os.environ.get("ENABLE_HSTS") or os.environ.get("RENDER"):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     return response

@@ -35,7 +35,7 @@ from app.schemas import (
     HrBudgetCreate,
     HrBudgetResponse,
 )
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 
 router = APIRouter()
 
@@ -87,8 +87,14 @@ def create_position(data: HrPositionCreate, db: Session = Depends(get_db), user=
 
 
 @router.put("/positions/{pos_id}", response_model=HrPositionResponse)
-def update_position(pos_id: int, data: HrPositionCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    pos = db.query(HrPosition).filter(HrPosition.id == pos_id).first()
+def update_position(
+    pos_id: int,
+    data: HrPositionCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    pos = get_company_scoped(db, HrPosition, pos_id, cid)
     if not pos:
         raise HTTPException(status_code=404, detail="职级不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -99,8 +105,13 @@ def update_position(pos_id: int, data: HrPositionCreate, db: Session = Depends(g
 
 
 @router.delete("/positions/{pos_id}")
-def delete_position(pos_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    pos = db.query(HrPosition).filter(HrPosition.id == pos_id).first()
+def delete_position(
+    pos_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    pos = get_company_scoped(db, HrPosition, pos_id, cid)
     if not pos:
         raise HTTPException(status_code=404, detail="职级不存在")
     pos.is_active = False
@@ -137,8 +148,14 @@ def create_employee(data: HrEmployeeCreate, db: Session = Depends(get_db), user=
 
 
 @router.put("/employees/{emp_id}", response_model=HrEmployeeResponse)
-def update_employee(emp_id: int, data: HrEmployeeCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    emp = db.query(HrEmployee).filter(HrEmployee.id == emp_id).first()
+def update_employee(
+    emp_id: int,
+    data: HrEmployeeCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    emp = get_company_scoped(db, HrEmployee, emp_id, cid)
     if not emp:
         raise HTTPException(status_code=404, detail="员工不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -149,8 +166,13 @@ def update_employee(emp_id: int, data: HrEmployeeCreate, db: Session = Depends(g
 
 
 @router.delete("/employees/{emp_id}")
-def delete_employee(emp_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    emp = db.query(HrEmployee).filter(HrEmployee.id == emp_id).first()
+def delete_employee(
+    emp_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    emp = get_company_scoped(db, HrEmployee, emp_id, cid)
     if not emp:
         raise HTTPException(status_code=404, detail="员工不存在")
     emp.status = "离职"
@@ -181,8 +203,14 @@ def create_training(data: HrTrainingCreate, db: Session = Depends(get_db), user=
 
 
 @router.put("/trainings/{t_id}", response_model=HrTrainingResponse)
-def update_training(t_id: int, data: HrTrainingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    t = db.query(HrTraining).filter(HrTraining.id == t_id).first()
+def update_training(
+    t_id: int,
+    data: HrTrainingCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    t = get_company_scoped(db, HrTraining, t_id, cid)
     if not t:
         raise HTTPException(status_code=404, detail="培训记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -193,8 +221,10 @@ def update_training(t_id: int, data: HrTrainingCreate, db: Session = Depends(get
 
 
 @router.delete("/trainings/{t_id}")
-def delete_training(t_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    t = db.query(HrTraining).filter(HrTraining.id == t_id).first()
+def delete_training(
+    t_id: int, cid: int = Depends(get_current_company_id), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    t = get_company_scoped(db, HrTraining, t_id, cid)
     if not t:
         raise HTTPException(status_code=404, detail="培训记录不存在")
     db.delete(t)
@@ -226,9 +256,13 @@ def create_evaluation(data: HrEvaluationCreate, db: Session = Depends(get_db), u
 
 @router.put("/evaluations/{e_id}", response_model=HrEvaluationResponse)
 def update_evaluation(
-    e_id: int, data: HrEvaluationCreate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    e_id: int,
+    data: HrEvaluationCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
-    e = db.query(HrEvaluation).filter(HrEvaluation.id == e_id).first()
+    e = get_company_scoped(db, HrEvaluation, e_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="考核记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -239,8 +273,10 @@ def update_evaluation(
 
 
 @router.delete("/evaluations/{e_id}")
-def delete_evaluation(e_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    e = db.query(HrEvaluation).filter(HrEvaluation.id == e_id).first()
+def delete_evaluation(
+    e_id: int, cid: int = Depends(get_current_company_id), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    e = get_company_scoped(db, HrEvaluation, e_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="考核记录不存在")
     db.delete(e)
@@ -277,8 +313,14 @@ def create_salary(data: HrSalaryCreate, db: Session = Depends(get_db), user=Depe
 
 
 @router.put("/salaries/{s_id}", response_model=HrSalaryResponse)
-def update_salary(s_id: int, data: HrSalaryCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    s = db.query(HrSalary).filter(HrSalary.id == s_id).first()
+def update_salary(
+    s_id: int,
+    data: HrSalaryCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    s = get_company_scoped(db, HrSalary, s_id, cid)
     if not s:
         raise HTTPException(status_code=404, detail="薪酬记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -289,8 +331,10 @@ def update_salary(s_id: int, data: HrSalaryCreate, db: Session = Depends(get_db)
 
 
 @router.delete("/salaries/{s_id}")
-def delete_salary(s_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    s = db.query(HrSalary).filter(HrSalary.id == s_id).first()
+def delete_salary(
+    s_id: int, cid: int = Depends(get_current_company_id), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    s = get_company_scoped(db, HrSalary, s_id, cid)
     if not s:
         raise HTTPException(status_code=404, detail="薪酬记录不存在")
     db.delete(s)
@@ -322,9 +366,13 @@ def create_reward(data: HrRewardPunishmentCreate, db: Session = Depends(get_db),
 
 @router.put("/rewards/{r_id}", response_model=HrRewardPunishmentResponse)
 def update_reward(
-    r_id: int, data: HrRewardPunishmentCreate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    r_id: int,
+    data: HrRewardPunishmentCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
-    r = db.query(HrRewardPunishment).filter(HrRewardPunishment.id == r_id).first()
+    r = get_company_scoped(db, HrRewardPunishment, r_id, cid)
     if not r:
         raise HTTPException(status_code=404, detail="记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -335,8 +383,10 @@ def update_reward(
 
 
 @router.delete("/rewards/{r_id}")
-def delete_reward(r_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    r = db.query(HrRewardPunishment).filter(HrRewardPunishment.id == r_id).first()
+def delete_reward(
+    r_id: int, cid: int = Depends(get_current_company_id), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    r = get_company_scoped(db, HrRewardPunishment, r_id, cid)
     if not r:
         raise HTTPException(status_code=404, detail="记录不存在")
     db.delete(r)
@@ -368,9 +418,13 @@ def create_offboarding(data: HrOffboardingCreate, db: Session = Depends(get_db),
 
 @router.put("/offboarding/{o_id}", response_model=HrOffboardingResponse)
 def update_offboarding(
-    o_id: int, data: HrOffboardingCreate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    o_id: int,
+    data: HrOffboardingCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
-    o = db.query(HrOffboarding).filter(HrOffboarding.id == o_id).first()
+    o = get_company_scoped(db, HrOffboarding, o_id, cid)
     if not o:
         raise HTTPException(status_code=404, detail="记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -385,8 +439,10 @@ def update_offboarding(
 
 
 @router.delete("/offboarding/{o_id}")
-def delete_offboarding(o_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    o = db.query(HrOffboarding).filter(HrOffboarding.id == o_id).first()
+def delete_offboarding(
+    o_id: int, cid: int = Depends(get_current_company_id), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    o = get_company_scoped(db, HrOffboarding, o_id, cid)
     if not o:
         raise HTTPException(status_code=404, detail="记录不存在")
     db.delete(o)
@@ -430,8 +486,10 @@ def upsert_budget(data: HrBudgetCreate, db: Session = Depends(get_db), user=Depe
 
 
 @router.delete("/budgets/{b_id}")
-def delete_budget(b_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    b = db.query(HrBudget).filter(HrBudget.id == b_id).first()
+def delete_budget(
+    b_id: int, cid: int = Depends(get_current_company_id), db: Session = Depends(get_db), user=Depends(get_current_user)
+):
+    b = get_company_scoped(db, HrBudget, b_id, cid)
     if not b:
         raise HTTPException(status_code=404, detail="预算记录不存在")
     db.delete(b)

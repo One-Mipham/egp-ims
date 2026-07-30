@@ -44,12 +44,8 @@ class Company(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
     short_name = Column(String(50))
-    industry = Column(
-        String(30), default="consulting"
-    )  # investment/consulting/tech_dev/ai
-    internal_control_mode = Column(
-        String(20), default="standard"
-    )  # simplified/standard/strict
+    industry = Column(String(30), default="consulting")  # investment/consulting/tech_dev/ai
+    internal_control_mode = Column(String(20), default="standard")  # simplified/standard/strict
     currency = Column(String(3), default="CNY")
     fiscal_year_start = Column(String(5), default="01-01")
     tax_number = Column(String(50), nullable=True)
@@ -63,9 +59,7 @@ class Company(Base):
     contact_person = Column(String(50), nullable=True)
     module_set = Column(String(20), default="trial")  # trial/basic/advanced/pro/custom
     enabled_modules = Column(JSON, default=list)  # ["accounting","receivables",...]
-    subscription_status = Column(
-        String(20), default="trialing"
-    )  # trialing/active/past_due/cancelled/expired
+    subscription_status = Column(String(20), default="trialing")  # trialing/active/past_due/cancelled/expired
     trial_ends_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -105,9 +99,7 @@ class Project(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     code = Column(String(20), nullable=False)
     name = Column(String(200), nullable=False)
-    project_type = Column(
-        String(20), default="product"
-    )  # product/platform/research/temp
+    project_type = Column(String(20), default="product")  # product/platform/research/temp
     status = Column(String(16), default="active")  # active/paused/completed/capitalized
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     manager = Column(String(100), nullable=True)
@@ -168,9 +160,7 @@ class Account(Base):
     name = Column(String(100), nullable=False)
     level = Column(Integer, nullable=False)  # 1/2/3/4
     parent_code = Column(String(10), nullable=True)
-    category = Column(
-        String(10), nullable=False
-    )  # asset/liability/equity/cost/profit_loss
+    category = Column(String(10), nullable=False)  # asset/liability/equity/cost/profit_loss
     balance_direction = Column(String(4), nullable=False)  # debit/credit
     initial_balance = Column(Float, default=0.0)
     is_system = Column(Boolean, default=False)
@@ -204,13 +194,9 @@ class Voucher(Base):
     reverse_reason = Column(String(500), nullable=True)
 
     company = relationship("Company", back_populates="vouchers")
-    entries = relationship(
-        "VoucherEntry", back_populates="voucher", cascade="all, delete-orphan"
-    )
+    entries = relationship("VoucherEntry", back_populates="voucher", cascade="all, delete-orphan")
 
-    __table_args__ = (
-        UniqueConstraint("company_id", "voucher_no", name="uq_voucher_no"),
-    )
+    __table_args__ = (UniqueConstraint("company_id", "voucher_no", name="uq_voucher_no"),)
 
 
 class VoucherSequence(Base):
@@ -224,9 +210,7 @@ class VoucherSequence(Base):
     period = Column(String(7), nullable=False)  # yyyy-MM
     last_seq = Column(Integer, nullable=False, default=0)
 
-    __table_args__ = (
-        UniqueConstraint("company_id", "voucher_type", "period", name="uq_voucher_seq"),
-    )
+    __table_args__ = (UniqueConstraint("company_id", "voucher_type", "period", name="uq_voucher_seq"),)
 
 
 class VoucherEntry(Base):
@@ -244,9 +228,7 @@ class VoucherEntry(Base):
     description = Column(String(500), nullable=True)
 
     voucher = relationship("Voucher", back_populates="entries")
-    settlements = relationship(
-        "BankSettlement", back_populates="entry", cascade="all, delete-orphan"
-    )
+    settlements = relationship("BankSettlement", back_populates="entry", cascade="all, delete-orphan")
 
 
 class BankSettlement(Base):
@@ -285,9 +267,7 @@ class VoucherTemplate(Base):
     __tablename__ = "voucher_templates"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(
-        Integer, ForeignKey("companies.id"), nullable=True
-    )  # NULL = built-in
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)  # NULL = built-in
     name = Column(String(100), nullable=False)
     type = Column(String(20), default="user_defined")  # built_in/user_defined
     entries = Column(JSON, nullable=False)
@@ -303,9 +283,7 @@ class ReportSnapshot(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     period = Column(String(10), nullable=False)
-    period_type = Column(
-        String(16), default="monthly"
-    )  # monthly/quarterly/semiannual/annual
+    period_type = Column(String(16), default="monthly")  # monthly/quarterly/semiannual/annual
     type = Column(String(16), nullable=False)  # balance/income/cashflow
     data = Column(JSON, nullable=False)
     generated_by = Column(Integer, ForeignKey("users.id"), nullable=True)
@@ -332,9 +310,7 @@ class Budget(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     company = relationship("Company", back_populates="budgets")
-    items = relationship(
-        "BudgetItem", back_populates="budget", cascade="all, delete-orphan"
-    )
+    items = relationship("BudgetItem", back_populates="budget", cascade="all, delete-orphan")
 
 
 class BudgetItem(Base):
@@ -362,9 +338,7 @@ class CashflowPlan(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     company = relationship("Company")
-    items = relationship(
-        "CashflowPlanItem", back_populates="plan", cascade="all, delete-orphan"
-    )
+    items = relationship("CashflowPlanItem", back_populates="plan", cascade="all, delete-orphan")
 
 
 class CashflowPlanItem(Base):
@@ -428,18 +402,14 @@ class InvestmentPortfolio(Base):
     description = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    positions = relationship(
-        "InvestmentPosition", back_populates="portfolio", cascade="all, delete-orphan"
-    )
+    positions = relationship("InvestmentPosition", back_populates="portfolio", cascade="all, delete-orphan")
 
 
 class InvestmentPosition(Base):
     __tablename__ = "investment_positions"
 
     id = Column(Integer, primary_key=True, index=True)
-    portfolio_id = Column(
-        Integer, ForeignKey("investment_portfolios.id"), nullable=False
-    )
+    portfolio_id = Column(Integer, ForeignKey("investment_portfolios.id"), nullable=False)
     account_code = Column(String(10), nullable=False)
     security_name = Column(String(200), nullable=False)
     security_code = Column(String(50), nullable=True)
@@ -448,20 +418,14 @@ class InvestmentPosition(Base):
     cost_amount = Column(Float, default=0.0)
     fair_value = Column(Float, default=0.0)
     fair_value_date = Column(String(10), nullable=True)
-    valuation_method = Column(
-        String(30), default="cost"
-    )  # market_price/cost/dcf/comparables
+    valuation_method = Column(String(30), default="cost")  # market_price/cost/dcf/comparables
     counterparty_id = Column(Integer, ForeignKey("counterparties.id"), nullable=True)
     status = Column(String(16), default="active")  # active/exited/impaired
     created_at = Column(DateTime, default=datetime.utcnow)
 
     portfolio = relationship("InvestmentPortfolio", back_populates="positions")
-    transactions = relationship(
-        "InvestmentTransaction", back_populates="position", cascade="all, delete-orphan"
-    )
-    adjustments = relationship(
-        "FairValueAdjustment", back_populates="position", cascade="all, delete-orphan"
-    )
+    transactions = relationship("InvestmentTransaction", back_populates="position", cascade="all, delete-orphan")
+    adjustments = relationship("FairValueAdjustment", back_populates="position", cascade="all, delete-orphan")
 
 
 class InvestmentTransaction(Base):
@@ -469,9 +433,7 @@ class InvestmentTransaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     position_id = Column(Integer, ForeignKey("investment_positions.id"), nullable=False)
-    transaction_type = Column(
-        String(20), nullable=False
-    )  # buy/sell/capital_call/distribution/dividend/interest
+    transaction_type = Column(String(20), nullable=False)  # buy/sell/capital_call/distribution/dividend/interest
     transaction_date = Column(String(10), nullable=False)
     quantity = Column(Float, default=0.0)
     price = Column(Float, default=0.0)
@@ -507,9 +469,7 @@ class InvestmentIncome(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     position_id = Column(Integer, ForeignKey("investment_positions.id"), nullable=True)
-    income_type = Column(
-        String(20), nullable=False
-    )  # dividend/interest/realized_gain/unrealized_gain/other
+    income_type = Column(String(20), nullable=False)  # dividend/interest/realized_gain/unrealized_gain/other
     income_date = Column(String(10), nullable=False)
     amount = Column(Float, default=0.0)
     voucher_id = Column(Integer, ForeignKey("vouchers.id"), nullable=True)
@@ -568,23 +528,13 @@ class InvestmentFund(Base):
     inception_date = Column(String(10), nullable=True)
     currency = Column(String(3), default="CNY")
     total_commitment = Column(Float, default=0.0, comment="总规模/承诺出资")
-    portfolio_id = Column(
-        Integer, ForeignKey("investment_portfolios.id"), nullable=True
-    )
-    status = Column(
-        String(16), default="active", comment="raising/active/liquidating/liquidated"
-    )
+    portfolio_id = Column(Integer, ForeignKey("investment_portfolios.id"), nullable=True)
+    status = Column(String(16), default="active", comment="raising/active/liquidating/liquidated")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    capital_accounts = relationship(
-        "CapitalAccount", back_populates="fund", cascade="all, delete-orphan"
-    )
-    capital_calls = relationship(
-        "CapitalCall", back_populates="fund", cascade="all, delete-orphan"
-    )
-    distributions = relationship(
-        "FundDistribution", back_populates="fund", cascade="all, delete-orphan"
-    )
+    capital_accounts = relationship("CapitalAccount", back_populates="fund", cascade="all, delete-orphan")
+    capital_calls = relationship("CapitalCall", back_populates="fund", cascade="all, delete-orphan")
+    distributions = relationship("FundDistribution", back_populates="fund", cascade="all, delete-orphan")
 
 
 class CapitalAccount(Base):
@@ -633,9 +583,7 @@ class FundDistribution(Base):
     fund_id = Column(Integer, ForeignKey("investment_funds.id"), nullable=False)
     distribution_date = Column(String(10), nullable=False)
     amount = Column(Float, default=0.0)
-    distribution_type = Column(
-        String(20), default="income", comment="return_of_capital/income/carry"
-    )
+    distribution_type = Column(String(20), default="income", comment="return_of_capital/income/carry")
     notes = Column(Text, nullable=True)
     voucher_id = Column(Integer, ForeignKey("vouchers.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -651,9 +599,7 @@ class WaterfallConfig(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     name = Column(String(200), nullable=False)
-    portfolio_id = Column(
-        Integer, ForeignKey("investment_portfolios.id"), nullable=True
-    )
+    portfolio_id = Column(Integer, ForeignKey("investment_portfolios.id"), nullable=True)
     tiers = Column(
         JSON,
         default=list,
@@ -683,17 +629,11 @@ class RealEstateAsset(Base):
     area_sqm = Column(Float, default=0.0, comment="建筑面积(m²)")
     occupancy_pct = Column(Float, default=0.0, comment="出租率%")
     annual_rental_income = Column(Float, default=0.0)
-    portfolio_id = Column(
-        Integer, ForeignKey("investment_portfolios.id"), nullable=True
-    )
-    status = Column(
-        String(16), default="active", comment="active/sold/under_renovation"
-    )
+    portfolio_id = Column(Integer, ForeignKey("investment_portfolios.id"), nullable=True)
+    status = Column(String(16), default="active", comment="active/sold/under_renovation")
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    valuations = relationship(
-        "RealEstateValuation", back_populates="asset", cascade="all, delete-orphan"
-    )
+    valuations = relationship("RealEstateValuation", back_populates="asset", cascade="all, delete-orphan")
 
 
 class RealEstateValuation(Base):
@@ -706,9 +646,7 @@ class RealEstateValuation(Base):
     asset_id = Column(Integer, ForeignKey("real_estate_assets.id"), nullable=False)
     valuation_date = Column(String(10), nullable=False)
     value = Column(Float, default=0.0)
-    valuation_method = Column(
-        String(30), default="comparable", comment="comparable/cost/income/dcf"
-    )
+    valuation_method = Column(String(30), default="comparable", comment="comparable/cost/income/dcf")
     appraiser = Column(String(100), nullable=True, comment="评估机构")
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -736,9 +674,7 @@ class InfraAsset(Base):
     valuation_date = Column(String(10), nullable=True)
     annual_revenue = Column(Float, default=0.0)
     concession_expiry = Column(String(10), nullable=True, comment="特许经营到期日")
-    portfolio_id = Column(
-        Integer, ForeignKey("investment_portfolios.id"), nullable=True
-    )
+    portfolio_id = Column(Integer, ForeignKey("investment_portfolios.id"), nullable=True)
     status = Column(
         String(16),
         default="operational",
@@ -776,9 +712,7 @@ class PrivateCredit(Base):
     )
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    payments = relationship(
-        "CreditPayment", back_populates="credit", cascade="all, delete-orphan"
-    )
+    payments = relationship("CreditPayment", back_populates="credit", cascade="all, delete-orphan")
 
 
 class CreditPayment(Base):
@@ -790,9 +724,7 @@ class CreditPayment(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     credit_id = Column(Integer, ForeignKey("private_credits.id"), nullable=False)
     payment_date = Column(String(10), nullable=False)
-    payment_type = Column(
-        String(20), default="interest", comment="interest/principal/fee"
-    )
+    payment_type = Column(String(20), default="interest", comment="interest/principal/fee")
     amount = Column(Float, default=0.0)
     voucher_id = Column(Integer, ForeignKey("vouchers.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -822,9 +754,7 @@ class InitInvoice(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     invoice_no = Column(String(50), nullable=False)
-    invoice_type = Column(
-        String(20), default="vat_special"
-    )  # vat_special/vat_normal/electronic
+    invoice_type = Column(String(20), default="vat_special")  # vat_special/vat_normal/electronic
     counterparty_id = Column(Integer, ForeignKey("counterparties.id"), nullable=True)
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     amount = Column(Float, default=0.0)
@@ -1009,9 +939,7 @@ class HrPosition(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     name = Column(String(50), nullable=False)
-    level = Column(
-        Integer, nullable=False
-    )  # 1董事会 2监事会 3管理层 4部门正职 5部门副职 6中层 7基层
+    level = Column(Integer, nullable=False)  # 1董事会 2监事会 3管理层 4部门正职 5部门副职 6中层 7基层
     sort_order = Column(Integer, nullable=True)
     is_active = Column(Boolean, default=True)
 
@@ -1133,9 +1061,7 @@ class HrOffboarding(Base):
     last_day = Column(String(10), nullable=True)
     reason = Column(Text, nullable=True)
     handover_to = Column(String(100), nullable=True)
-    status = Column(
-        String(10), nullable=False, default="申请"
-    )  # 申请/审批中/已批准/已离职
+    status = Column(String(10), nullable=False, default="申请")  # 申请/审批中/已批准/已离职
     notes = Column(Text, nullable=True)
 
     employee = relationship("HrEmployee")
@@ -1172,17 +1098,11 @@ class FixedAsset(Base):
     original_value = Column(Float, nullable=False, default=0, comment="原值")
     residual_value = Column(Float, nullable=False, default=0, comment="残值")
     useful_life = Column(Integer, nullable=False, default=5, comment="使用年限(年)")
-    depreciation_method = Column(
-        String(20), nullable=False, default="直线法", comment="折旧方法"
-    )
+    depreciation_method = Column(String(20), nullable=False, default="直线法", comment="折旧方法")
     monthly_depreciation = Column(Float, nullable=False, default=0, comment="月折旧额")
-    accumulated_depreciation = Column(
-        Float, nullable=False, default=0, comment="累计折旧"
-    )
+    accumulated_depreciation = Column(Float, nullable=False, default=0, comment="累计折旧")
     net_value = Column(Float, nullable=False, default=0, comment="净值")
-    status = Column(
-        String(20), nullable=False, default="使用中", comment="使用中/已处置/报废"
-    )
+    status = Column(String(20), nullable=False, default="使用中", comment="使用中/已处置/报废")
     location = Column(String(200), nullable=True, comment="存放地点")
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     disposal_date = Column(String(10), nullable=True, comment="处置日期")
@@ -1266,9 +1186,7 @@ class Payable(Base):
     balance = Column(Float, nullable=False, default=0, comment="余额")
     due_date = Column(String(10), nullable=True, comment="到期日")
     aging_days = Column(Integer, nullable=False, default=0, comment="账龄(天)")
-    status = Column(
-        String(20), nullable=False, default="未付款", comment="未付款/部分付款/已付款"
-    )
+    status = Column(String(20), nullable=False, default="未付款", comment="未付款/部分付款/已付款")
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -1695,9 +1613,7 @@ class Server(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    services = relationship(
-        "ServerService", back_populates="server", cascade="all, delete-orphan"
-    )
+    services = relationship("ServerService", back_populates="server", cascade="all, delete-orphan")
 
 
 class ServerService(Base):
@@ -1742,9 +1658,7 @@ class KbArticle(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     title = Column(String(300), nullable=False, comment="文章标题")
     content_md = Column(Text, nullable=True, comment="Markdown 正文")
-    category = Column(
-        String(30), default="inbox", nullable=True, comment="[已废弃] 改用 category_id"
-    )
+    category = Column(String(30), default="inbox", nullable=True, comment="[已废弃] 改用 category_id")
     category_id = Column(
         Integer,
         ForeignKey("kb_categories.id"),
@@ -1753,9 +1667,7 @@ class KbArticle(Base):
     )
     tags = Column(String(500), nullable=True, comment="标签，逗号分隔")
     author = Column(String(100), nullable=True, comment="作者")
-    status = Column(
-        String(20), nullable=False, default="draft", comment="draft/published/archived"
-    )
+    status = Column(String(20), nullable=False, default="draft", comment="draft/published/archived")
     version = Column(Integer, nullable=False, default=1, comment="版本号")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -1787,17 +1699,11 @@ class ExpenseReport(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     report_no = Column(String(20), nullable=False, comment="报销单号")
-    applicant_id = Column(
-        Integer, ForeignKey("users.id"), nullable=False, comment="申请人"
-    )
-    department_id = Column(
-        Integer, ForeignKey("departments.id"), nullable=True, comment="申请部门"
-    )
+    applicant_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="申请人")
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, comment="申请部门")
     expense_date = Column(String(10), nullable=False, comment="费用发生日期")
     total_amount = Column(Float, nullable=False, default=0, comment="报销总额")
-    loan_offset_amount = Column(
-        Float, nullable=False, default=0, comment="冲销借款金额"
-    )
+    loan_offset_amount = Column(Float, nullable=False, default=0, comment="冲销借款金额")
     net_payable = Column(Float, nullable=False, default=0, comment="实付金额")
     status = Column(
         String(20),
@@ -1805,9 +1711,7 @@ class ExpenseReport(Base):
         default="draft",
         comment="draft/submitted/dept_approved/finance_approved/director_approved/unit_head_approved/paid/closed/rejected",
     )
-    current_approver_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, comment="当前审批人"
-    )
+    current_approver_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="当前审批人")
     approval_chain = Column(JSON, nullable=True, comment="审批链记录")
     policy_warnings = Column(JSON, nullable=True, comment="超标预警汇总")
     notes = Column(Text, nullable=True)
@@ -1816,12 +1720,8 @@ class ExpenseReport(Base):
 
     company = relationship("Company")
     applicant = relationship("User", foreign_keys=[applicant_id])
-    items = relationship(
-        "ExpenseReportItem", back_populates="report", cascade="all, delete-orphan"
-    )
-    attachments = relationship(
-        "ExpenseAttachment", back_populates="report", cascade="all, delete-orphan"
-    )
+    items = relationship("ExpenseReportItem", back_populates="report", cascade="all, delete-orphan")
+    attachments = relationship("ExpenseAttachment", back_populates="report", cascade="all, delete-orphan")
 
 
 class ExpenseReportItem(Base):
@@ -1832,9 +1732,7 @@ class ExpenseReportItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     report_id = Column(Integer, ForeignKey("expense_reports.id"), nullable=False)
     row_seq = Column(Integer, nullable=False, default=1, comment="行序号")
-    expense_item_id = Column(
-        Integer, ForeignKey("expense_items.id"), nullable=True, comment="费用类型"
-    )
+    expense_item_id = Column(Integer, ForeignKey("expense_items.id"), nullable=True, comment="费用类型")
     date = Column(String(10), nullable=False, comment="发生日期")
     amount = Column(Float, nullable=False, default=0, comment="金额")
     description = Column(String(300), nullable=True, comment="费用说明")
@@ -1852,12 +1750,8 @@ class ExpenseLoan(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     loan_no = Column(String(20), nullable=False, comment="借款单号")
-    applicant_id = Column(
-        Integer, ForeignKey("users.id"), nullable=False, comment="借款人"
-    )
-    department_id = Column(
-        Integer, ForeignKey("departments.id"), nullable=True, comment="借款部门"
-    )
+    applicant_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="借款人")
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, comment="借款部门")
     loan_date = Column(String(10), nullable=False, comment="借款日期")
     amount = Column(Float, nullable=False, default=0, comment="借款金额")
     repaid_amount = Column(Float, nullable=False, default=0, comment="已还金额")
@@ -1875,9 +1769,7 @@ class ExpenseLoan(Base):
 
     company = relationship("Company")
     applicant = relationship("User", foreign_keys=[applicant_id])
-    attachments = relationship(
-        "ExpenseAttachment", back_populates="loan", cascade="all, delete-orphan"
-    )
+    attachments = relationship("ExpenseAttachment", back_populates="loan", cascade="all, delete-orphan")
 
 
 class ExpensePolicy(Base):
@@ -1887,18 +1779,12 @@ class ExpensePolicy(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    expense_item_id = Column(
-        Integer, ForeignKey("expense_items.id"), nullable=True, comment="费用类型"
-    )
+    expense_item_id = Column(Integer, ForeignKey("expense_items.id"), nullable=True, comment="费用类型")
     country = Column(String(10), nullable=True, comment="国别")
     region = Column(String(50), nullable=True, comment="地区")
-    department_id = Column(
-        Integer, ForeignKey("departments.id"), nullable=True, comment="适用部门"
-    )
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, comment="适用部门")
     position_level = Column(Integer, nullable=True, comment="适用岗位级别")
-    policy_type = Column(
-        String(20), nullable=False, default="event", comment="daily/event/per_person"
-    )
+    policy_type = Column(String(20), nullable=False, default="event", comment="daily/event/per_person")
     max_amount = Column(Float, nullable=False, default=0, comment="上限金额")
     currency = Column(String(5), nullable=False, default="CNY", comment="币种")
     effective_from = Column(String(10), nullable=False, comment="生效日期")
@@ -1914,12 +1800,8 @@ class ExpenseAttachment(Base):
     __tablename__ = "expense_attachments"
 
     id = Column(Integer, primary_key=True, index=True)
-    report_id = Column(
-        Integer, ForeignKey("expense_reports.id"), nullable=True, comment="关联报销单"
-    )
-    loan_id = Column(
-        Integer, ForeignKey("expense_loans.id"), nullable=True, comment="关联借款单"
-    )
+    report_id = Column(Integer, ForeignKey("expense_reports.id"), nullable=True, comment="关联报销单")
+    loan_id = Column(Integer, ForeignKey("expense_loans.id"), nullable=True, comment="关联借款单")
     file_name = Column(String(200), nullable=False, comment="规范命名文件名")
     category = Column(
         String(20),
@@ -1950,9 +1832,7 @@ class Contract(Base):
     # 合同基本信息
     contract_name = Column(String(300), nullable=True, comment="合同名称")
     contract_no = Column(String(50), nullable=False, comment="合同号码")
-    contract_type = Column(
-        String(20), nullable=False, index=True, comment="supplier/customer/labor/lease"
-    )
+    contract_type = Column(String(20), nullable=False, index=True, comment="supplier/customer/labor/lease")
     contract_category = Column(
         String(50),
         nullable=False,
@@ -1968,18 +1848,14 @@ class Contract(Base):
     party_a = Column(String(200), nullable=True, comment="甲方")
     party_a_address = Column(String(300), nullable=True, comment="甲方地址")
     party_a_phone = Column(String(50), nullable=True, comment="甲方电话")
-    party_a_representative = Column(
-        String(100), nullable=True, comment="甲方法定代表人"
-    )
+    party_a_representative = Column(String(100), nullable=True, comment="甲方法定代表人")
     party_a_signatory = Column(String(100), nullable=True, comment="甲方授权签字人")
 
     # 乙方信息（对方）
     party_b = Column(String(200), nullable=True, comment="乙方")
     party_b_address = Column(String(300), nullable=True, comment="乙方地址")
     party_b_phone = Column(String(50), nullable=True, comment="乙方电话")
-    party_b_representative = Column(
-        String(100), nullable=True, comment="乙方法定代表人"
-    )
+    party_b_representative = Column(String(100), nullable=True, comment="乙方法定代表人")
     party_b_signatory = Column(String(100), nullable=True, comment="乙方授权签字人")
 
     # 金额与日期
@@ -1994,23 +1870,15 @@ class Contract(Base):
     arbitration_venue = Column(String(200), nullable=True, comment="仲裁/诉讼地")
 
     # 状态与管理
-    status = Column(
-        String(16), default="draft", comment="draft/active/completed/terminated"
-    )
-    department_id = Column(
-        Integer, ForeignKey("departments.id"), nullable=True, comment="发起部门"
-    )
+    status = Column(String(16), default="draft", comment="draft/active/completed/terminated")
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, comment="发起部门")
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="经办人")
     notes = Column(Text, nullable=True, comment="备注")
 
     # 审批环节（非强制）
-    reviewer_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, comment="审核人"
-    )
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="审核人")
     reviewed_at = Column(DateTime, nullable=True, comment="审核时间")
-    approver_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, comment="批准人"
-    )
+    approver_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="批准人")
     approved_at = Column(DateTime, nullable=True, comment="批准时间")
     sealer_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="盖章人")
     sealed_at = Column(DateTime, nullable=True, comment="盖章时间")
@@ -2024,9 +1892,7 @@ class Contract(Base):
     supplement_notes = Column(Text, nullable=True, comment="补录说明")
     closure_confirmed = Column(Boolean, default=False, comment="闭环确认")
     closure_confirmed_at = Column(DateTime, nullable=True, comment="闭环确认时间")
-    closure_confirmed_by = Column(
-        Integer, ForeignKey("users.id"), nullable=True, comment="闭环确认人"
-    )
+    closure_confirmed_by = Column(Integer, ForeignKey("users.id"), nullable=True, comment="闭环确认人")
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -2056,9 +1922,7 @@ class TenderProject(Base):
         default="公开招标",
         comment="公开招标/邀请招标/竞争性谈判/询价/单一来源",
     )
-    procurement_category = Column(
-        String(20), nullable=False, default="服务", comment="货物/工程/服务"
-    )
+    procurement_category = Column(String(20), nullable=False, default="服务", comment="货物/工程/服务")
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="经办人")
     estimated_amount = Column(Float, default=0.0, comment="预算金额")
@@ -2091,13 +1955,9 @@ class TenderProject(Base):
     tender_doc_path = Column(String(500), nullable=True, comment="招标文件路径")
     bid_opening_record = Column(Text, nullable=True, comment="开标记录")
 
-    reviewer_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, comment="审核人"
-    )
+    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="审核人")
     reviewed_at = Column(DateTime, nullable=True, comment="审核时间")
-    approver_id = Column(
-        Integer, ForeignKey("users.id"), nullable=True, comment="批准人"
-    )
+    approver_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="批准人")
     approved_at = Column(DateTime, nullable=True, comment="批准时间")
 
     notes = Column(Text, nullable=True)
@@ -2120,9 +1980,7 @@ class BidSubmission(Base):
     project_name = Column(String(300), nullable=False, comment="投标项目名称")
     tendering_party = Column(String(200), nullable=True, comment="招标方")
     tendering_agency = Column(String(200), nullable=True, comment="招标代理机构")
-    bid_type = Column(
-        String(30), nullable=False, default="公开投标", comment="公开投标/邀请投标"
-    )
+    bid_type = Column(String(30), nullable=False, default="公开投标", comment="公开投标/邀请投标")
 
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="经办人")
@@ -2135,9 +1993,7 @@ class BidSubmission(Base):
     bond_returned_date = Column(String(10), nullable=True, comment="保证金退还日期")
     bond_status = Column(String(20), default="未缴", comment="未缴/已缴/已退/被没收")
 
-    bid_doc_submitted_date = Column(
-        String(10), nullable=True, comment="投标文件递交日期"
-    )
+    bid_doc_submitted_date = Column(String(10), nullable=True, comment="投标文件递交日期")
     bid_deadline = Column(String(10), nullable=True, comment="投标截止日期")
     opening_date = Column(String(10), nullable=True, comment="开标日期")
 
@@ -2211,9 +2067,7 @@ class BoardFiling(Base):
     )
     approver = Column(String(100), nullable=True, comment="审批人")
     contact_person = Column(String(100), nullable=True, comment="联系人（对接日志用）")
-    contact_method = Column(
-        String(100), nullable=True, comment="联系方式（对接日志用）"
-    )
+    contact_method = Column(String(100), nullable=True, comment="联系方式（对接日志用）")
     party_name = Column(String(200), nullable=True, comment="对方单位（对接日志用）")
     summary = Column(Text, nullable=True, comment="摘要")
     content = Column(Text, nullable=True, comment="正文（Markdown）")
@@ -2235,9 +2089,7 @@ class BoardShareholder(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     name = Column(String(200), nullable=False, comment="股东名称")
-    share_type = Column(
-        String(20), nullable=False, default="普通股", comment="普通股/优先股"
-    )
+    share_type = Column(String(20), nullable=False, default="普通股", comment="普通股/优先股")
     share_count = Column(Float, nullable=False, default=0, comment="持股数量")
     share_ratio = Column(Float, nullable=False, default=0, comment="持股比例(%)")
     contact_person = Column(String(100), nullable=True, comment="联系人")
@@ -2245,9 +2097,7 @@ class BoardShareholder(Base):
     contact_email = Column(String(100), nullable=True)
     entry_date = Column(String(10), nullable=True, comment="入股日期")
     notes = Column(Text, nullable=True)
-    status = Column(
-        String(20), nullable=False, default="active", comment="active/inactive"
-    )
+    status = Column(String(20), nullable=False, default="active", comment="active/inactive")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -2274,9 +2124,7 @@ class BidExceptionEvent(Base):
     title = Column(String(300), nullable=False, comment="例外事项标题")
     reason = Column(Text, nullable=True, comment="事由说明")
     resolution = Column(Text, nullable=True, comment="处理结果")
-    status = Column(
-        String(20), default="draft", comment="draft/reviewed/approved/rejected/closed"
-    )
+    status = Column(String(20), default="draft", comment="draft/reviewed/approved/rejected/closed")
 
     reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
@@ -2318,9 +2166,7 @@ class TaxDeclaration(Base):
     tax_rate = Column(Float, nullable=True, comment="税率(%)")
     tax_amount = Column(Float, nullable=False, default=0.0)
     paid_amount = Column(Float, nullable=True, default=0.0)
-    status = Column(
-        String(20), nullable=False, default="pending", comment="pending/filed/paid"
-    )
+    status = Column(String(20), nullable=False, default="pending", comment="pending/filed/paid")
     declaration_date = Column(DateTime, nullable=True)
     payment_deadline = Column(DateTime, nullable=True)
     payment_date = Column(DateTime, nullable=True)
@@ -2340,9 +2186,7 @@ class TaxInvoice(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    invoice_type = Column(
-        String(10), nullable=False, index=True, comment="sales/purchase"
-    )
+    invoice_type = Column(String(10), nullable=False, index=True, comment="sales/purchase")
     invoice_number = Column(String(50), nullable=False)
     invoice_date = Column(DateTime, nullable=False)
     counterparty_id = Column(Integer, ForeignKey("counterparties.id"), nullable=True)
@@ -2351,9 +2195,7 @@ class TaxInvoice(Base):
     tax_amount = Column(Float, nullable=False, comment="税额")
     total_amount = Column(Float, nullable=False, comment="价税合计")
     category = Column(String(30), nullable=True, comment="商品/服务类别")
-    status = Column(
-        String(20), nullable=False, default="draft", comment="draft/issued/verified"
-    )
+    status = Column(String(20), nullable=False, default="draft", comment="draft/issued/verified")
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -2378,12 +2220,8 @@ class CarryForwardEntry(Base):
     debit_account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)
     credit_account_id = Column(Integer, ForeignKey("accounts.id"), nullable=True)
     amount = Column(Float, nullable=False, default=0.0)
-    voucher_id = Column(
-        Integer, ForeignKey("vouchers.id"), nullable=True, comment="生成的结转凭证ID"
-    )
-    status = Column(
-        String(20), nullable=False, default="draft", comment="draft/executed"
-    )
+    voucher_id = Column(Integer, ForeignKey("vouchers.id"), nullable=True, comment="生成的结转凭证ID")
+    status = Column(String(20), nullable=False, default="draft", comment="draft/executed")
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     executed_at = Column(DateTime, nullable=True)
@@ -2400,9 +2238,7 @@ class AutoTransferTemplate(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     name = Column(String(100), nullable=False)
     description = Column(String(500), nullable=True)
-    template_type = Column(
-        String(20), nullable=False, default="fixed", comment="fixed/ratio/balance"
-    )
+    template_type = Column(String(20), nullable=False, default="fixed", comment="fixed/ratio/balance")
     frequency = Column(
         String(20),
         nullable=False,
@@ -2484,9 +2320,7 @@ class PaymentTransaction(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    subscription_id = Column(
-        Integer, ForeignKey("company_subscriptions.id"), nullable=True
-    )
+    subscription_id = Column(Integer, ForeignKey("company_subscriptions.id"), nullable=True)
     amount = Column(Float, nullable=False, default=0)
     currency = Column(String(3), nullable=False, default="CNY")
     payment_method = Column(String(30), nullable=False)

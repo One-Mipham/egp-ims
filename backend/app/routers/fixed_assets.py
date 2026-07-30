@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import FixedAsset, FixedAssetDepreciation, User, Voucher, VoucherEntry
 from app.schemas import (
     FixedAssetCreate,
@@ -76,8 +76,13 @@ def list_assets(
 
 
 @router.get("/assets/{asset_id}", response_model=FixedAssetResponse)
-def get_asset(asset_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(FixedAsset).filter(FixedAsset.id == asset_id).first()
+def get_asset(
+    asset_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    item = get_company_scoped(db, FixedAsset, asset_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="资产不存在")
     return item
@@ -94,9 +99,13 @@ def create_asset(data: FixedAssetCreate, db: Session = Depends(get_db), user: Us
 
 @router.put("/assets/{asset_id}", response_model=FixedAssetResponse)
 def update_asset(
-    asset_id: int, data: FixedAssetUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    asset_id: int,
+    data: FixedAssetUpdate,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    item = db.query(FixedAsset).filter(FixedAsset.id == asset_id).first()
+    item = get_company_scoped(db, FixedAsset, asset_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="资产不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -107,8 +116,13 @@ def update_asset(
 
 
 @router.delete("/assets/{asset_id}")
-def delete_asset(asset_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(FixedAsset).filter(FixedAsset.id == asset_id).first()
+def delete_asset(
+    asset_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    item = get_company_scoped(db, FixedAsset, asset_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="资产不存在")
     db.delete(item)
@@ -125,11 +139,12 @@ def dispose_asset(
     data: FixedAssetDispose,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
     if data.status not in ("已处置", "报废"):
         raise HTTPException(status_code=400, detail="处置状态必须为'已处置'或'报废'")
 
-    asset = db.query(FixedAsset).filter(FixedAsset.id == asset_id).first()
+    asset = get_company_scoped(db, FixedAsset, asset_id, cid)
     if not asset:
         raise HTTPException(status_code=404, detail="资产不存在")
     if asset.status in ("已处置", "报废"):
@@ -277,8 +292,9 @@ def update_depreciation(
     data: FixedAssetDepreciationCreate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    dep = db.query(FixedAssetDepreciation).filter(FixedAssetDepreciation.id == dep_id).first()
+    dep = get_company_scoped(db, FixedAssetDepreciation, dep_id, cid)
     if not dep:
         raise HTTPException(status_code=404, detail="折旧记录不存在")
     asset = db.query(FixedAsset).filter(FixedAsset.id == dep.fixed_asset_id).first()
@@ -310,8 +326,9 @@ def delete_depreciation(
     dep_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    dep = db.query(FixedAssetDepreciation).filter(FixedAssetDepreciation.id == dep_id).first()
+    dep = get_company_scoped(db, FixedAssetDepreciation, dep_id, cid)
     if not dep:
         raise HTTPException(status_code=404, detail="折旧记录不存在")
     asset = db.query(FixedAsset).filter(FixedAsset.id == dep.fixed_asset_id).first()

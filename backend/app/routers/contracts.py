@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import Contract, Department, User
 from app.schemas.contracts import (
     CONTRACT_CATEGORIES,
@@ -170,10 +170,11 @@ def get_stats(
 @router.get("/{contract_id}", response_model=ContractResponse)
 def get_contract(
     contract_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    c = db.query(Contract).filter(Contract.id == contract_id).first()
+    c = get_company_scoped(db, Contract, contract_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="合同不存在")
     _check_single_permission(c, user)
@@ -197,10 +198,11 @@ def create_contract(
 def update_contract(
     contract_id: int,
     data: ContractUpdate,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    c = db.query(Contract).filter(Contract.id == contract_id).first()
+    c = get_company_scoped(db, Contract, contract_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="合同不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -213,10 +215,11 @@ def update_contract(
 @router.delete("/{contract_id}")
 def delete_contract(
     contract_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    c = db.query(Contract).filter(Contract.id == contract_id).first()
+    c = get_company_scoped(db, Contract, contract_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="合同不存在")
     db.delete(c)
@@ -230,10 +233,11 @@ def delete_contract(
 @router.post("/{contract_id}/review")
 def review_contract(
     contract_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    c = db.query(Contract).filter(Contract.id == contract_id).first()
+    c = get_company_scoped(db, Contract, contract_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="合同不存在")
     c.reviewer_id = user.id
@@ -245,10 +249,11 @@ def review_contract(
 @router.post("/{contract_id}/approve")
 def approve_contract(
     contract_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    c = db.query(Contract).filter(Contract.id == contract_id).first()
+    c = get_company_scoped(db, Contract, contract_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="合同不存在")
     c.approver_id = user.id
@@ -261,10 +266,11 @@ def approve_contract(
 @router.post("/{contract_id}/seal")
 def seal_contract(
     contract_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    c = db.query(Contract).filter(Contract.id == contract_id).first()
+    c = get_company_scoped(db, Contract, contract_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="合同不存在")
     c.sealer_id = user.id
@@ -282,10 +288,11 @@ UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads",
 def upload_scan(
     contract_id: int,
     file: UploadFile = File(...),
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    c = db.query(Contract).filter(Contract.id == contract_id).first()
+    c = get_company_scoped(db, Contract, contract_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="合同不存在")
     os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -307,10 +314,11 @@ def upload_scan(
 @router.post("/{contract_id}/closure-confirm")
 def confirm_closure(
     contract_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    c = db.query(Contract).filter(Contract.id == contract_id).first()
+    c = get_company_scoped(db, Contract, contract_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="合同不存在")
     c.closure_confirmed = True

@@ -1,6 +1,7 @@
 """投资模块端到端集成测试"""
 
-import requests, json
+import requests
+import json
 
 BASE = "http://localhost:8000/api"
 TOKEN = None
@@ -19,7 +20,7 @@ def ok(resp, label=""):
     global PASS
     try:
         d = resp.json() if resp.text else {}
-    except:
+    except Exception:
         d = resp.text[:100]
     if resp.status_code < 400:
         PASS += 1
@@ -253,7 +254,7 @@ if pf:
 
 # ═══════════════════════════════════════
 print(f"\n{'=' * 50}")
-print(f"  🏁 INVESTMENT E2E COMPLETE")
+print("  🏁 INVESTMENT E2E COMPLETE")
 print(f"  ✅ Passed: {PASS}")
 print(f"  ❌ Failed: {FAIL}")
 print(f"{'=' * 50}")

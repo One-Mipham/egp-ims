@@ -16,7 +16,7 @@ from app.schemas import (
     ServerServiceResponse,
     ServerServiceStatusUpdate,
 )
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 
 router = APIRouter()
 
@@ -38,8 +38,14 @@ def create_server(data: ServerCreate, db: Session = Depends(get_db), user=Depend
 
 
 @router.put("/{server_id}", response_model=ServerResponse)
-def update_server(server_id: int, data: ServerUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    srv = db.query(Server).filter(Server.id == server_id).first()
+def update_server(
+    server_id: int,
+    data: ServerUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    srv = get_company_scoped(db, Server, server_id, cid)
     if not srv:
         raise HTTPException(status_code=404, detail="服务器不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -51,8 +57,13 @@ def update_server(server_id: int, data: ServerUpdate, db: Session = Depends(get_
 
 
 @router.delete("/{server_id}")
-def delete_server(server_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    srv = db.query(Server).filter(Server.id == server_id).first()
+def delete_server(
+    server_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    srv = get_company_scoped(db, Server, server_id, cid)
     if not srv:
         raise HTTPException(status_code=404, detail="服务器不存在")
     db.delete(srv)
@@ -61,8 +72,13 @@ def delete_server(server_id: int, db: Session = Depends(get_db), user=Depends(ge
 
 
 @router.get("/{server_id}", response_model=ServerResponse)
-def get_server(server_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    srv = db.query(Server).filter(Server.id == server_id).first()
+def get_server(
+    server_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    srv = get_company_scoped(db, Server, server_id, cid)
     if not srv:
         raise HTTPException(status_code=404, detail="服务器不存在")
     return srv
@@ -89,9 +105,13 @@ def create_service(
 
 @router.put("/services/{service_id}", response_model=ServerServiceResponse)
 def update_service(
-    service_id: int, data: ServerServiceUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    service_id: int,
+    data: ServerServiceUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
-    svc = db.query(ServerService).filter(ServerService.id == service_id).first()
+    svc = get_company_scoped(db, ServerService, service_id, cid)
     if not svc:
         raise HTTPException(status_code=404, detail="服务不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -103,8 +123,13 @@ def update_service(
 
 
 @router.delete("/services/{service_id}")
-def delete_service(service_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    svc = db.query(ServerService).filter(ServerService.id == service_id).first()
+def delete_service(
+    service_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    svc = get_company_scoped(db, ServerService, service_id, cid)
     if not svc:
         raise HTTPException(status_code=404, detail="服务不存在")
     db.delete(svc)
@@ -117,9 +142,13 @@ def delete_service(service_id: int, db: Session = Depends(get_db), user=Depends(
 
 @router.post("/services/{service_id}/control", response_model=ServerServiceResponse)
 def control_service(
-    service_id: int, data: ServerServiceStatusUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    service_id: int,
+    data: ServerServiceStatusUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
-    svc = db.query(ServerService).filter(ServerService.id == service_id).first()
+    svc = get_company_scoped(db, ServerService, service_id, cid)
     if not svc:
         raise HTTPException(status_code=404, detail="服务不存在")
 

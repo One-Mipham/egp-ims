@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import KbArticle, KbCategory, AuditLog, User
 from app.schemas import KbArticleCreate, KbArticleUpdate, KbCategoryCreate, KbCategoryUpdate, KbCategoryResponse
 from sqlalchemy import func
@@ -135,8 +135,13 @@ def export_articles_csv(
 
 
 @router.get("/articles/{article_id}")
-def get_article(article_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(KbArticle).filter(KbArticle.id == article_id).first()
+def get_article(
+    article_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    item = get_company_scoped(db, KbArticle, article_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="文章不存在")
     cat_map = {}
@@ -170,9 +175,13 @@ def create_article(data: KbArticleCreate, db: Session = Depends(get_db), user: U
 
 @router.put("/articles/{article_id}")
 def update_article(
-    article_id: int, data: KbArticleUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    article_id: int,
+    data: KbArticleUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(KbArticle).filter(KbArticle.id == article_id).first()
+    item = get_company_scoped(db, KbArticle, article_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="文章不存在")
     update_data = data.model_dump(exclude_unset=True, exclude={"tags"})
@@ -201,8 +210,13 @@ def update_article(
 
 
 @router.delete("/articles/{article_id}")
-def delete_article(article_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(KbArticle).filter(KbArticle.id == article_id).first()
+def delete_article(
+    article_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    item = get_company_scoped(db, KbArticle, article_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="文章不存在")
     _audit(db, user, "delete", item.id, {"title": item.title})
@@ -217,9 +231,16 @@ class BatchDeleteRequest(BaseModel):
 
 @router.post("/articles/batch-delete")
 def batch_delete_articles(
-    data: BatchDeleteRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    data: BatchDeleteRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    count = db.query(KbArticle).filter(KbArticle.id.in_(data.ids)).delete(synchronize_session=False)
+    count = (
+        db.query(KbArticle)
+        .filter(KbArticle.company_id == cid, KbArticle.id.in_(data.ids))
+        .delete(synchronize_session=False)
+    )
     _audit(db, user, "batch_delete", None, {"deleted_count": count, "ids": data.ids})
     db.commit()
     return {"deleted": count}
@@ -273,8 +294,13 @@ def list_categories(
 
 
 @router.get("/categories/{cat_id}", response_model=KbCategoryResponse)
-def get_category(cat_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    cat = db.query(KbCategory).filter(KbCategory.id == cat_id).first()
+def get_category(
+    cat_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    cat = get_company_scoped(db, KbCategory, cat_id, cid)
     if not cat:
         raise HTTPException(status_code=404, detail="分类不存在")
     return cat

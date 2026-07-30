@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getMe } from '@/api'
+import api, { getMe } from '@/api'
 
 import SidebarMenu from '@/components/SidebarMenu.vue'
 import LangToggle from '@/components/LangToggle.vue'
@@ -65,17 +65,15 @@ const _ROLE_LABELS: Record<string, string> = {
 }
 
 async function loadCurrentUser() {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    router.push('/login')
-    return
-  }
   try {
     const res = await getMe()
     currentUser.value = res.data
   } catch {
+    // Cookie 无效或已过期 → 清除旧 token 并跳转登录
     localStorage.removeItem('token')
-    router.push('/login')
+    if (route.path !== '/login') {
+      router.push('/login')
+    }
   }
 }
 
@@ -100,8 +98,14 @@ watch(isLoginPage, async nowLogin => {
   }
 })
 
-function handleLogout() {
+async function handleLogout() {
+  try {
+    await api.post('/auth/logout')
+  } catch {
+    // 即使 logout API 失败也清除本地状态
+  }
   localStorage.removeItem('token')
+  localStorage.removeItem('companyId')
   router.push('/login')
 }
 </script>

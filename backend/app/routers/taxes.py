@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import User, TaxDeclaration, TaxInvoice
 from app.schemas.taxes import (
     TaxDeclarationCreate,
@@ -86,10 +86,11 @@ def declarations_summary(
 @router.get("/declarations/{declaration_id}", response_model=TaxDeclarationResponse)
 def get_declaration(
     declaration_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    obj = db.query(TaxDeclaration).filter(TaxDeclaration.id == declaration_id).first()
+    obj = get_company_scoped(db, TaxDeclaration, declaration_id, cid)
     if not obj:
         raise HTTPException(404, "申报记录未找到")
     return obj
@@ -127,10 +128,11 @@ def create_declaration(
 def update_declaration(
     declaration_id: int,
     data: TaxDeclarationUpdate,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    obj = db.query(TaxDeclaration).filter(TaxDeclaration.id == declaration_id).first()
+    obj = get_company_scoped(db, TaxDeclaration, declaration_id, cid)
     if not obj:
         raise HTTPException(404, "申报记录未找到")
     for field, value in data.model_dump(exclude_unset=True).items():
@@ -147,10 +149,11 @@ def update_declaration(
 @router.delete("/declarations/{declaration_id}")
 def delete_declaration(
     declaration_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    obj = db.query(TaxDeclaration).filter(TaxDeclaration.id == declaration_id).first()
+    obj = get_company_scoped(db, TaxDeclaration, declaration_id, cid)
     if not obj:
         raise HTTPException(404, "申报记录未找到")
     db.delete(obj)
@@ -229,10 +232,11 @@ def invoices_summary(
 @router.get("/invoices/{invoice_id}", response_model=TaxInvoiceResponse)
 def get_invoice(
     invoice_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    obj = db.query(TaxInvoice).filter(TaxInvoice.id == invoice_id).first()
+    obj = get_company_scoped(db, TaxInvoice, invoice_id, cid)
     if not obj:
         raise HTTPException(404, "发票记录未找到")
     return obj
@@ -268,10 +272,11 @@ def create_invoice(
 def update_invoice(
     invoice_id: int,
     data: TaxInvoiceUpdate,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    obj = db.query(TaxInvoice).filter(TaxInvoice.id == invoice_id).first()
+    obj = get_company_scoped(db, TaxInvoice, invoice_id, cid)
     if not obj:
         raise HTTPException(404, "发票记录未找到")
     for field, value in data.model_dump(exclude_unset=True).items():
@@ -287,10 +292,11 @@ def update_invoice(
 @router.delete("/invoices/{invoice_id}")
 def delete_invoice(
     invoice_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    obj = db.query(TaxInvoice).filter(TaxInvoice.id == invoice_id).first()
+    obj = get_company_scoped(db, TaxInvoice, invoice_id, cid)
     if not obj:
         raise HTTPException(404, "发票记录未找到")
     db.delete(obj)

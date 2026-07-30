@@ -5,8 +5,10 @@ const API_BASE = BASE === '/' ? '/api' : `${BASE}api`
 
 const api = axios.create({
   baseURL: API_BASE,
+  withCredentials: true,  // 自动发送 httpOnly cookie（防 XSS token 窃取）
 })
 
+// 向后兼容：如果 localStorage 中有旧 token，仍然通过 Authorization 头发送
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
   if (token) {
@@ -20,7 +22,10 @@ api.interceptors.response.use(
   err => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
-      window.location.href = (import.meta.env.VITE_BASE || '/') + 'login'
+      const loginPath = (import.meta.env.VITE_BASE || '/') + 'login'
+      if (window.location.pathname !== loginPath) {
+        window.location.href = loginPath
+      }
     }
     return Promise.reject(err)
   },
@@ -168,9 +173,9 @@ export const updateUser = (userId: number, data: { role?: string; is_active?: bo
   api.put(`/users/${userId}`, null, { params: data })
 export const deleteUser = (userId: number) => api.delete(`/users/${userId}`)
 export const resetUserPassword = (userId: number, newPassword: string) =>
-  api.post(`/users/${userId}/reset-password`, null, { params: { new_password: newPassword } })
+  api.post(`/users/${userId}/reset-password`, { new_password: newPassword })
 export const changeMyPassword = (currentPassword: string, newPassword: string) =>
-  api.post('/auth/change-password', null, { params: { current_password: currentPassword, new_password: newPassword } })
+  api.post('/auth/change-password', { current_password: currentPassword, new_password: newPassword })
 
 // Print module
 export const printCompany = (companyId: number) => api.get('/prints/company', { params: { company_id: companyId } })

@@ -127,11 +127,7 @@ async def company_isolation_middleware(request: Request, call_next):
                     except Exception as e:
                         return JSONResponse(
                             status_code=403,
-                            content={
-                                "detail": str(
-                                    getattr(e, "detail", "无权访问其他公司的数据")
-                                )
-                            },
+                            content={"detail": str(getattr(e, "detail", "无权访问其他公司的数据"))},
                         )
             except (json.JSONDecodeError, ValueError):
                 pass  # 非 JSON 请求体（如文件上传）跳过
@@ -170,9 +166,7 @@ async def company_isolation_middleware(request: Request, call_next):
                     _db.close()
                     return JSONResponse(
                         status_code=402,
-                        content={
-                            "detail": "订阅已过期，系统处于只读模式。请续费后继续使用。"
-                        },
+                        content={"detail": "订阅已过期，系统处于只读模式。请续费后继续使用。"},
                     )
             finally:
                 _db.close()
@@ -187,57 +181,35 @@ app.include_router(users.router, prefix="/api/users", tags=["用户管理"])
 app.include_router(companies.router, prefix="/api/companies", tags=["公司账套"])
 app.include_router(permissions.router, prefix="/api/permissions", tags=["权限管理"])
 app.include_router(kb.router, prefix="/api/kb", tags=["知识库"])
-app.include_router(
-    subscriptions.router, prefix="/api/subscriptions", tags=["订阅与支付"]
-)
+app.include_router(subscriptions.router, prefix="/api/subscriptions", tags=["订阅与支付"])
 app.include_router(system.router, prefix="/api/system", tags=["系统管理"])
-app.include_router(
-    audit_reports.router, prefix="/api/audit-reports", tags=["年度审计报告"]
-)
+app.include_router(audit_reports.router, prefix="/api/audit-reports", tags=["年度审计报告"])
 app.include_router(todo.router, prefix="/api/todo", tags=["协同办公"])
-app.include_router(
-    access_control.router, prefix="/api/access-control", tags=["门禁管理"]
-)
+app.include_router(access_control.router, prefix="/api/access-control", tags=["门禁管理"])
 
 # 会计模块（会计/财务经理/总监/管理员）
 _accounting = [Depends(require_module("accounting"))]
-app.include_router(
-    accounts.router, prefix="/api/accounts", tags=["科目管理"], dependencies=_accounting
-)
-app.include_router(
-    vouchers.router, prefix="/api/vouchers", tags=["凭证管理"], dependencies=_accounting
-)
+app.include_router(accounts.router, prefix="/api/accounts", tags=["科目管理"], dependencies=_accounting)
+app.include_router(vouchers.router, prefix="/api/vouchers", tags=["凭证管理"], dependencies=_accounting)
 app.include_router(
     templates.router,
     prefix="/api/templates",
     tags=["凭证模板"],
     dependencies=_accounting,
 )
-app.include_router(
-    periods.router, prefix="/api/periods", tags=["会计期间"], dependencies=_accounting
-)
-app.include_router(
-    prints.router, prefix="/api/prints", tags=["打印模块"], dependencies=_accounting
-)
-app.include_router(
-    taxes.router, prefix="/api/taxes", tags=["税务管理"], dependencies=_accounting
-)
+app.include_router(periods.router, prefix="/api/periods", tags=["会计期间"], dependencies=_accounting)
+app.include_router(prints.router, prefix="/api/prints", tags=["打印模块"], dependencies=_accounting)
+app.include_router(taxes.router, prefix="/api/taxes", tags=["税务管理"], dependencies=_accounting)
 app.include_router(gl.router, prefix="/api/gl", tags=["总账"], dependencies=_accounting)
 
 # 报表（会计/财务经理/总监/管理员）
 _reports = [Depends(require_module("reports"))]
-app.include_router(
-    reports.router, prefix="/api/reports", tags=["报表中心"], dependencies=_reports
-)
-app.include_router(
-    cockpit.router, prefix="/api/cockpit", tags=["管理驾驶舱"], dependencies=_reports
-)
+app.include_router(reports.router, prefix="/api/reports", tags=["报表中心"], dependencies=_reports)
+app.include_router(cockpit.router, prefix="/api/cockpit", tags=["管理驾驶舱"], dependencies=_reports)
 
 # 财务管理（财务经理/总监/管理员）
 _finance = [Depends(require_module("finance"))]
-app.include_router(
-    budget.router, prefix="/api", tags=["预算管理"], dependencies=_finance
-)
+app.include_router(budget.router, prefix="/api", tags=["预算管理"], dependencies=_finance)
 app.include_router(
     investments.router,
     prefix="/api/investments",
@@ -253,9 +225,7 @@ app.include_router(
 
 # 费用报销（含出纳/部门负责人）
 _expenses = [Depends(require_module("expenses"))]
-app.include_router(
-    expenses.router, prefix="/api/expenses", tags=["费用报销"], dependencies=_expenses
-)
+app.include_router(expenses.router, prefix="/api/expenses", tags=["费用报销"], dependencies=_expenses)
 
 # 固定资产（会计/财务经理/管理员）
 _assets = [Depends(require_module("assets"))]
@@ -275,9 +245,7 @@ app.include_router(
     tags=["应收账款管理"],
     dependencies=_ar,
 )
-app.include_router(
-    payables.router, prefix="/api/payables", tags=["应付账款管理"], dependencies=_ap
-)
+app.include_router(payables.router, prefix="/api/payables", tags=["应付账款管理"], dependencies=_ap)
 
 # 进销存（会计/行政/管理员）
 _inv = [Depends(require_module("inventory"))]
@@ -290,15 +258,11 @@ app.include_router(
 
 # 招投标（行政/管理员）
 _bids = [Depends(require_module("bids"))]
-app.include_router(
-    bids.router, prefix="/api/bids", tags=["招投标管理"], dependencies=_bids
-)
+app.include_router(bids.router, prefix="/api/bids", tags=["招投标管理"], dependencies=_bids)
 
 # 合同管理
 _ct = [Depends(require_module("contracts"))]
-app.include_router(
-    contracts.router, prefix="/api/contracts", tags=["合同管理"], dependencies=_ct
-)
+app.include_router(contracts.router, prefix="/api/contracts", tags=["合同管理"], dependencies=_ct)
 
 # 人力资源
 _hr = [Depends(require_module("hr"))]
@@ -306,44 +270,30 @@ app.include_router(hr.router, prefix="/api/hr", tags=["HR"], dependencies=_hr)
 
 # 行政综合
 _adm = [Depends(require_module("admin"))]
-app.include_router(
-    admin.router, prefix="/api/admin", tags=["行政综合管理"], dependencies=_adm
-)
-app.include_router(
-    departments.router, prefix="/api/departments", tags=["部门管理"], dependencies=_adm
-)
+app.include_router(admin.router, prefix="/api/admin", tags=["行政综合管理"], dependencies=_adm)
+app.include_router(departments.router, prefix="/api/departments", tags=["部门管理"], dependencies=_adm)
 app.include_router(
     counterparties.router,
     prefix="/api/counterparties",
     tags=["往来单位"],
     dependencies=_adm,
 )
-app.include_router(
-    persons.router, prefix="/api/persons", tags=["员工个人"], dependencies=_adm
-)
+app.include_router(persons.router, prefix="/api/persons", tags=["员工个人"], dependencies=_adm)
 app.include_router(
     cashflow_items.router,
     prefix="/api/cashflow-items",
     tags=["现金流量项目"],
     dependencies=_accounting,
 )
-app.include_router(
-    projects.router, prefix="/api/projects", tags=["项目管理"], dependencies=_adm
-)
-app.include_router(
-    servers.router, prefix="/api/servers", tags=["服务器管理"], dependencies=_adm
-)
+app.include_router(projects.router, prefix="/api/projects", tags=["项目管理"], dependencies=_adm)
+app.include_router(servers.router, prefix="/api/servers", tags=["服务器管理"], dependencies=_adm)
 
 # 董事办（仅总监/管理员）
 _board = [Depends(require_module("board"))]
-app.include_router(
-    board.router, prefix="/api/board", tags=["董事办"], dependencies=_board
-)
+app.include_router(board.router, prefix="/api/board", tags=["董事办"], dependencies=_board)
 
 # 审计日志（会计及以上）
-app.include_router(
-    audit.router, prefix="/api/audit", tags=["审计日志"], dependencies=_accounting
-)
+app.include_router(audit.router, prefix="/api/audit", tags=["审计日志"], dependencies=_accounting)
 
 
 @app.get("/api/health")

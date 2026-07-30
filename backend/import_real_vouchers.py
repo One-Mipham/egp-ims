@@ -4,7 +4,8 @@
 来源: Downloads/20260101-20260531-填制凭证.xlsx
 """
 
-import os, sys
+import os
+import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -73,7 +74,7 @@ def import_vouchers():
         db.query(VoucherEntry).filter(VoucherEntry.voucher_id == v.id).delete()
     db.query(Voucher).filter(Voucher.company_id == COMPANY_ID).delete()
     db.commit()
-    print(f"已清除旧凭证数据")
+    print("已清除旧凭证数据")
 
     created = 0
     entries_created = 0
@@ -166,7 +167,7 @@ def import_vouchers():
     db.commit()
 
     print(f"\n{'=' * 60}")
-    print(f"✅ 导入完成:")
+    print("✅ 导入完成:")
     print(f"  凭证: {created} 张")
     print(f"  分录: {entries_created} 行")
     if unknown_codes:

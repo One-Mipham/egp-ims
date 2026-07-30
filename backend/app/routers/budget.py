@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import Budget, BudgetItem, User
 from app.schemas import (
     BudgetCreate,
@@ -74,8 +74,9 @@ def get_budget(
     budget_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    budget = db.query(Budget).filter(Budget.id == budget_id).first()
+    budget = get_company_scoped(db, Budget, budget_id, cid)
     if not budget:
         raise HTTPException(status_code=404, detail="预算不存在")
     return budget
@@ -87,8 +88,9 @@ def update_budget(
     data: BudgetUpdate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    budget = db.query(Budget).filter(Budget.id == budget_id).first()
+    budget = get_company_scoped(db, Budget, budget_id, cid)
     if not budget:
         raise HTTPException(status_code=404, detail="预算不存在")
 
@@ -131,8 +133,9 @@ def delete_budget(
     budget_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    budget = db.query(Budget).filter(Budget.id == budget_id).first()
+    budget = get_company_scoped(db, Budget, budget_id, cid)
     if not budget:
         raise HTTPException(status_code=404, detail="预算不存在")
     db.delete(budget)

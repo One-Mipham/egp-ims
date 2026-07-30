@@ -4,13 +4,21 @@ import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import User, Company
 from app.schemas import UserResponse, LoginRequest
-from app.auth import hash_password, verify_password, create_access_token, get_current_user
+from app.auth import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    get_current_user,
+    set_token_cookie,
+    clear_token_cookie,
+)
 from app.seed import seed_level1_accounts, seed_level2_accounts, seed_tax_accounts, seed_cashflow_items
 
 router = APIRouter()
@@ -151,7 +159,7 @@ def identify_user(data: IdentifyRequest, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login")
 def login(data: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.username == data.username).first()
     if not user or not verify_password(data.password, user.password_hash):
@@ -182,18 +190,23 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         }
     )
 
-    return LoginResponse(
-        access_token=token,
-        token_type="bearer",
-        user_id=user.id,
-        username=user.username,
-        role=user.role,
-        is_admin=user.is_admin,
-        company_id=cid,
-        company_name=company.name,
-        company_short_name=company.short_name or company.name,
-        period=period,
+    response = JSONResponse(
+        content={
+            "access_token": token,
+            "token_type": "bearer",
+            "user_id": user.id,
+            "username": user.username,
+            "role": user.role,
+            "is_admin": user.is_admin,
+            "company_id": cid,
+            "company_name": company.name,
+            "company_short_name": company.short_name or company.name,
+            "period": period,
+        }
     )
+    # 设置 httpOnly cookie（浏览器自动携带，防止 XSS token 窃取）
+    set_token_cookie(response, token)
+    return response
 
 
 @router.get("/me", response_model=UserResponse)
@@ -223,3 +236,11 @@ def change_password(body: ChangePasswordBody, user: User = Depends(get_current_u
     user.password_hash = hash_password(body.new_password)
     db.commit()
     return {"ok": True}
+
+
+@router.post("/logout")
+def logout():
+    """清除认证 Cookie，退出登录。"""
+    response = JSONResponse(content={"ok": True})
+    clear_token_cookie(response)
+    return response

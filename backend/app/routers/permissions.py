@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, UserPermission, Company
 from app.schemas import UserPermissionSchema
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 
 router = APIRouter()
 
@@ -43,8 +43,8 @@ def list_all_permissions(
     return result
 
 
-def _get_user_or_404(db: Session, user_id: int) -> User:
-    user = db.query(User).filter(User.id == user_id).first()
+def _get_user_or_404(db: Session, user_id: int, cid: int) -> User:
+    user = get_company_scoped(db, User, user_id, cid)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
     return user
@@ -61,11 +61,12 @@ def _get_company_or_404(db: Session, company_id: int) -> Company:
 def get_user_permissions(
     user_id: int,
     company_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """获取指定用户在指定公司的权限。"""
-    _get_user_or_404(db, user_id)
+    _get_user_or_404(db, user_id, cid)
     _get_company_or_404(db, company_id)
 
     perm = db.query(UserPermission).filter_by(user_id=user_id, company_id=company_id).first()
@@ -80,6 +81,7 @@ def get_user_permissions(
 def set_user_permissions(
     user_id: int,
     data: UserPermissionSchema,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -87,7 +89,7 @@ def set_user_permissions(
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="仅管理员可设置权限")
 
-    _get_user_or_404(db, user_id)
+    _get_user_or_404(db, user_id, cid)
     _get_company_or_404(db, data.company_id)
 
     perm = db.query(UserPermission).filter_by(user_id=user_id, company_id=data.company_id).first()

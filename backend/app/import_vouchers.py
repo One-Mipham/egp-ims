@@ -374,20 +374,12 @@ VOUCHERS = [
 
 
 def get_department_by_code(db: Session, company_id: int, code: str) -> int | None:
-    dept = (
-        db.query(Department)
-        .filter(Department.company_id == company_id, Department.code == code)
-        .first()
-    )
+    dept = db.query(Department).filter(Department.company_id == company_id, Department.code == code).first()
     return dept.id if dept else None
 
 
 def get_account_by_code(db: Session, company_id: int, code: str) -> Account | None:
-    return (
-        db.query(Account)
-        .filter(Account.company_id == company_id, Account.code == code)
-        .first()
-    )
+    return db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
 
 
 def ensure_periods(db: Session, company_id: int):
@@ -401,9 +393,7 @@ def ensure_periods(db: Session, company_id: int):
             .first()
         )
         if not period:
-            db.add(
-                AccountingPeriod(company_id=company_id, period=month, is_closed=False)
-            )
+            db.add(AccountingPeriod(company_id=company_id, period=month, is_closed=False))
     db.commit()
 
 
@@ -464,24 +454,10 @@ def verify_balances(db: Session, company_id: int):
     from app.models import VoucherEntry as VE
 
     voucher_count = db.query(Voucher).filter(Voucher.company_id == company_id).count()
-    entry_count = (
-        db.query(VE).join(Voucher).filter(Voucher.company_id == company_id).count()
-    )
+    entry_count = db.query(VE).join(Voucher).filter(Voucher.company_id == company_id).count()
 
-    total_dr = (
-        db.query(sa_func.sum(VE.debit))
-        .join(Voucher)
-        .filter(Voucher.company_id == company_id)
-        .scalar()
-        or 0
-    )
-    total_cr = (
-        db.query(sa_func.sum(VE.credit))
-        .join(Voucher)
-        .filter(Voucher.company_id == company_id)
-        .scalar()
-        or 0
-    )
+    total_dr = db.query(sa_func.sum(VE.debit)).join(Voucher).filter(Voucher.company_id == company_id).scalar() or 0
+    total_cr = db.query(sa_func.sum(VE.credit)).join(Voucher).filter(Voucher.company_id == company_id).scalar() or 0
 
     print(f"  凭证数: {voucher_count}")
     print(f"  分录数: {entry_count}")
@@ -507,11 +483,7 @@ def verify_balances(db: Session, company_id: int):
 
     for code, dr, cr in rows:
         if dr > 0 or cr > 0:
-            acct = (
-                db.query(Account)
-                .filter(Account.company_id == company_id, Account.code == code)
-                .first()
-            )
+            acct = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
             name = acct.name if acct else "?"
             print(f"    {code} {name}: DR={dr:>14,.2f}  CR={cr:>14,.2f}")
 
@@ -573,11 +545,7 @@ def main():
     init_db()
     db = SessionLocal()
     try:
-        company = (
-            db.query(Company)
-            .filter(Company.name == "青岛利美融信投资控股有限责任公司")
-            .first()
-        )
+        company = db.query(Company).filter(Company.name == "青岛利美融信投资控股有限责任公司").first()
         if not company:
             print("错误：公司不存在，请先运行 import_data.py")
             return

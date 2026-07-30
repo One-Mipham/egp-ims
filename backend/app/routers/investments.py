@@ -80,7 +80,7 @@ from app.schemas import (
     CreditPaymentUpdate,
     CreditPaymentResponse,
 )
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 
 router = APIRouter()
 
@@ -202,9 +202,13 @@ def create_portfolio(
 
 @router.put("/portfolios/{portfolio_id}", response_model=InvestmentPortfolioResponse)
 def update_portfolio(
-    portfolio_id: int, data: InvestmentPortfolioUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    portfolio_id: int,
+    data: InvestmentPortfolioUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    p = db.query(InvestmentPortfolio).filter(InvestmentPortfolio.id == portfolio_id).first()
+    p = get_company_scoped(db, InvestmentPortfolio, portfolio_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="组合不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -215,8 +219,13 @@ def update_portfolio(
 
 
 @router.delete("/portfolios/{portfolio_id}")
-def delete_portfolio(portfolio_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    p = db.query(InvestmentPortfolio).filter(InvestmentPortfolio.id == portfolio_id).first()
+def delete_portfolio(
+    portfolio_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    p = get_company_scoped(db, InvestmentPortfolio, portfolio_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="组合不存在")
     db.delete(p)
@@ -266,9 +275,13 @@ def create_position(
 
 @router.put("/positions/{position_id}", response_model=InvestmentPositionResponse)
 def update_position(
-    position_id: int, data: InvestmentPositionUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    position_id: int,
+    data: InvestmentPositionUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    pos = db.query(InvestmentPosition).filter(InvestmentPosition.id == position_id).first()
+    pos = get_company_scoped(db, InvestmentPosition, position_id, cid)
     if not pos:
         raise HTTPException(status_code=404, detail="持仓不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -279,8 +292,13 @@ def update_position(
 
 
 @router.delete("/positions/{position_id}")
-def delete_position(position_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    pos = db.query(InvestmentPosition).filter(InvestmentPosition.id == position_id).first()
+def delete_position(
+    position_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    pos = get_company_scoped(db, InvestmentPosition, position_id, cid)
     if not pos:
         raise HTTPException(status_code=404, detail="持仓不存在")
     db.delete(pos)
@@ -359,8 +377,9 @@ def update_transaction(
     data: InvestmentTransactionUpdate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    txn = db.query(InvestmentTransaction).filter(InvestmentTransaction.id == transaction_id).first()
+    txn = get_company_scoped(db, InvestmentTransaction, transaction_id, cid)
     if not txn:
         raise HTTPException(status_code=404, detail="交易不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -383,8 +402,13 @@ def update_transaction(
 
 
 @router.delete("/transactions/{transaction_id}")
-def delete_transaction(transaction_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    txn = db.query(InvestmentTransaction).filter(InvestmentTransaction.id == transaction_id).first()
+def delete_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    txn = get_company_scoped(db, InvestmentTransaction, transaction_id, cid)
     if not txn:
         raise HTTPException(status_code=404, detail="交易不存在")
     if txn.voucher_id:
@@ -469,9 +493,13 @@ def create_adjustment(
 
 @router.put("/adjustments/{adjustment_id}", response_model=FairValueAdjustmentResponse)
 def update_adjustment(
-    adjustment_id: int, data: FairValueAdjustmentUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    adjustment_id: int,
+    data: FairValueAdjustmentUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    adj = db.query(FairValueAdjustment).filter(FairValueAdjustment.id == adjustment_id).first()
+    adj = get_company_scoped(db, FairValueAdjustment, adjustment_id, cid)
     if not adj:
         raise HTTPException(status_code=404, detail="调整不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -504,8 +532,13 @@ def update_adjustment(
 
 
 @router.delete("/adjustments/{adjustment_id}")
-def delete_adjustment(adjustment_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    adj = db.query(FairValueAdjustment).filter(FairValueAdjustment.id == adjustment_id).first()
+def delete_adjustment(
+    adjustment_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    adj = get_company_scoped(db, FairValueAdjustment, adjustment_id, cid)
     if not adj:
         raise HTTPException(status_code=404, detail="调整不存在")
     if adj.voucher_id:
@@ -576,9 +609,13 @@ def create_income(
 
 @router.put("/income/{income_id}", response_model=InvestmentIncomeResponse)
 def update_income(
-    income_id: int, data: InvestmentIncomeUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    income_id: int,
+    data: InvestmentIncomeUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    inc = db.query(InvestmentIncome).filter(InvestmentIncome.id == income_id).first()
+    inc = get_company_scoped(db, InvestmentIncome, income_id, cid)
     if not inc:
         raise HTTPException(status_code=404, detail="收益记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -609,8 +646,13 @@ def update_income(
 
 
 @router.delete("/income/{income_id}")
-def delete_income(income_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    inc = db.query(InvestmentIncome).filter(InvestmentIncome.id == income_id).first()
+def delete_income(
+    income_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    inc = get_company_scoped(db, InvestmentIncome, income_id, cid)
     if not inc:
         raise HTTPException(status_code=404, detail="收益记录不存在")
     if inc.voucher_id:
@@ -781,9 +823,13 @@ def create_security(
 
 @router.put("/securities/{security_id}", response_model=SecurityMasterResponse)
 def update_security(
-    security_id: int, data: SecurityMasterUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    security_id: int,
+    data: SecurityMasterUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    s = db.query(SecurityMaster).filter(SecurityMaster.id == security_id).first()
+    s = get_company_scoped(db, SecurityMaster, security_id, cid)
     if not s:
         raise HTTPException(status_code=404, detail="证券不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -794,8 +840,13 @@ def update_security(
 
 
 @router.delete("/securities/{security_id}")
-def delete_security(security_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    s = db.query(SecurityMaster).filter(SecurityMaster.id == security_id).first()
+def delete_security(
+    security_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    s = get_company_scoped(db, SecurityMaster, security_id, cid)
     if not s:
         raise HTTPException(status_code=404, detail="证券不存在")
     db.delete(s)
@@ -832,9 +883,13 @@ def create_fund(
 
 @router.put("/funds/{fund_id}", response_model=InvestmentFundResponse)
 def update_fund(
-    fund_id: int, data: InvestmentFundUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    fund_id: int,
+    data: InvestmentFundUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    f = db.query(InvestmentFund).filter(InvestmentFund.id == fund_id).first()
+    f = get_company_scoped(db, InvestmentFund, fund_id, cid)
     if not f:
         raise HTTPException(status_code=404, detail="基金不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -845,8 +900,13 @@ def update_fund(
 
 
 @router.delete("/funds/{fund_id}")
-def delete_fund(fund_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    f = db.query(InvestmentFund).filter(InvestmentFund.id == fund_id).first()
+def delete_fund(
+    fund_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    f = get_company_scoped(db, InvestmentFund, fund_id, cid)
     if not f:
         raise HTTPException(status_code=404, detail="基金不存在")
     db.delete(f)
@@ -889,8 +949,13 @@ def update_capital_account(
     data: CapitalAccountUpdate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    ca = db.query(CapitalAccount).filter(CapitalAccount.id == account_id, CapitalAccount.fund_id == fund_id).first()
+    ca = (
+        db.query(CapitalAccount)
+        .filter(CapitalAccount.id == account_id, CapitalAccount.fund_id == fund_id, CapitalAccount.company_id == cid)
+        .first()
+    )
     if not ca:
         raise HTTPException(status_code=404, detail="资本账户不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -902,9 +967,17 @@ def update_capital_account(
 
 @router.delete("/funds/{fund_id}/capital-accounts/{account_id}")
 def delete_capital_account(
-    fund_id: int, account_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)
+    fund_id: int,
+    account_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    ca = db.query(CapitalAccount).filter(CapitalAccount.id == account_id, CapitalAccount.fund_id == fund_id).first()
+    ca = (
+        db.query(CapitalAccount)
+        .filter(CapitalAccount.id == account_id, CapitalAccount.fund_id == fund_id, CapitalAccount.company_id == cid)
+        .first()
+    )
     if not ca:
         raise HTTPException(status_code=404, detail="资本账户不存在")
     db.delete(ca)
@@ -957,9 +1030,18 @@ def create_capital_call(
 
 @router.put("/funds/{fund_id}/capital-calls/{call_id}", response_model=CapitalCallResponse)
 def update_capital_call(
-    fund_id: int, call_id: int, data: CapitalCallUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    fund_id: int,
+    call_id: int,
+    data: CapitalCallUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    cc = db.query(CapitalCall).filter(CapitalCall.id == call_id, CapitalCall.fund_id == fund_id).first()
+    cc = (
+        db.query(CapitalCall)
+        .filter(CapitalCall.id == call_id, CapitalCall.fund_id == fund_id, CapitalCall.company_id == cid)
+        .first()
+    )
     if not cc:
         raise HTTPException(status_code=404, detail="资本召唤不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -970,8 +1052,18 @@ def update_capital_call(
 
 
 @router.delete("/funds/{fund_id}/capital-calls/{call_id}")
-def delete_capital_call(fund_id: int, call_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    cc = db.query(CapitalCall).filter(CapitalCall.id == call_id, CapitalCall.fund_id == fund_id).first()
+def delete_capital_call(
+    fund_id: int,
+    call_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    cc = (
+        db.query(CapitalCall)
+        .filter(CapitalCall.id == call_id, CapitalCall.fund_id == fund_id, CapitalCall.company_id == cid)
+        .first()
+    )
     if not cc:
         raise HTTPException(status_code=404, detail="资本召唤不存在")
     if cc.voucher_id:
@@ -1037,8 +1129,13 @@ def update_distribution(
     data: FundDistributionUpdate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    fd = db.query(FundDistribution).filter(FundDistribution.id == dist_id, FundDistribution.fund_id == fund_id).first()
+    fd = (
+        db.query(FundDistribution)
+        .filter(FundDistribution.id == dist_id, FundDistribution.fund_id == fund_id, FundDistribution.company_id == cid)
+        .first()
+    )
     if not fd:
         raise HTTPException(status_code=404, detail="分配记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1049,8 +1146,18 @@ def update_distribution(
 
 
 @router.delete("/funds/{fund_id}/distributions/{dist_id}")
-def delete_distribution(fund_id: int, dist_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    fd = db.query(FundDistribution).filter(FundDistribution.id == dist_id, FundDistribution.fund_id == fund_id).first()
+def delete_distribution(
+    fund_id: int,
+    dist_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    fd = (
+        db.query(FundDistribution)
+        .filter(FundDistribution.id == dist_id, FundDistribution.fund_id == fund_id, FundDistribution.company_id == cid)
+        .first()
+    )
     if not fd:
         raise HTTPException(status_code=404, detail="分配记录不存在")
     if fd.voucher_id:
@@ -1180,9 +1287,13 @@ def create_waterfall_config(
 
 @router.put("/waterfall-configs/{config_id}", response_model=WaterfallConfigResponse)
 def update_waterfall_config(
-    config_id: int, data: WaterfallConfigUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    config_id: int,
+    data: WaterfallConfigUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    wc = db.query(WaterfallConfig).filter(WaterfallConfig.id == config_id).first()
+    wc = get_company_scoped(db, WaterfallConfig, config_id, cid)
     if not wc:
         raise HTTPException(status_code=404, detail="瀑布配置不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1193,8 +1304,13 @@ def update_waterfall_config(
 
 
 @router.delete("/waterfall-configs/{config_id}")
-def delete_waterfall_config(config_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    wc = db.query(WaterfallConfig).filter(WaterfallConfig.id == config_id).first()
+def delete_waterfall_config(
+    config_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    wc = get_company_scoped(db, WaterfallConfig, config_id, cid)
     if not wc:
         raise HTTPException(status_code=404, detail="瀑布配置不存在")
     db.delete(wc)
@@ -1373,9 +1489,13 @@ def create_real_estate(
 
 @router.put("/real-estate/{asset_id}", response_model=RealEstateAssetResponse)
 def update_real_estate(
-    asset_id: int, data: RealEstateAssetUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    asset_id: int,
+    data: RealEstateAssetUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    a = db.query(RealEstateAsset).filter(RealEstateAsset.id == asset_id).first()
+    a = get_company_scoped(db, RealEstateAsset, asset_id, cid)
     if not a:
         raise HTTPException(status_code=404, detail="资产不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1386,8 +1506,13 @@ def update_real_estate(
 
 
 @router.delete("/real-estate/{asset_id}")
-def delete_real_estate(asset_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    a = db.query(RealEstateAsset).filter(RealEstateAsset.id == asset_id).first()
+def delete_real_estate(
+    asset_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    a = get_company_scoped(db, RealEstateAsset, asset_id, cid)
     if not a:
         raise HTTPException(status_code=404, detail="资产不存在")
     db.delete(a)
@@ -1439,10 +1564,15 @@ def update_re_valuation(
     data: RealEstateValuationUpdate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
     v = (
         db.query(RealEstateValuation)
-        .filter(RealEstateValuation.id == val_id, RealEstateValuation.asset_id == asset_id)
+        .filter(
+            RealEstateValuation.id == val_id,
+            RealEstateValuation.asset_id == asset_id,
+            RealEstateValuation.company_id == cid,
+        )
         .first()
     )
     if not v:
@@ -1455,10 +1585,20 @@ def update_re_valuation(
 
 
 @router.delete("/real-estate/{asset_id}/valuations/{val_id}")
-def delete_re_valuation(asset_id: int, val_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def delete_re_valuation(
+    asset_id: int,
+    val_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
     v = (
         db.query(RealEstateValuation)
-        .filter(RealEstateValuation.id == val_id, RealEstateValuation.asset_id == asset_id)
+        .filter(
+            RealEstateValuation.id == val_id,
+            RealEstateValuation.asset_id == asset_id,
+            RealEstateValuation.company_id == cid,
+        )
         .first()
     )
     if not v:
@@ -1497,9 +1637,13 @@ def create_infrastructure(
 
 @router.put("/infrastructure/{asset_id}", response_model=InfraAssetResponse)
 def update_infrastructure(
-    asset_id: int, data: InfraAssetUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    asset_id: int,
+    data: InfraAssetUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    a = db.query(InfraAsset).filter(InfraAsset.id == asset_id).first()
+    a = get_company_scoped(db, InfraAsset, asset_id, cid)
     if not a:
         raise HTTPException(status_code=404, detail="资产不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1510,8 +1654,13 @@ def update_infrastructure(
 
 
 @router.delete("/infrastructure/{asset_id}")
-def delete_infrastructure(asset_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    a = db.query(InfraAsset).filter(InfraAsset.id == asset_id).first()
+def delete_infrastructure(
+    asset_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    a = get_company_scoped(db, InfraAsset, asset_id, cid)
     if not a:
         raise HTTPException(status_code=404, detail="资产不存在")
     db.delete(a)
@@ -1549,9 +1698,13 @@ def create_private_credit(
 
 @router.put("/private-credit/{credit_id}", response_model=PrivateCreditResponse)
 def update_private_credit(
-    credit_id: int, data: PrivateCreditUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    credit_id: int,
+    data: PrivateCreditUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    c = db.query(PrivateCredit).filter(PrivateCredit.id == credit_id).first()
+    c = get_company_scoped(db, PrivateCredit, credit_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="信贷记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1562,8 +1715,13 @@ def update_private_credit(
 
 
 @router.delete("/private-credit/{credit_id}")
-def delete_private_credit(credit_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    c = db.query(PrivateCredit).filter(PrivateCredit.id == credit_id).first()
+def delete_private_credit(
+    credit_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
+    c = get_company_scoped(db, PrivateCredit, credit_id, cid)
     if not c:
         raise HTTPException(status_code=404, detail="信贷记录不存在")
     db.delete(c)
@@ -1653,8 +1811,13 @@ def update_credit_payment(
     data: CreditPaymentUpdate,
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    p = db.query(CreditPayment).filter(CreditPayment.id == payment_id, CreditPayment.credit_id == credit_id).first()
+    p = (
+        db.query(CreditPayment)
+        .filter(CreditPayment.id == payment_id, CreditPayment.credit_id == credit_id, CreditPayment.company_id == cid)
+        .first()
+    )
     if not p:
         raise HTTPException(status_code=404, detail="还款记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1666,9 +1829,17 @@ def update_credit_payment(
 
 @router.delete("/private-credit/{credit_id}/payments/{payment_id}")
 def delete_credit_payment(
-    credit_id: int, payment_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)
+    credit_id: int,
+    payment_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    p = db.query(CreditPayment).filter(CreditPayment.id == payment_id, CreditPayment.credit_id == credit_id).first()
+    p = (
+        db.query(CreditPayment)
+        .filter(CreditPayment.id == payment_id, CreditPayment.credit_id == credit_id, CreditPayment.company_id == cid)
+        .first()
+    )
     if not p:
         raise HTTPException(status_code=404, detail="还款记录不存在")
     if p.voucher_id:

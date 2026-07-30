@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import TenderProject, BidSubmission, BidExceptionEvent, User, AuditLog
 from app.schemas import BypassAction
 from app.permissions import check_approval_bypass
@@ -126,10 +126,11 @@ def list_tender_projects(
 @router.get("/tender-projects/{project_id}", response_model=TenderProjectResponse)
 def get_tender_project(
     project_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    p = db.query(TenderProject).filter(TenderProject.id == project_id).first()
+    p = get_company_scoped(db, TenderProject, project_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="招标项目不存在")
     return p
@@ -152,10 +153,11 @@ def create_tender_project(
 def update_tender_project(
     project_id: int,
     data: TenderProjectUpdate,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    p = db.query(TenderProject).filter(TenderProject.id == project_id).first()
+    p = get_company_scoped(db, TenderProject, project_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="招标项目不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -168,10 +170,11 @@ def update_tender_project(
 @router.delete("/tender-projects/{project_id}")
 def delete_tender_project(
     project_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    p = db.query(TenderProject).filter(TenderProject.id == project_id).first()
+    p = get_company_scoped(db, TenderProject, project_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="招标项目不存在")
     db.delete(p)
@@ -185,10 +188,11 @@ def delete_tender_project(
 @router.post("/tender-projects/{project_id}/review")
 def review_tender_project(
     project_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    p = db.query(TenderProject).filter(TenderProject.id == project_id).first()
+    p = get_company_scoped(db, TenderProject, project_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="招标项目不存在")
     p.reviewer_id = user.id
@@ -200,10 +204,11 @@ def review_tender_project(
 @router.post("/tender-projects/{project_id}/approve")
 def approve_tender_project(
     project_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    p = db.query(TenderProject).filter(TenderProject.id == project_id).first()
+    p = get_company_scoped(db, TenderProject, project_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="招标项目不存在")
     p.approver_id = user.id
@@ -218,6 +223,7 @@ def approve_tender_project(
 def bypass_tender_project(
     project_id: int,
     action: BypassAction,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
@@ -226,7 +232,7 @@ def bypass_tender_project(
     if err:
         raise HTTPException(status_code=403, detail=err)
 
-    p = db.query(TenderProject).filter(TenderProject.id == project_id).first()
+    p = get_company_scoped(db, TenderProject, project_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="招标项目不存在")
 
@@ -305,10 +311,11 @@ def list_bid_submissions(
 @router.get("/submissions/{submission_id}", response_model=BidSubmissionResponse)
 def get_bid_submission(
     submission_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    s = db.query(BidSubmission).filter(BidSubmission.id == submission_id).first()
+    s = get_company_scoped(db, BidSubmission, submission_id, cid)
     if not s:
         raise HTTPException(status_code=404, detail="投标项目不存在")
     return s
@@ -331,10 +338,11 @@ def create_bid_submission(
 def update_bid_submission(
     submission_id: int,
     data: BidSubmissionUpdate,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    s = db.query(BidSubmission).filter(BidSubmission.id == submission_id).first()
+    s = get_company_scoped(db, BidSubmission, submission_id, cid)
     if not s:
         raise HTTPException(status_code=404, detail="投标项目不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -347,10 +355,11 @@ def update_bid_submission(
 @router.delete("/submissions/{submission_id}")
 def delete_bid_submission(
     submission_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    s = db.query(BidSubmission).filter(BidSubmission.id == submission_id).first()
+    s = get_company_scoped(db, BidSubmission, submission_id, cid)
     if not s:
         raise HTTPException(status_code=404, detail="投标项目不存在")
     db.delete(s)
@@ -456,10 +465,11 @@ def list_exception_events(
 @router.get("/exceptions/{event_id}", response_model=BidExceptionResponse)
 def get_exception_event(
     event_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    e = db.query(BidExceptionEvent).filter(BidExceptionEvent.id == event_id).first()
+    e = get_company_scoped(db, BidExceptionEvent, event_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="例外事项不存在")
     return e
@@ -482,10 +492,11 @@ def create_exception_event(
 def update_exception_event(
     event_id: int,
     data: BidExceptionUpdate,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    e = db.query(BidExceptionEvent).filter(BidExceptionEvent.id == event_id).first()
+    e = get_company_scoped(db, BidExceptionEvent, event_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="例外事项不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -498,10 +509,11 @@ def update_exception_event(
 @router.delete("/exceptions/{event_id}")
 def delete_exception_event(
     event_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    e = db.query(BidExceptionEvent).filter(BidExceptionEvent.id == event_id).first()
+    e = get_company_scoped(db, BidExceptionEvent, event_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="例外事项不存在")
     db.delete(e)
@@ -515,10 +527,11 @@ def delete_exception_event(
 @router.post("/exceptions/{event_id}/review")
 def review_exception_event(
     event_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    e = db.query(BidExceptionEvent).filter(BidExceptionEvent.id == event_id).first()
+    e = get_company_scoped(db, BidExceptionEvent, event_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="例外事项不存在")
     e.reviewer_id = user.id
@@ -531,11 +544,12 @@ def review_exception_event(
 @router.post("/exceptions/{event_id}/approve")
 def approve_exception_event(
     event_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
     """批准例外事项，并联动更新关联的招标/投标项目状态以形成闭环"""
-    e = db.query(BidExceptionEvent).filter(BidExceptionEvent.id == event_id).first()
+    e = get_company_scoped(db, BidExceptionEvent, event_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="例外事项不存在")
     e.approver_id = user.id
@@ -578,6 +592,7 @@ def approve_exception_event(
 def bypass_exception_event(
     event_id: int,
     action: BypassAction,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
@@ -586,7 +601,7 @@ def bypass_exception_event(
     if err:
         raise HTTPException(status_code=403, detail=err)
 
-    e = db.query(BidExceptionEvent).filter(BidExceptionEvent.id == event_id).first()
+    e = get_company_scoped(db, BidExceptionEvent, event_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="例外事项不存在")
 
@@ -611,10 +626,11 @@ def bypass_exception_event(
 @router.post("/exceptions/{event_id}/reject")
 def reject_exception_event(
     event_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    e = db.query(BidExceptionEvent).filter(BidExceptionEvent.id == event_id).first()
+    e = get_company_scoped(db, BidExceptionEvent, event_id, cid)
     if not e:
         raise HTTPException(status_code=404, detail="例外事项不存在")
     e.status = "rejected"

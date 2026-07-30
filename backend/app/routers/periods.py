@@ -26,7 +26,7 @@ from app.schemas import (
     QuarterlyPeriodStatus,
     YearlyPeriodStatus,
 )
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.permissions import check_period_close, check_period_unclose
 
 router = APIRouter()
@@ -70,9 +70,7 @@ def _period_month_range(period: str) -> tuple[str, str]:
     return f"{period}-01", f"{period}-{last_day:02d}"
 
 
-def _auto_carry_forward(
-    db: Session, company_id: int, period: str, user_id: int
-) -> dict:
+def _auto_carry_forward(db: Session, company_id: int, period: str, user_id: int) -> dict:
     """自动执行损益结转：收入/费用科目余额 → 本年利润(4103)。
     返回 {'voucher_id': ..., 'entries': N, 'income_total': ..., 'expense_total': ...}。"""
     profit_account = (
@@ -132,14 +130,10 @@ def _auto_carry_forward(
 
         if account.balance_direction == "credit":
             # 收入类：贷方余额 → 借方结转
-            income_entries.append(
-                {"code": account.code, "name": account.name, "amount": abs(net)}
-            )
+            income_entries.append({"code": account.code, "name": account.name, "amount": abs(net)})
         else:
             # 费用/成本类：借方余额 → 贷方结转
-            expense_entries.append(
-                {"code": account.code, "name": account.name, "amount": abs(net)}
-            )
+            expense_entries.append({"code": account.code, "name": account.name, "amount": abs(net)})
 
     if not income_entries and not expense_entries:
         return {"skipped": True, "reason": "本月损益类科目无发生额，无需结转"}
@@ -467,11 +461,7 @@ def get_close_checks(
             unbalanced += 1
 
     can_close = unposted == 0 and unbalanced == 0
-    message = (
-        "可以关账"
-        if can_close
-        else f"未过账凭证 {unposted} 张，试算不平衡 {unbalanced} 张"
-    )
+    message = "可以关账" if can_close else f"未过账凭证 {unposted} 张，试算不平衡 {unbalanced} 张"
 
     return CloseCheckResult(
         period=period,
@@ -575,9 +565,7 @@ def list_carry_forwards(
     q = db.query(CarryForwardEntry).filter(CarryForwardEntry.company_id == company_id)
     if period:
         q = q.filter(CarryForwardEntry.period == period)
-    return q.order_by(
-        CarryForwardEntry.period.desc(), CarryForwardEntry.entry_type
-    ).all()
+    return q.order_by(CarryForwardEntry.period.desc(), CarryForwardEntry.entry_type).all()
 
 
 @router.post("/carry-forward", response_model=CarryForwardEntryResponse)
@@ -601,15 +589,14 @@ def create_carry_forward(
     return obj
 
 
-@router.post(
-    "/carry-forward/{entry_id}/execute", response_model=CarryForwardEntryResponse
-)
+@router.post("/carry-forward/{entry_id}/execute", response_model=CarryForwardEntryResponse)
 def execute_carry_forward(
     entry_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    obj = db.query(CarryForwardEntry).filter(CarryForwardEntry.id == entry_id).first()
+    obj = get_company_scoped(db, CarryForwardEntry, entry_id, cid)
     if not obj:
         raise HTTPException(404, "结转记录未找到")
     if obj.status == "executed":
@@ -668,12 +655,8 @@ def execute_carry_forward(
             .first()
         )
 
-        total_debit = float(agg[0]) + (
-            account.initial_balance if account.balance_direction == "debit" else 0
-        )
-        total_credit = float(agg[1]) + (
-            account.initial_balance if account.balance_direction == "credit" else 0
-        )
+        total_debit = float(agg[0]) + (account.initial_balance if account.balance_direction == "debit" else 0)
+        total_credit = float(agg[1]) + (account.initial_balance if account.balance_direction == "credit" else 0)
 
         net_balance = total_debit - total_credit
 
@@ -806,8 +789,9 @@ def delete_carry_forward(
     entry_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    obj = db.query(CarryForwardEntry).filter(CarryForwardEntry.id == entry_id).first()
+    obj = get_company_scoped(db, CarryForwardEntry, entry_id, cid)
     if not obj:
         raise HTTPException(404, "结转记录未找到")
     if obj.status == "executed":

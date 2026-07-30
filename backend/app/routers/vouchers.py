@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User, Voucher, VoucherEntry, BankSettlement, AccountingPeriod, AuditLog, Company, VoucherSequence
 from app.schemas import VoucherCreate, VoucherUpdate, VoucherResponse, ReverseVoucherRequest
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.permissions import (
     check_voucher_create,
     check_voucher_update,
@@ -185,9 +185,13 @@ def create_voucher(data: VoucherCreate, db: Session = Depends(get_db), user: Use
 
 @router.put("/{voucher_id}", response_model=VoucherResponse)
 def update_voucher(
-    voucher_id: int, data: VoucherUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    voucher_id: int,
+    data: VoucherUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status != "draft":
@@ -253,9 +257,14 @@ def update_voucher(
 
 
 @router.post("/{voucher_id}/approve", response_model=VoucherResponse)
-def approve_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def approve_voucher(
+    voucher_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """审核凭证。"""
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status != "draft":
@@ -277,9 +286,14 @@ def approve_voucher(voucher_id: int, db: Session = Depends(get_db), user: User =
 
 
 @router.post("/{voucher_id}/post", response_model=VoucherResponse)
-def post_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def post_voucher(
+    voucher_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """记账：影响科目余额。"""
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status not in ("draft", "approved"):
@@ -302,10 +316,14 @@ def post_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = De
 
 @router.post("/{voucher_id}/reverse", response_model=VoucherResponse)
 def reverse_voucher(
-    voucher_id: int, req: ReverseVoucherRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    voucher_id: int,
+    req: ReverseVoucherRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """反记账：需填写原因。"""
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status != "posted":
@@ -351,9 +369,14 @@ def reverse_voucher(
 
 
 @router.post("/{voucher_id}/unpost", response_model=VoucherResponse)
-def unpost_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def unpost_voucher(
+    voucher_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """取消记账：将已记账凭证回退到审核通过/草稿状态。"""
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status != "posted":
@@ -388,9 +411,14 @@ def unpost_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = 
 
 
 @router.post("/{voucher_id}/unapprove", response_model=VoucherResponse)
-def unapprove_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def unapprove_voucher(
+    voucher_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """取消审核：将已审核凭证回退到草稿状态。"""
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status != "approved":
@@ -423,9 +451,14 @@ def unapprove_voucher(voucher_id: int, db: Session = Depends(get_db), user: User
 
 
 @router.post("/{voucher_id}/unreverse", response_model=VoucherResponse)
-def unreverse_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def unreverse_voucher(
+    voucher_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """取消冲销：将已冲销凭证恢复为已记账状态。"""
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status != "reversed":
@@ -459,9 +492,14 @@ def unreverse_voucher(voucher_id: int, db: Session = Depends(get_db), user: User
 
 
 @router.delete("/{voucher_id}")
-def delete_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def delete_voucher(
+    voucher_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """删除草稿状态凭证。凭证号码不回收（VoucherSequence 只增不减）。"""
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status != "draft":
@@ -498,9 +536,14 @@ def delete_voucher(voucher_id: int, db: Session = Depends(get_db), user: User = 
 
 
 @router.post("/{voucher_id}/restore-draft", response_model=VoucherResponse)
-def restore_draft(voucher_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def restore_draft(
+    voucher_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
     """一键恢复草稿：reversed→posted→approved→draft 全链路回退。"""
-    voucher = db.query(Voucher).filter(Voucher.id == voucher_id).first()
+    voucher = get_company_scoped(db, Voucher, voucher_id, cid)
     if not voucher:
         raise HTTPException(status_code=404, detail="凭证不存在")
     if voucher.status == "draft":

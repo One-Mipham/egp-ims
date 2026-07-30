@@ -1,6 +1,7 @@
 """端到端全链路集成测试 — 从注册到报表"""
 
-import requests, json
+import requests
+import json
 
 BASE = "http://localhost:8000/api"
 TOKEN = None
@@ -20,7 +21,7 @@ def ok(resp, label=""):
     global PASS
     try:
         d = resp.json() if resp.text else {}
-    except:
+    except Exception:
         d = resp.text[:100]
     if resp.status_code < 400:
         PASS += 1
@@ -368,7 +369,7 @@ if inc:
 
 # ═══════════════════════════════════════
 print(f"\n{'=' * 50}")
-print(f"  🏁 E2E TEST COMPLETE")
+print("  🏁 E2E TEST COMPLETE")
 print(f"  ✅ Passed: {PASS}")
 print(f"  ❌ Failed: {FAIL}")
 print(f"{'=' * 50}")

@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import BoardFiling, BoardShareholder
 from app.schemas.board import (
     BoardFilingCreate,
@@ -153,8 +153,13 @@ def list_filings(
 
 
 @router.get("/filings/{filing_id}", response_model=BoardFilingResponse)
-def get_filing(filing_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    obj = db.query(BoardFiling).filter(BoardFiling.id == filing_id).first()
+def get_filing(
+    filing_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    obj = get_company_scoped(db, BoardFiling, filing_id, cid)
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")
     return obj
@@ -171,9 +176,13 @@ def create_filing(data: BoardFilingCreate, db: Session = Depends(get_db), user=D
 
 @router.put("/filings/{filing_id}", response_model=BoardFilingResponse)
 def update_filing(
-    filing_id: int, data: BoardFilingUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    filing_id: int,
+    data: BoardFilingUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
-    obj = db.query(BoardFiling).filter(BoardFiling.id == filing_id).first()
+    obj = get_company_scoped(db, BoardFiling, filing_id, cid)
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -184,8 +193,13 @@ def update_filing(
 
 
 @router.delete("/filings/{filing_id}")
-def delete_filing(filing_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    obj = db.query(BoardFiling).filter(BoardFiling.id == filing_id).first()
+def delete_filing(
+    filing_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    obj = get_company_scoped(db, BoardFiling, filing_id, cid)
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")
     db.delete(obj)
@@ -243,9 +257,13 @@ def create_shareholder(data: BoardShareholderCreate, db: Session = Depends(get_d
 
 @router.put("/shareholders/{shareholder_id}", response_model=BoardShareholderResponse)
 def update_shareholder(
-    shareholder_id: int, data: BoardShareholderUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    shareholder_id: int,
+    data: BoardShareholderUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
-    obj = db.query(BoardShareholder).filter(BoardShareholder.id == shareholder_id).first()
+    obj = get_company_scoped(db, BoardShareholder, shareholder_id, cid)
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -256,8 +274,13 @@ def update_shareholder(
 
 
 @router.delete("/shareholders/{shareholder_id}")
-def delete_shareholder(shareholder_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    obj = db.query(BoardShareholder).filter(BoardShareholder.id == shareholder_id).first()
+def delete_shareholder(
+    shareholder_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    obj = get_company_scoped(db, BoardShareholder, shareholder_id, cid)
     if not obj:
         raise HTTPException(status_code=404, detail="记录不存在")
     db.delete(obj)

@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 TAX_TYPES = [
@@ -92,8 +92,7 @@ class TaxDeclarationResponse(BaseModel):
     notes: Optional[str] = None
     created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaxDeclarationSummary(BaseModel):
@@ -153,8 +152,7 @@ class TaxInvoiceResponse(BaseModel):
     notes: Optional[str] = None
     created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaxInvoiceSummary(BaseModel):

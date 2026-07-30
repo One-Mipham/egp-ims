@@ -266,7 +266,7 @@ def main():
         print()
         verify(conn)
         print("\n✅ 内部用户预置完成！")
-        print(f"\n   三家公司的登录凭据：")
+        print("\n   三家公司的登录凭据：")
         for u in INTERNAL_USERS:
             print(f"   📧 {u['username']}")
         print(f"   🔑 统一密码: {SHARED_PASSWORD}")

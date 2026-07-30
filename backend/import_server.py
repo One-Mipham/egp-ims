@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Import real vouchers on the server."""
 
-import sys, os
+import sys
+import os
 
 os.chdir("/opt/egp-ims/intranet/backend")
 sys.path.insert(0, ".")
@@ -28,7 +29,7 @@ for row_idx in range(2, ws.max_row + 1):
         continue
     try:
         num = int(vno.split("-")[1])
-    except:
+    except (ValueError, IndexError):
         continue
 
     if num < prev_num and prev_num > 0:

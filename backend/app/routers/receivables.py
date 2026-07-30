@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import Receivable, ReceivablePayment, Counterparty, Voucher, VoucherEntry, AuditLog, User
 from app.schemas import (
     ReceivableCreate,
@@ -163,9 +163,13 @@ def create_receivable(data: ReceivableCreate, db: Session = Depends(get_db), use
 
 @router.put("/invoices/{inv_id}", response_model=ReceivableResponse)
 def update_receivable(
-    inv_id: int, data: ReceivableCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    inv_id: int,
+    data: ReceivableCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(Receivable).filter(Receivable.id == inv_id).first()
+    item = get_company_scoped(db, Receivable, inv_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="应收记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -181,8 +185,13 @@ def update_receivable(
 
 
 @router.delete("/invoices/{inv_id}")
-def delete_receivable(inv_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(Receivable).filter(Receivable.id == inv_id).first()
+def delete_receivable(
+    inv_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    item = get_company_scoped(db, Receivable, inv_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="应收记录不存在")
     _audit(db, user, "delete", "receivable", item.id, {"customer": item.customer_name, "invoice_no": item.invoice_no})
@@ -228,11 +237,14 @@ def list_payments(
 
 @router.post("/payments", response_model=ReceivablePaymentResponse)
 def create_payment(
-    data: ReceivablePaymentCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    data: ReceivablePaymentCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     if data.amount <= 0:
         raise HTTPException(status_code=400, detail="收款金额必须大于0")
-    inv = db.query(Receivable).filter(Receivable.id == data.receivable_id).first()
+    inv = get_company_scoped(db, Receivable, data.receivable_id, cid)
     if not inv:
         raise HTTPException(status_code=404, detail="应收记录不存在")
     if data.amount > inv.balance:

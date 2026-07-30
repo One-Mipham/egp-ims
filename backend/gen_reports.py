@@ -1,6 +1,7 @@
 """Generate May 2026 reports and compare with Excel."""
 
-import sys, os
+import sys
+import os
 
 os.chdir("/opt/egp-ims/intranet/backend")
 sys.path.insert(0, ".")
@@ -18,12 +19,7 @@ for v in vouchers:
     v.status = "posted"
 db.commit()
 
-accounts = (
-    db.query(Account)
-    .filter(Account.company_id == cid, Account.is_active == True)
-    .order_by(Account.code)
-    .all()
-)
+accounts = db.query(Account).filter(Account.company_id == cid, Account.is_active).order_by(Account.code).all()
 
 # Build activity
 may_act = defaultdict(lambda: {"d": 0.0, "c": 0.0})
@@ -39,9 +35,7 @@ for v in vouchers:
 
 
 def children(code):
-    return [code] + [
-        a.code for a in accounts if a.code != code and a.code.startswith(code)
-    ]
+    return [code] + [a.code for a in accounts if a.code != code and a.code.startswith(code)]
 
 
 # ============================
@@ -91,18 +85,14 @@ for a in accounts:
     may_c += mc
 
     if init != 0 or md != 0 or mc != 0:
-        print(
-            f"{a.code:10s} {a.name:24s} {init:>14,.2f} {md:>14,.2f} {mc:>14,.2f} {end:>14,.2f}"
-        )
+        print(f"{a.code:10s} {a.name:24s} {init:>14,.2f} {md:>14,.2f} {mc:>14,.2f} {end:>14,.2f}")
 
 print("-" * 90)
 print(f"{'TOTAL':34s} {'':>14s} {may_d:>14,.2f} {may_c:>14,.2f} {'':>14s}")
 print(
     f"  Init: Dr={dr_init:,.2f} Cr={cr_init:,.2f} Diff={abs(dr_init - cr_init):,.2f} {'OK' if abs(dr_init - cr_init) < 0.01 else 'IMBAL'}"  # noqa: E501
 )
-print(
-    f"  End:  Dr={edr:,.2f} Cr={ecr:,.2f} Diff={abs(edr - ecr):,.2f} {'OK' if abs(edr - ecr) < 0.01 else 'IMBAL'}"
-)
+print(f"  End:  Dr={edr:,.2f} Cr={ecr:,.2f} Diff={abs(edr - ecr):,.2f} {'OK' if abs(edr - ecr) < 0.01 else 'IMBAL'}")
 
 # ============================
 # Income Statement (May)
@@ -124,21 +114,15 @@ for a in accounts:
     if a.code.startswith("6") and a.category in ("profit_loss",):
         net = mc - md
         rev += net
-        print(
-            f"  [Revenue]  {a.code} {a.name:30s} Dr={md:>12,.2f} Cr={mc:>12,.2f} Net={net:>12,.2f}"
-        )
+        print(f"  [Revenue]  {a.code} {a.name:30s} Dr={md:>12,.2f} Cr={mc:>12,.2f} Net={net:>12,.2f}")
     elif a.code.startswith("5"):
         net = md - mc
         cost += net
-        print(
-            f"  [Cost]     {a.code} {a.name:30s} Dr={md:>12,.2f} Cr={mc:>12,.2f} Net={net:>12,.2f}"
-        )
+        print(f"  [Cost]     {a.code} {a.name:30s} Dr={md:>12,.2f} Cr={mc:>12,.2f} Net={net:>12,.2f}")
     elif a.code.startswith("6"):
         net = md - mc
         exp += net
-        print(
-            f"  [Expense]  {a.code} {a.name:30s} Dr={md:>12,.2f} Cr={mc:>12,.2f} Net={net:>12,.2f}"
-        )
+        print(f"  [Expense]  {a.code} {a.name:30s} Dr={md:>12,.2f} Cr={mc:>12,.2f} Net={net:>12,.2f}")
 
 print(f"\n  Revenue:  {rev:>14,.2f}")
 print(f"  Cost:     {cost:>14,.2f}")

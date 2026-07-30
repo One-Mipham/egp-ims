@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import (
     User,
     AuditLog,
@@ -303,10 +303,11 @@ def list_approvals(
 def approve_step(
     record_id: int,
     body: ApprovalAction = ApprovalAction(),
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    record = db.query(ApprovalRecord).filter(ApprovalRecord.id == record_id).first()
+    record = get_company_scoped(db, ApprovalRecord, record_id, cid)
     if not record:
         raise HTTPException(status_code=404, detail="记录不存在")
     err = _process_approval(db, record.target_type, record.target_id, user, "approve", body.comment)
@@ -319,10 +320,11 @@ def approve_step(
 def reject_step(
     record_id: int,
     body: ApprovalAction = ApprovalAction(),
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    record = db.query(ApprovalRecord).filter(ApprovalRecord.id == record_id).first()
+    record = get_company_scoped(db, ApprovalRecord, record_id, cid)
     if not record:
         raise HTTPException(status_code=404, detail="记录不存在")
     err = _process_approval(db, record.target_type, record.target_id, user, "reject", body.comment)
@@ -413,10 +415,11 @@ def create_document(
 def update_document(
     doc_id: int,
     data: AdminDocumentUpdate,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    doc = db.query(AdminDocument).filter(AdminDocument.id == doc_id).first()
+    doc = get_company_scoped(db, AdminDocument, doc_id, cid)
     if not doc:
         raise HTTPException(status_code=404, detail="文件不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -430,10 +433,11 @@ def update_document(
 @router.delete("/documents/{doc_id}")
 def delete_document(
     doc_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    doc = db.query(AdminDocument).filter(AdminDocument.id == doc_id).first()
+    doc = get_company_scoped(db, AdminDocument, doc_id, cid)
     if not doc:
         raise HTTPException(status_code=404, detail="文件不存在")
     if doc.status != "draft":
@@ -449,10 +453,11 @@ def delete_document(
 def submit_document(
     doc_id: int,
     body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    doc = db.query(AdminDocument).filter(AdminDocument.id == doc_id).first()
+    doc = get_company_scoped(db, AdminDocument, doc_id, cid)
     if not doc:
         raise HTTPException(status_code=404, detail="文件不存在")
     if doc.status != "draft":
@@ -466,10 +471,11 @@ def submit_document(
 @router.post("/documents/{doc_id}/issue")
 def issue_document(
     doc_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    doc = db.query(AdminDocument).filter(AdminDocument.id == doc_id).first()
+    doc = get_company_scoped(db, AdminDocument, doc_id, cid)
     if not doc:
         raise HTTPException(status_code=404, detail="文件不存在")
     if doc.status != "approved":
@@ -506,9 +512,13 @@ def create_vehicle_supplier(
 
 @router.put("/vehicles/suppliers/{sid}", response_model=VehicleSupplierResponse)
 def update_vehicle_supplier(
-    sid: int, data: VehicleSupplierUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    sid: int,
+    data: VehicleSupplierUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    s = db.query(VehicleSupplier).filter(VehicleSupplier.id == sid).first()
+    s = get_company_scoped(db, VehicleSupplier, sid, cid)
     if not s:
         raise HTTPException(status_code=404, detail="供应商不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -519,8 +529,13 @@ def update_vehicle_supplier(
 
 
 @router.delete("/vehicles/suppliers/{sid}")
-def delete_vehicle_supplier(sid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    s = db.query(VehicleSupplier).filter(VehicleSupplier.id == sid).first()
+def delete_vehicle_supplier(
+    sid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    s = get_company_scoped(db, VehicleSupplier, sid, cid)
     if not s:
         raise HTTPException(status_code=404, detail="供应商不存在")
     db.delete(s)
@@ -557,9 +572,13 @@ def create_vehicle_purchase(
 
 @router.put("/vehicles/purchases/{pid}", response_model=VehiclePurchaseResponse)
 def update_vehicle_purchase(
-    pid: int, data: VehiclePurchaseUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    pid: int,
+    data: VehiclePurchaseUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    vp = db.query(VehiclePurchase).filter(VehiclePurchase.id == pid).first()
+    vp = get_company_scoped(db, VehiclePurchase, pid, cid)
     if not vp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -570,8 +589,13 @@ def update_vehicle_purchase(
 
 
 @router.delete("/vehicles/purchases/{pid}")
-def delete_vehicle_purchase(pid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    vp = db.query(VehiclePurchase).filter(VehiclePurchase.id == pid).first()
+def delete_vehicle_purchase(
+    pid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    vp = get_company_scoped(db, VehiclePurchase, pid, cid)
     if not vp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     if vp.status != "draft":
@@ -585,9 +609,13 @@ def delete_vehicle_purchase(pid: int, db: Session = Depends(get_db), user: User 
 
 @router.post("/vehicles/purchases/{pid}/submit")
 def submit_vehicle_purchase(
-    pid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    pid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    vp = db.query(VehiclePurchase).filter(VehiclePurchase.id == pid).first()
+    vp = get_company_scoped(db, VehiclePurchase, pid, cid)
     if not vp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     if vp.status != "draft":
@@ -626,9 +654,13 @@ def create_vehicle(data: VehicleCreate, db: Session = Depends(get_db), user: Use
 
 @router.put("/vehicles/{vid}", response_model=VehicleResponse)
 def update_vehicle(
-    vid: int, data: VehicleUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    vid: int,
+    data: VehicleUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    v = db.query(Vehicle).filter(Vehicle.id == vid).first()
+    v = get_company_scoped(db, Vehicle, vid, cid)
     if not v:
         raise HTTPException(status_code=404, detail="车辆不存在")
     for k, val in data.model_dump(exclude_unset=True).items():
@@ -640,8 +672,13 @@ def update_vehicle(
 
 
 @router.delete("/vehicles/{vid}")
-def delete_vehicle(vid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    v = db.query(Vehicle).filter(Vehicle.id == vid).first()
+def delete_vehicle(
+    vid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    v = get_company_scoped(db, Vehicle, vid, cid)
     if not v:
         raise HTTPException(status_code=404, detail="车辆不存在")
     cid = v.company_id
@@ -680,9 +717,13 @@ def create_vehicle_maintenance(
 
 @router.put("/vehicles/maintenance/{mid}", response_model=VehicleMaintenanceResponse)
 def update_vehicle_maintenance(
-    mid: int, data: VehicleMaintenanceUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    mid: int,
+    data: VehicleMaintenanceUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    vm = db.query(VehicleMaintenance).filter(VehicleMaintenance.id == mid).first()
+    vm = get_company_scoped(db, VehicleMaintenance, mid, cid)
     if not vm:
         raise HTTPException(status_code=404, detail="维保申请不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -693,8 +734,13 @@ def update_vehicle_maintenance(
 
 
 @router.delete("/vehicles/maintenance/{mid}")
-def delete_vehicle_maintenance(mid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    vm = db.query(VehicleMaintenance).filter(VehicleMaintenance.id == mid).first()
+def delete_vehicle_maintenance(
+    mid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    vm = get_company_scoped(db, VehicleMaintenance, mid, cid)
     if not vm:
         raise HTTPException(status_code=404, detail="维保申请不存在")
     if vm.status != "draft":
@@ -708,9 +754,13 @@ def delete_vehicle_maintenance(mid: int, db: Session = Depends(get_db), user: Us
 
 @router.post("/vehicles/maintenance/{mid}/submit")
 def submit_vehicle_maintenance(
-    mid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    mid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    vm = db.query(VehicleMaintenance).filter(VehicleMaintenance.id == mid).first()
+    vm = get_company_scoped(db, VehicleMaintenance, mid, cid)
     if not vm:
         raise HTTPException(status_code=404, detail="维保申请不存在")
     if vm.status != "draft":
@@ -751,9 +801,13 @@ def create_insurance(
 
 @router.put("/insurance/{iid}", response_model=InsurancePolicyResponse)
 def update_insurance(
-    iid: int, data: InsurancePolicyUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    iid: int,
+    data: InsurancePolicyUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    ip = db.query(InsurancePolicy).filter(InsurancePolicy.id == iid).first()
+    ip = get_company_scoped(db, InsurancePolicy, iid, cid)
     if not ip:
         raise HTTPException(status_code=404, detail="保单不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -764,8 +818,13 @@ def update_insurance(
 
 
 @router.delete("/insurance/{iid}")
-def delete_insurance(iid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    ip = db.query(InsurancePolicy).filter(InsurancePolicy.id == iid).first()
+def delete_insurance(
+    iid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    ip = get_company_scoped(db, InsurancePolicy, iid, cid)
     if not ip:
         raise HTTPException(status_code=404, detail="保单不存在")
     if ip.status != "draft":
@@ -779,9 +838,13 @@ def delete_insurance(iid: int, db: Session = Depends(get_db), user: User = Depen
 
 @router.post("/insurance/{iid}/submit")
 def submit_insurance(
-    iid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    iid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    ip = db.query(InsurancePolicy).filter(InsurancePolicy.id == iid).first()
+    ip = get_company_scoped(db, InsurancePolicy, iid, cid)
     if not ip:
         raise HTTPException(status_code=404, detail="保单不存在")
     if ip.status != "draft":
@@ -842,9 +905,13 @@ def create_stock_category(
 
 @router.put("/stock/categories/{cid}", response_model=StockCategoryResponse)
 def update_stock_category(
-    cid: int, data: StockCategoryUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    cid: int,
+    data: StockCategoryUpdate,
+    _cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    c = db.query(StockCategory).filter(StockCategory.id == cid).first()
+    c = get_company_scoped(db, StockCategory, cid, _cid)
     if not c:
         raise HTTPException(status_code=404, detail="类别不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -855,8 +922,13 @@ def update_stock_category(
 
 
 @router.delete("/stock/categories/{cid}")
-def delete_stock_category(cid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    c = db.query(StockCategory).filter(StockCategory.id == cid).first()
+def delete_stock_category(
+    cid: int,
+    _cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    c = get_company_scoped(db, StockCategory, cid, _cid)
     if not c:
         raise HTTPException(status_code=404, detail="类别不存在")
     c.is_active = False
@@ -895,9 +967,13 @@ def create_stock_asset(data: StockAssetCreate, db: Session = Depends(get_db), us
 
 @router.put("/stock/assets/{aid}", response_model=StockAssetResponse)
 def update_stock_asset(
-    aid: int, data: StockAssetUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    aid: int,
+    data: StockAssetUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    a = db.query(StockAsset).filter(StockAsset.id == aid).first()
+    a = get_company_scoped(db, StockAsset, aid, cid)
     if not a:
         raise HTTPException(status_code=404, detail="资产不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -908,8 +984,13 @@ def update_stock_asset(
 
 
 @router.delete("/stock/assets/{aid}")
-def delete_stock_asset(aid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    a = db.query(StockAsset).filter(StockAsset.id == aid).first()
+def delete_stock_asset(
+    aid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    a = get_company_scoped(db, StockAsset, aid, cid)
     if not a:
         raise HTTPException(status_code=404, detail="资产不存在")
     cid = a.company_id
@@ -948,9 +1029,13 @@ def create_stock_purchase(
 
 @router.put("/stock/assets/purchases/{pid}", response_model=StockPurchaseResponse)
 def update_stock_purchase(
-    pid: int, data: StockPurchaseUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    pid: int,
+    data: StockPurchaseUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    sp = db.query(StockPurchase).filter(StockPurchase.id == pid).first()
+    sp = get_company_scoped(db, StockPurchase, pid, cid)
     if not sp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -961,8 +1046,13 @@ def update_stock_purchase(
 
 
 @router.delete("/stock/assets/purchases/{pid}")
-def delete_stock_purchase(pid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    sp = db.query(StockPurchase).filter(StockPurchase.id == pid).first()
+def delete_stock_purchase(
+    pid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    sp = get_company_scoped(db, StockPurchase, pid, cid)
     if not sp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     if sp.status != "draft":
@@ -976,9 +1066,13 @@ def delete_stock_purchase(pid: int, db: Session = Depends(get_db), user: User = 
 
 @router.post("/stock/assets/purchases/{pid}/submit")
 def submit_stock_purchase(
-    pid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    pid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    sp = db.query(StockPurchase).filter(StockPurchase.id == pid).first()
+    sp = get_company_scoped(db, StockPurchase, pid, cid)
     if not sp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     if sp.status != "draft":
@@ -1018,9 +1112,13 @@ def create_stock_requisition(
 
 @router.put("/stock/assets/requisitions/{rid}", response_model=StockRequisitionResponse)
 def update_stock_requisition(
-    rid: int, data: StockRequisitionUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    rid: int,
+    data: StockRequisitionUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    sr = db.query(StockRequisition).filter(StockRequisition.id == rid).first()
+    sr = get_company_scoped(db, StockRequisition, rid, cid)
     if not sr:
         raise HTTPException(status_code=404, detail="领用申请不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1031,8 +1129,13 @@ def update_stock_requisition(
 
 
 @router.delete("/stock/assets/requisitions/{rid}")
-def delete_stock_requisition(rid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    sr = db.query(StockRequisition).filter(StockRequisition.id == rid).first()
+def delete_stock_requisition(
+    rid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    sr = get_company_scoped(db, StockRequisition, rid, cid)
     if not sr:
         raise HTTPException(status_code=404, detail="领用申请不存在")
     if sr.status != "draft":
@@ -1046,9 +1149,13 @@ def delete_stock_requisition(rid: int, db: Session = Depends(get_db), user: User
 
 @router.post("/stock/assets/requisitions/{rid}/submit")
 def submit_stock_requisition(
-    rid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    rid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    sr = db.query(StockRequisition).filter(StockRequisition.id == rid).first()
+    sr = get_company_scoped(db, StockRequisition, rid, cid)
     if not sr:
         raise HTTPException(status_code=404, detail="领用申请不存在")
     if sr.status != "draft":
@@ -1088,9 +1195,13 @@ def create_stock_inbound(
 
 @router.put("/stock/assets/inbound/{iid}", response_model=StockInboundResponse)
 def update_stock_inbound(
-    iid: int, data: StockInboundUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    iid: int,
+    data: StockInboundUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    si = db.query(StockInbound).filter(StockInbound.id == iid).first()
+    si = get_company_scoped(db, StockInbound, iid, cid)
     if not si:
         raise HTTPException(status_code=404, detail="入库记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1101,8 +1212,13 @@ def update_stock_inbound(
 
 
 @router.delete("/stock/assets/inbound/{iid}")
-def delete_stock_inbound(iid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    si = db.query(StockInbound).filter(StockInbound.id == iid).first()
+def delete_stock_inbound(
+    iid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    si = get_company_scoped(db, StockInbound, iid, cid)
     if not si:
         raise HTTPException(status_code=404, detail="入库记录不存在")
     if si.status != "draft":
@@ -1116,9 +1232,13 @@ def delete_stock_inbound(iid: int, db: Session = Depends(get_db), user: User = D
 
 @router.post("/stock/assets/inbound/{iid}/submit")
 def submit_stock_inbound(
-    iid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    iid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    si = db.query(StockInbound).filter(StockInbound.id == iid).first()
+    si = get_company_scoped(db, StockInbound, iid, cid)
     if not si:
         raise HTTPException(status_code=404, detail="入库记录不存在")
     if si.status != "draft":
@@ -1158,9 +1278,13 @@ def create_stock_outbound(
 
 @router.put("/stock/assets/outbound/{oid}", response_model=StockOutboundResponse)
 def update_stock_outbound(
-    oid: int, data: StockOutboundUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    oid: int,
+    data: StockOutboundUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    so = db.query(StockOutbound).filter(StockOutbound.id == oid).first()
+    so = get_company_scoped(db, StockOutbound, oid, cid)
     if not so:
         raise HTTPException(status_code=404, detail="出库记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1171,8 +1295,13 @@ def update_stock_outbound(
 
 
 @router.delete("/stock/assets/outbound/{oid}")
-def delete_stock_outbound(oid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    so = db.query(StockOutbound).filter(StockOutbound.id == oid).first()
+def delete_stock_outbound(
+    oid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    so = get_company_scoped(db, StockOutbound, oid, cid)
     if not so:
         raise HTTPException(status_code=404, detail="出库记录不存在")
     if so.status != "draft":
@@ -1186,9 +1315,13 @@ def delete_stock_outbound(oid: int, db: Session = Depends(get_db), user: User = 
 
 @router.post("/stock/assets/outbound/{oid}/submit")
 def submit_stock_outbound(
-    oid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    oid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    so = db.query(StockOutbound).filter(StockOutbound.id == oid).first()
+    so = get_company_scoped(db, StockOutbound, oid, cid)
     if not so:
         raise HTTPException(status_code=404, detail="出库记录不存在")
     if so.status != "draft":
@@ -1221,9 +1354,13 @@ def create_stock_count(data: StockCountCreate, db: Session = Depends(get_db), us
 
 @router.put("/stock/assets/counts/{cid}", response_model=StockCountResponse)
 def update_stock_count(
-    cid: int, data: StockCountUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    cid: int,
+    data: StockCountUpdate,
+    _cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    sc = db.query(StockCount).filter(StockCount.id == cid).first()
+    sc = get_company_scoped(db, StockCount, cid, _cid)
     if not sc:
         raise HTTPException(status_code=404, detail="盘库记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1234,8 +1371,13 @@ def update_stock_count(
 
 
 @router.delete("/stock/assets/counts/{cid}")
-def delete_stock_count(cid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    sc = db.query(StockCount).filter(StockCount.id == cid).first()
+def delete_stock_count(
+    cid: int,
+    _cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    sc = get_company_scoped(db, StockCount, cid, _cid)
     if not sc:
         raise HTTPException(status_code=404, detail="盘库记录不存在")
     cid_val = sc.company_id
@@ -1273,9 +1415,13 @@ def create_gift_category(
 
 @router.put("/stock/gifts/categories/{cid}", response_model=GiftCategoryResponse)
 def update_gift_category(
-    cid: int, data: GiftCategoryUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    cid: int,
+    data: GiftCategoryUpdate,
+    _cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    c = db.query(GiftCategory).filter(GiftCategory.id == cid).first()
+    c = get_company_scoped(db, GiftCategory, cid, _cid)
     if not c:
         raise HTTPException(status_code=404, detail="类别不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1286,8 +1432,13 @@ def update_gift_category(
 
 
 @router.delete("/stock/gifts/categories/{cid}")
-def delete_gift_category(cid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    c = db.query(GiftCategory).filter(GiftCategory.id == cid).first()
+def delete_gift_category(
+    cid: int,
+    _cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    c = get_company_scoped(db, GiftCategory, cid, _cid)
     if not c:
         raise HTTPException(status_code=404, detail="类别不存在")
     c.is_active = False
@@ -1323,9 +1474,13 @@ def create_stock_gift(data: StockGiftCreate, db: Session = Depends(get_db), user
 
 @router.put("/stock/gifts/{gid}", response_model=StockGiftResponse)
 def update_stock_gift(
-    gid: int, data: StockGiftUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    gid: int,
+    data: StockGiftUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    g = db.query(StockGift).filter(StockGift.id == gid).first()
+    g = get_company_scoped(db, StockGift, gid, cid)
     if not g:
         raise HTTPException(status_code=404, detail="礼品不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1336,8 +1491,13 @@ def update_stock_gift(
 
 
 @router.delete("/stock/gifts/{gid}")
-def delete_stock_gift(gid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    g = db.query(StockGift).filter(StockGift.id == gid).first()
+def delete_stock_gift(
+    gid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    g = get_company_scoped(db, StockGift, gid, cid)
     if not g:
         raise HTTPException(status_code=404, detail="礼品不存在")
     cid = g.company_id
@@ -1376,9 +1536,13 @@ def create_gift_purchase(
 
 @router.put("/stock/gifts/purchases/{pid}", response_model=StockGiftPurchaseResponse)
 def update_gift_purchase(
-    pid: int, data: StockGiftPurchaseUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    pid: int,
+    data: StockGiftPurchaseUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    gp = db.query(StockGiftPurchase).filter(StockGiftPurchase.id == pid).first()
+    gp = get_company_scoped(db, StockGiftPurchase, pid, cid)
     if not gp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1389,8 +1553,13 @@ def update_gift_purchase(
 
 
 @router.delete("/stock/gifts/purchases/{pid}")
-def delete_gift_purchase(pid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    gp = db.query(StockGiftPurchase).filter(StockGiftPurchase.id == pid).first()
+def delete_gift_purchase(
+    pid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    gp = get_company_scoped(db, StockGiftPurchase, pid, cid)
     if not gp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     if gp.status != "draft":
@@ -1404,9 +1573,13 @@ def delete_gift_purchase(pid: int, db: Session = Depends(get_db), user: User = D
 
 @router.post("/stock/gifts/purchases/{pid}/submit")
 def submit_gift_purchase(
-    pid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    pid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    gp = db.query(StockGiftPurchase).filter(StockGiftPurchase.id == pid).first()
+    gp = get_company_scoped(db, StockGiftPurchase, pid, cid)
     if not gp:
         raise HTTPException(status_code=404, detail="采购申请不存在")
     if gp.status != "draft":
@@ -1446,9 +1619,13 @@ def create_gift_requisition(
 
 @router.put("/stock/gifts/requisitions/{rid}", response_model=StockGiftRequisitionResponse)
 def update_gift_requisition(
-    rid: int, data: StockGiftRequisitionUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    rid: int,
+    data: StockGiftRequisitionUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    gr = db.query(StockGiftRequisition).filter(StockGiftRequisition.id == rid).first()
+    gr = get_company_scoped(db, StockGiftRequisition, rid, cid)
     if not gr:
         raise HTTPException(status_code=404, detail="领用申请不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1459,8 +1636,13 @@ def update_gift_requisition(
 
 
 @router.delete("/stock/gifts/requisitions/{rid}")
-def delete_gift_requisition(rid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    gr = db.query(StockGiftRequisition).filter(StockGiftRequisition.id == rid).first()
+def delete_gift_requisition(
+    rid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    gr = get_company_scoped(db, StockGiftRequisition, rid, cid)
     if not gr:
         raise HTTPException(status_code=404, detail="领用申请不存在")
     if gr.status != "draft":
@@ -1474,9 +1656,13 @@ def delete_gift_requisition(rid: int, db: Session = Depends(get_db), user: User 
 
 @router.post("/stock/gifts/requisitions/{rid}/submit")
 def submit_gift_requisition(
-    rid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    rid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    gr = db.query(StockGiftRequisition).filter(StockGiftRequisition.id == rid).first()
+    gr = get_company_scoped(db, StockGiftRequisition, rid, cid)
     if not gr:
         raise HTTPException(status_code=404, detail="领用申请不存在")
     if gr.status != "draft":
@@ -1516,9 +1702,13 @@ def create_gift_inbound(
 
 @router.put("/stock/gifts/inbound/{iid}", response_model=StockGiftInboundResponse)
 def update_gift_inbound(
-    iid: int, data: StockGiftInboundUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    iid: int,
+    data: StockGiftInboundUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    gi = db.query(StockGiftInbound).filter(StockGiftInbound.id == iid).first()
+    gi = get_company_scoped(db, StockGiftInbound, iid, cid)
     if not gi:
         raise HTTPException(status_code=404, detail="入库记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1529,8 +1719,13 @@ def update_gift_inbound(
 
 
 @router.delete("/stock/gifts/inbound/{iid}")
-def delete_gift_inbound(iid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    gi = db.query(StockGiftInbound).filter(StockGiftInbound.id == iid).first()
+def delete_gift_inbound(
+    iid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    gi = get_company_scoped(db, StockGiftInbound, iid, cid)
     if not gi:
         raise HTTPException(status_code=404, detail="入库记录不存在")
     if gi.status != "draft":
@@ -1544,9 +1739,13 @@ def delete_gift_inbound(iid: int, db: Session = Depends(get_db), user: User = De
 
 @router.post("/stock/gifts/inbound/{iid}/submit")
 def submit_gift_inbound(
-    iid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    iid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    gi = db.query(StockGiftInbound).filter(StockGiftInbound.id == iid).first()
+    gi = get_company_scoped(db, StockGiftInbound, iid, cid)
     if not gi:
         raise HTTPException(status_code=404, detail="入库记录不存在")
     if gi.status != "draft":
@@ -1586,9 +1785,13 @@ def create_gift_outbound(
 
 @router.put("/stock/gifts/outbound/{oid}", response_model=StockGiftOutboundResponse)
 def update_gift_outbound(
-    oid: int, data: StockGiftOutboundUpdate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    oid: int,
+    data: StockGiftOutboundUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    go = db.query(StockGiftOutbound).filter(StockGiftOutbound.id == oid).first()
+    go = get_company_scoped(db, StockGiftOutbound, oid, cid)
     if not go:
         raise HTTPException(status_code=404, detail="出库记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -1599,8 +1802,13 @@ def update_gift_outbound(
 
 
 @router.delete("/stock/gifts/outbound/{oid}")
-def delete_gift_outbound(oid: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    go = db.query(StockGiftOutbound).filter(StockGiftOutbound.id == oid).first()
+def delete_gift_outbound(
+    oid: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    go = get_company_scoped(db, StockGiftOutbound, oid, cid)
     if not go:
         raise HTTPException(status_code=404, detail="出库记录不存在")
     if go.status != "draft":
@@ -1614,9 +1822,13 @@ def delete_gift_outbound(oid: int, db: Session = Depends(get_db), user: User = D
 
 @router.post("/stock/gifts/outbound/{oid}/submit")
 def submit_gift_outbound(
-    oid: int, body: SubmitApprovalRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    oid: int,
+    body: SubmitApprovalRequest,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    go = db.query(StockGiftOutbound).filter(StockGiftOutbound.id == oid).first()
+    go = get_company_scoped(db, StockGiftOutbound, oid, cid)
     if not go:
         raise HTTPException(status_code=404, detail="出库记录不存在")
     if go.status != "draft":

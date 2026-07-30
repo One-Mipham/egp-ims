@@ -97,11 +97,7 @@ def import_accounts(db, company_id):
         code = str(row["code"]).strip()
         if not code or code == "nan":
             continue
-        existing = (
-            db.query(Account)
-            .filter(Account.company_id == company_id, Account.code == code)
-            .first()
-        )
+        existing = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
         if existing:
             existing.aux_dept = int(row["aux_dept"] or 0)
             existing.aux_person = int(row["aux_person"] or 0)
@@ -109,11 +105,7 @@ def import_accounts(db, company_id):
             existing.aux_project = int(row["aux_project"] or 0)
             updated += 1
         else:
-            level = (
-                1
-                if len(code) <= 4
-                else (2 if len(code) == 6 else (3 if len(code) == 8 else 4))
-            )
+            level = 1 if len(code) <= 4 else (2 if len(code) == 6 else (3 if len(code) == 8 else 4))
             parent = None
             if level > 1:
                 parent_code_len = 4 + (level - 2) * 2
@@ -172,9 +164,7 @@ def set_opening_balances(db, company_id):
     all_codes = {a["code"] for a in accounts_data}
     # Leaf = no other account has this code as prefix
     leaves = {
-        a["code"]: a
-        for a in accounts_data
-        if not any(c.startswith(a["code"]) and c != a["code"] for c in all_codes)
+        a["code"]: a for a in accounts_data if not any(c.startswith(a["code"]) and c != a["code"] for c in all_codes)
     }
 
     all_accounts = db.query(Account).filter(Account.company_id == company_id).all()
@@ -209,9 +199,7 @@ def set_opening_balances(db, company_id):
             pc = child.parent_code or (child.code[:4] if len(child.code) > 4 else None)
             if pc and pc in code_to_acct:
                 parent = code_to_acct[pc]
-                parent.initial_balance = (parent.initial_balance or 0.0) + (
-                    child.initial_balance or 0.0
-                )
+                parent.initial_balance = (parent.initial_balance or 0.0) + (child.initial_balance or 0.0)
                 recomputed += 1
 
     db.commit()
@@ -229,11 +217,7 @@ def import_counterparties(db, company_id):
         name = str(row.iloc[1]).strip()
         if not code or code == "nan" or not name or name == "nan":
             continue
-        if (
-            db.query(Counterparty)
-            .filter(Counterparty.company_id == company_id, Counterparty.code == code)
-            .first()
-        ):
+        if db.query(Counterparty).filter(Counterparty.company_id == company_id, Counterparty.code == code).first():
             continue
         cat_code = str(row.iloc[4]).strip() if pd.notna(row.iloc[4]) else "0000001"
         cat_name = str(row.iloc[5]).strip() if pd.notna(row.iloc[5]) else "咨询"
@@ -244,9 +228,7 @@ def import_counterparties(db, company_id):
                 name=name,
                 category_code=cat_code,
                 category=cat_name,
-                contact_person=str(row.iloc[16] or "").strip()
-                if pd.notna(row.iloc[16])
-                else "",
+                contact_person=str(row.iloc[16] or "").strip() if pd.notna(row.iloc[16]) else "",
                 phone=str(row.iloc[21] or "").strip() if pd.notna(row.iloc[21]) else "",
             )
         )
@@ -265,17 +247,9 @@ def import_employees(db, company_id):
         name = str(row.iloc[1]).strip() if pd.notna(row.iloc[1]) else ""
         if not name or name == "nan":
             continue
-        if (
-            db.query(Person)
-            .filter(Person.company_id == company_id, Person.name == name)
-            .first()
-        ):
+        if db.query(Person).filter(Person.company_id == company_id, Person.name == name).first():
             continue
-        code = (
-            str(row.iloc[0]).strip()
-            if pd.notna(row.iloc[0])
-            else f"EMP{created + 1:04d}"
-        )
+        code = str(row.iloc[0]).strip() if pd.notna(row.iloc[0]) else f"EMP{created + 1:04d}"
         dept_code = str(row.iloc[3]).strip() if pd.notna(row.iloc[3]) else None
         db.add(
             Person(
@@ -292,10 +266,7 @@ def import_employees(db, company_id):
 
 def import_departments(db, company_id):
     """从原系统科目表的辅助核算配置推断并创建部门。"""
-    existing = {
-        d.name
-        for d in db.query(Department).filter(Department.company_id == company_id).all()
-    }
+    existing = {d.name for d in db.query(Department).filter(Department.company_id == company_id).all()}
     # 利美融信的部门来自原系统往来单位中的分管部门
     df = read_sheet("往来单位.xlsx", "往来单位", header_row=1)
     if df is None:
@@ -313,9 +284,7 @@ def import_departments(db, company_id):
         db.add(
             Department(
                 company_id=company_id,
-                code=dept_code
-                if dept_code and dept_code != "nan"
-                else f"D{created + 1:03d}",
+                code=dept_code if dept_code and dept_code != "nan" else f"D{created + 1:03d}",
                 name=dept_name,
             )
         )
@@ -353,18 +322,12 @@ def create_period_vouchers(db, company_id):
     for _, row in df.iterrows():
         cat = row.iloc[1]
         code = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else ""
-        if (
-            not code
-            or code == "nan"
-            or cat not in ("资产", "负债", "权益", "成本", "损益")
-        ):
+        if not code or code == "nan" or cat not in ("资产", "负债", "权益", "成本", "损益"):
             continue
         name = str(row.iloc[3]).strip() if pd.notna(row.iloc[3]) else ""
         period_dr = float(row.iloc[7]) if pd.notna(row.iloc[7]) else 0.0
         period_cr = float(row.iloc[8]) if pd.notna(row.iloc[8]) else 0.0
-        all_rows.append(
-            {"code": code, "name": name, "period_dr": period_dr, "period_cr": period_cr}
-        )
+        all_rows.append({"code": code, "name": name, "period_dr": period_dr, "period_cr": period_cr})
 
     all_codes = {r["code"] for r in all_rows}
     # Use only leaf accounts
@@ -550,30 +513,20 @@ def _import_simple(
         return 0
     created = 0
     for _, row in df.iterrows():
-        code = (
-            str(row.iloc[code_cols[0]]).strip()
-            if pd.notna(row.iloc[code_cols[0]])
-            else ""
-        )
+        code = str(row.iloc[code_cols[0]]).strip() if pd.notna(row.iloc[code_cols[0]]) else ""
         name = str(row.iloc[name_col]).strip() if pd.notna(row.iloc[name_col]) else ""
         if (not code or code == "nan") and (not name or name == "nan"):
             continue
         if not code or code == "nan":
             code = name
-        if (
-            db.query(model)
-            .filter(model.company_id == company_id, model.code == code)
-            .first()
-        ):
+        if db.query(model).filter(model.company_id == company_id, model.code == code).first():
             continue
         kwargs = {"company_id": company_id, "code": code, "name": name}
         if extra_fields:
             for col_idx, attr in extra_fields:
                 val = row.iloc[col_idx] if pd.notna(row.iloc[col_idx]) else None
                 if val is not None and str(val) != "nan":
-                    kwargs[attr] = (
-                        str(val).strip() if isinstance(val, str) else float(val)
-                    )
+                    kwargs[attr] = str(val).strip() if isinstance(val, str) else float(val)
         db.add(model(**kwargs))
         created += 1
     db.commit()
@@ -585,9 +538,7 @@ def import_all_master_data(db, company_id):
     results = {}
 
     # 1. Regions
-    results["地区"] = _import_simple(
-        db, company_id, Region, "地区.xlsx", "地区", [0], 1, [(2, "parent_code")]
-    )
+    results["地区"] = _import_simple(db, company_id, Region, "地区.xlsx", "地区", [0], 1, [(2, "parent_code")])
 
     # 2. Warehouses
     results["仓库"] = _import_simple(
@@ -671,11 +622,7 @@ def import_all_master_data(db, company_id):
                 continue
             if not code or code == "nan":
                 code = name
-            if (
-                db.query(BankAccount)
-                .filter(BankAccount.company_id == company_id, BankAccount.code == code)
-                .first()
-            ):
+            if db.query(BankAccount).filter(BankAccount.company_id == company_id, BankAccount.code == code).first():
                 continue
             acct_type = str(row.iloc[2]).strip() if pd.notna(row.iloc[2]) else "bank"
             db.add(
@@ -684,12 +631,8 @@ def import_all_master_data(db, company_id):
                     code=code,
                     name=name,
                     account_type=acct_type,
-                    bank_name=str(row.iloc[3] or "").strip()
-                    if pd.notna(row.iloc[3])
-                    else None,
-                    account_number=str(row.iloc[4] or "").strip()
-                    if pd.notna(row.iloc[4])
-                    else None,
+                    bank_name=str(row.iloc[3] or "").strip() if pd.notna(row.iloc[3]) else None,
+                    account_number=str(row.iloc[4] or "").strip() if pd.notna(row.iloc[4]) else None,
                 )
             )
             bank_count += 1
@@ -720,26 +663,16 @@ def import_all_master_data(db, company_id):
                 continue
             if not code or code == "nan":
                 code = name
-            if (
-                db.query(Inventory)
-                .filter(Inventory.company_id == company_id, Inventory.code == code)
-                .first()
-            ):
+            if db.query(Inventory).filter(Inventory.company_id == company_id, Inventory.code == code).first():
                 continue
             db.add(
                 Inventory(
                     company_id=company_id,
                     code=code,
                     name=name,
-                    category_code=str(row.iloc[2] or "").strip()
-                    if pd.notna(row.iloc[2])
-                    else None,
-                    specs=str(row.iloc[3] or "").strip()
-                    if pd.notna(row.iloc[3])
-                    else None,
-                    unit=str(row.iloc[4] or "").strip()
-                    if pd.notna(row.iloc[4])
-                    else None,
+                    category_code=str(row.iloc[2] or "").strip() if pd.notna(row.iloc[2]) else None,
+                    specs=str(row.iloc[3] or "").strip() if pd.notna(row.iloc[3]) else None,
+                    unit=str(row.iloc[4] or "").strip() if pd.notna(row.iloc[4]) else None,
                 )
             )
             inv_count += 1
@@ -793,31 +726,17 @@ def import_all_master_data(db, company_id):
                 continue
             if not code or code == "nan":
                 code = name
-            if (
-                db.query(CashFlowItem)
-                .filter(
-                    CashFlowItem.company_id == company_id, CashFlowItem.code == code
-                )
-                .first()
-            ):
+            if db.query(CashFlowItem).filter(CashFlowItem.company_id == company_id, CashFlowItem.code == code).first():
                 continue
             db.add(
                 CashFlowItem(
                     company_id=company_id,
                     code=code,
                     name=name,
-                    category_code=str(row.iloc[2] or "").strip()
-                    if pd.notna(row.iloc[2])
-                    else None,
-                    direction=str(row.iloc[4] or "").strip()
-                    if pd.notna(row.iloc[4])
-                    else None,
-                    debit_accounts=str(row.iloc[5] or "").strip()
-                    if pd.notna(row.iloc[5])
-                    else None,
-                    credit_accounts=str(row.iloc[6] or "").strip()
-                    if pd.notna(row.iloc[6])
-                    else None,
+                    category_code=str(row.iloc[2] or "").strip() if pd.notna(row.iloc[2]) else None,
+                    direction=str(row.iloc[4] or "").strip() if pd.notna(row.iloc[4]) else None,
+                    debit_accounts=str(row.iloc[5] or "").strip() if pd.notna(row.iloc[5]) else None,
+                    credit_accounts=str(row.iloc[6] or "").strip() if pd.notna(row.iloc[6]) else None,
                 )
             )
             cf_count += 1

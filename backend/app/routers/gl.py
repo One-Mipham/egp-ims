@@ -41,7 +41,7 @@ from app.schemas import (
     AgingRow,
     AgingBucket,
 )
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 
 router = APIRouter()
 
@@ -98,8 +98,9 @@ def update_auto_transfer_template(
     data: AutoTransferTemplateUpdate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    obj = db.query(AutoTransferTemplate).filter(AutoTransferTemplate.id == template_id).first()
+    obj = get_company_scoped(db, AutoTransferTemplate, template_id, cid)
     if not obj:
         raise HTTPException(404, "模板不存在")
     if data.name is not None:
@@ -125,8 +126,9 @@ def delete_auto_transfer_template(
     template_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    obj = db.query(AutoTransferTemplate).filter(AutoTransferTemplate.id == template_id).first()
+    obj = get_company_scoped(db, AutoTransferTemplate, template_id, cid)
     if not obj:
         raise HTTPException(404, "模板不存在")
     db.delete(obj)
@@ -538,8 +540,9 @@ def update_custom_query(
     data: CustomQueryUpdate,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    obj = db.query(CustomQuery).filter(CustomQuery.id == query_id).first()
+    obj = get_company_scoped(db, CustomQuery, query_id, cid)
     if not obj:
         raise HTTPException(404, "查询不存在")
     if data.name is not None:
@@ -557,8 +560,9 @@ def delete_custom_query(
     query_id: int,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    obj = db.query(CustomQuery).filter(CustomQuery.id == query_id).first()
+    obj = get_company_scoped(db, CustomQuery, query_id, cid)
     if not obj:
         raise HTTPException(404, "查询不存在")
     db.delete(obj)
@@ -574,8 +578,9 @@ def execute_custom_query(
     end_period: str = Query(...),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
-    obj = db.query(CustomQuery).filter(CustomQuery.id == query_id).first()
+    obj = get_company_scoped(db, CustomQuery, query_id, cid)
     if not obj:
         raise HTTPException(404, "查询不存在")
     filters = obj.filters

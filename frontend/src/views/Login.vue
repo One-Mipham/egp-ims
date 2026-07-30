@@ -116,7 +116,7 @@ async function handleLogin() {
       period: selectedPeriod.value,
       is_admin: isAdmin.value,
     })
-    localStorage.setItem('token', res.data.access_token)
+    // Token 现在通过 httpOnly cookie 自动管理（防 XSS 窃取）
     localStorage.setItem('companyId', String(res.data.company_id))
     localStorage.setItem('companyName', res.data.company_name)
     localStorage.setItem('username', res.data.username)

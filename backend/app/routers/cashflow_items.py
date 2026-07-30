@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import CashFlowItem
 from app.schemas import CashFlowItemCreate, CashFlowItemUpdate, CashFlowItemResponse
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 
 router = APIRouter()
 
@@ -40,10 +40,14 @@ def create_cashflow_item(data: CashFlowItemCreate, db: Session = Depends(get_db)
 
 @router.put("/{item_id}", response_model=CashFlowItemResponse)
 def update_cashflow_item(
-    item_id: int, data: CashFlowItemUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    item_id: int,
+    data: CashFlowItemUpdate,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
 ):
     """更新现金流量项目映射（如修改对方科目范围）。"""
-    item = db.query(CashFlowItem).filter(CashFlowItem.id == item_id).first()
+    item = get_company_scoped(db, CashFlowItem, item_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="项目不存在")
 
@@ -56,9 +60,14 @@ def update_cashflow_item(
 
 
 @router.delete("/{item_id}")
-def delete_cashflow_item(item_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def delete_cashflow_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+    cid: int = Depends(get_current_company_id),
+):
     """删除现金流量项目映射。"""
-    item = db.query(CashFlowItem).filter(CashFlowItem.id == item_id).first()
+    item = get_company_scoped(db, CashFlowItem, item_id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="项目不存在")
     db.delete(item)

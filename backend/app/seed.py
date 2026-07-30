@@ -84,11 +84,7 @@ LEVEL1_ACCOUNTS = [
 def seed_level1_accounts(db: Session, company_id: int):
     """为指定公司创建国标一级科目。"""
     for code, name, category, direction in LEVEL1_ACCOUNTS:
-        existing = (
-            db.query(Account)
-            .filter(Account.company_id == company_id, Account.code == code)
-            .first()
-        )
+        existing = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
         if not existing:
             account = Account(
                 company_id=company_id,
@@ -124,11 +120,7 @@ LEVEL2_ACCOUNTS = [
 def seed_level2_accounts(db: Session, company_id: int):
     """为指定公司创建常用二级科目（仅限损益类明细）。"""
     for code, name, level, parent_code, category, direction in LEVEL2_ACCOUNTS:
-        existing = (
-            db.query(Account)
-            .filter(Account.company_id == company_id, Account.code == code)
-            .first()
-        )
+        existing = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
         if not existing:
             account = Account(
                 company_id=company_id,
@@ -194,11 +186,7 @@ TAX_LEVEL3 = [
 def seed_tax_accounts(db: Session, company_id: int):
     """为指定公司创建 2221 应交税费完整科目体系（二/三级，幂等）。"""
     # 先确保一级科目存在
-    parent = (
-        db.query(Account)
-        .filter(Account.company_id == company_id, Account.code == "2221")
-        .first()
-    )
+    parent = db.query(Account).filter(Account.company_id == company_id, Account.code == "2221").first()
     if not parent:
         parent = Account(
             company_id=company_id,
@@ -215,11 +203,7 @@ def seed_tax_accounts(db: Session, company_id: int):
 
     # 二级科目
     for code, name, parent_code in TAX_LEVEL2:
-        existing = (
-            db.query(Account)
-            .filter(Account.company_id == company_id, Account.code == code)
-            .first()
-        )
+        existing = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
         if not existing:
             db.add(
                 Account(
@@ -236,11 +220,7 @@ def seed_tax_accounts(db: Session, company_id: int):
 
     # 三级科目
     for code, name, parent_code in TAX_LEVEL3:
-        existing = (
-            db.query(Account)
-            .filter(Account.company_id == company_id, Account.code == code)
-            .first()
-        )
+        existing = db.query(Account).filter(Account.company_id == company_id, Account.code == code).first()
         if not existing:
             db.add(
                 Account(
@@ -294,17 +274,9 @@ def seed_hr_positions(db: Session, company_id: int):
     from app.models import HrPosition
 
     for level, name, sort_order in POSITIONS_SEED:
-        existing = (
-            db.query(HrPosition)
-            .filter(HrPosition.company_id == company_id, HrPosition.name == name)
-            .first()
-        )
+        existing = db.query(HrPosition).filter(HrPosition.company_id == company_id, HrPosition.name == name).first()
         if not existing:
-            db.add(
-                HrPosition(
-                    company_id=company_id, name=name, level=level, sort_order=sort_order
-                )
-            )
+            db.add(HrPosition(company_id=company_id, name=name, level=level, sort_order=sort_order))
     db.commit()
 
 
@@ -421,11 +393,7 @@ def seed_kb_categories(db: Session, company_id: int = 1):
     """为指定公司创建 L1 + L2 分类（幂等：已存在则跳过）。"""
     from app.models import KbCategory
 
-    existing = (
-        db.query(KbCategory)
-        .filter(KbCategory.company_id == company_id, KbCategory.is_system)
-        .count()
-    )
+    existing = db.query(KbCategory).filter(KbCategory.company_id == company_id, KbCategory.is_system).count()
     if existing > 0:
         return  # 已种子过
 
@@ -674,11 +642,7 @@ def seed_subscription_plans(db: Session):
     from app.models import SubscriptionPlan
 
     for p in SUBSCRIPTION_PLANS:
-        existing = (
-            db.query(SubscriptionPlan)
-            .filter(SubscriptionPlan.slug == p["slug"])
-            .first()
-        )
+        existing = db.query(SubscriptionPlan).filter(SubscriptionPlan.slug == p["slug"]).first()
         if not existing:
             db.add(SubscriptionPlan(**p))
     db.commit()
@@ -751,12 +715,7 @@ def seed_cashflow_items(db: Session, company_id: int):
         ),
     ]
 
-    existing = {
-        cfi.code
-        for cfi in db.query(CashFlowItem)
-        .filter(CashFlowItem.company_id == company_id)
-        .all()
-    }
+    existing = {cfi.code for cfi in db.query(CashFlowItem).filter(CashFlowItem.company_id == company_id).all()}
 
     added = 0
     for code, name, cat_code, direction, dr_accts, cr_accts in CF_ITEMS:
@@ -803,24 +762,12 @@ def migrate_account_codes(db: Session, company_id: int, dry_run: bool = True):
     """
     changes = []
     for old_code, new_code, name in CODE_MIGRATIONS:
-        acct = (
-            db.query(Account)
-            .filter(Account.company_id == company_id, Account.code == old_code)
-            .first()
-        )
+        acct = db.query(Account).filter(Account.company_id == company_id, Account.code == old_code).first()
         if not acct:
             continue
         # 检查新代码是否已被占用
-        conflict = (
-            db.query(Account)
-            .filter(Account.company_id == company_id, Account.code == new_code)
-            .first()
-        )
-        entry_count = (
-            db.query(VoucherEntry)
-            .filter(VoucherEntry.account_code == old_code)
-            .count()
-        )
+        conflict = db.query(Account).filter(Account.company_id == company_id, Account.code == new_code).first()
+        entry_count = db.query(VoucherEntry).filter(VoucherEntry.account_code == old_code).count()
 
         change = {
             "old_code": old_code,
@@ -838,9 +785,9 @@ def migrate_account_codes(db: Session, company_id: int, dry_run: bool = True):
             else:
                 acct.code = new_code
                 # 同步更新所有凭证分录
-                db.query(VoucherEntry).filter(
-                    VoucherEntry.account_code == old_code
-                ).update({VoucherEntry.account_code: new_code}, synchronize_session=False)
+                db.query(VoucherEntry).filter(VoucherEntry.account_code == old_code).update(
+                    {VoucherEntry.account_code: new_code}, synchronize_session=False
+                )
                 change["migrated"] = True
 
         changes.append(change)

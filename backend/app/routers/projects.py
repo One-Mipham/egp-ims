@@ -8,7 +8,7 @@ from typing import Optional
 from app.database import get_db
 from app.models import Project
 from app.schemas import ProjectResponse
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 
 router = APIRouter()
 
@@ -71,8 +71,14 @@ def create_project(company_id: int, data: ProjectUpdate, db: Session = Depends(g
 
 
 @router.put("/{project_id}", response_model=ProjectResponse)
-def update_project(project_id: int, data: ProjectUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    p = db.query(Project).filter(Project.id == project_id).first()
+def update_project(
+    project_id: int,
+    data: ProjectUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    p = get_company_scoped(db, Project, project_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="项目不存在")
     for field in ["name", "project_type", "status", "department_id", "manager", "start_date", "end_date", "budget"]:
@@ -85,8 +91,13 @@ def update_project(project_id: int, data: ProjectUpdate, db: Session = Depends(g
 
 
 @router.delete("/{project_id}")
-def delete_project(project_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    p = db.query(Project).filter(Project.id == project_id).first()
+def delete_project(
+    project_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    p = get_company_scoped(db, Project, project_id, cid)
     if not p:
         raise HTTPException(status_code=404, detail="项目不存在")
     p.is_active = False

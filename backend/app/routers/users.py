@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserResponse
-from app.auth import hash_password, get_current_user
+from app.auth import hash_password, get_current_user, get_current_company_id, get_company_scoped
 
 
 class ResetPasswordBody(BaseModel):
@@ -71,13 +71,14 @@ def update_user(
     user_id: int,
     role: str = None,
     is_active: bool = None,
+    cid: int = Depends(get_current_company_id),
     current: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """更新用户角色/状态（需 super_admin，仅限同公司用户）。"""
     if current.role != "super_admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅系统管理员可修改用户")
-    target = db.query(User).filter(User.id == user_id).first()
+    target = get_company_scoped(db, User, user_id, cid)
     if not target:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
     _require_same_company(current, target)
@@ -91,13 +92,18 @@ def update_user(
 
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def delete_user(
+    user_id: int,
+    cid: int = Depends(get_current_company_id),
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """删除/停用用户（需 super_admin，不能删除自己，仅限同公司用户）。"""
     if current.role != "super_admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅系统管理员可删除用户")
     if user_id == current.id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="不能删除自己")
-    target = db.query(User).filter(User.id == user_id).first()
+    target = get_company_scoped(db, User, user_id, cid)
     if not target:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
     _require_same_company(current, target)
@@ -108,14 +114,18 @@ def delete_user(user_id: int, current: User = Depends(get_current_user), db: Ses
 
 @router.post("/{user_id}/reset-password")
 def reset_password(
-    user_id: int, body: ResetPasswordBody, current: User = Depends(get_current_user), db: Session = Depends(get_db)
+    user_id: int,
+    body: ResetPasswordBody,
+    cid: int = Depends(get_current_company_id),
+    current: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """管理员重置用户密码（仅限同公司用户）。"""
     if current.role != "super_admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="仅系统管理员可重置密码")
     if user_id == current.id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="请使用修改自身密码功能")
-    target = db.query(User).filter(User.id == user_id).first()
+    target = get_company_scoped(db, User, user_id, cid)
     if not target:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
     _require_same_company(current, target)

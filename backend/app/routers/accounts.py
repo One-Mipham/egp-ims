@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Account, VoucherEntry, Voucher, Company
 from app.schemas import AccountCreate, AccountUpdate, AccountResponse
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.permissions import check_account_level
 
 router = APIRouter()
@@ -144,9 +144,15 @@ def create_account(data: AccountCreate, db: Session = Depends(get_db), user=Depe
 
 
 @router.put("/{account_id}", response_model=AccountResponse)
-def update_account(account_id: int, data: AccountUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_account(
+    account_id: int,
+    data: AccountUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
     """更新科目字段 — 仅更新传入的非空字段。"""
-    account = db.query(Account).filter(Account.id == account_id).first()
+    account = get_company_scoped(db, Account, account_id, cid)
     if not account:
         raise HTTPException(status_code=404, detail="科目不存在")
     if account.is_system:
@@ -165,10 +171,14 @@ def update_account(account_id: int, data: AccountUpdate, db: Session = Depends(g
 
 @router.patch("/{account_id}/initial-balance")
 def set_initial_balance(
-    account_id: int, data: InitialBalanceUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    account_id: int,
+    data: InitialBalanceUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
     """设置科目期初余额。"""
-    account = db.query(Account).filter(Account.id == account_id).first()
+    account = get_company_scoped(db, Account, account_id, cid)
     if not account:
         raise HTTPException(status_code=404, detail="科目不存在")
     account.initial_balance = data.initial_balance
@@ -199,9 +209,14 @@ def bulk_set_initial_balance(
 
 
 @router.delete("/{account_id}")
-def delete_account(account_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def delete_account(
+    account_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
     """删除科目。系统科目不可删，有子科目的不可删，已被凭证引用的不可删。"""
-    account = db.query(Account).filter(Account.id == account_id).first()
+    account = get_company_scoped(db, Account, account_id, cid)
     if not account:
         raise HTTPException(status_code=404, detail="科目不存在")
     if account.is_system:

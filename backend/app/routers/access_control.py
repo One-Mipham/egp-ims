@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import User, AccessRecord
 
 router = APIRouter()
@@ -88,11 +88,12 @@ def create_record(
 @router.delete("/{record_id}")
 def delete_record(
     record_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """删除出入记录。"""
-    record = db.query(AccessRecord).filter(AccessRecord.id == record_id).first()
+    record = get_company_scoped(db, AccessRecord, record_id, cid)
     if not record:
         raise HTTPException(status_code=404, detail="记录不存在")
     db.delete(record)

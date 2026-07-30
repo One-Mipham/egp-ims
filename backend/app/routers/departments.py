@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Department
 from app.schemas import DepartmentCreate, DepartmentUpdate, DepartmentResponse
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 
 router = APIRouter()
 
@@ -33,10 +33,14 @@ def create_department(data: DepartmentCreate, db: Session = Depends(get_db), use
 
 @router.put("/{dept_id}", response_model=DepartmentResponse)
 def update_department(
-    dept_id: int, data: DepartmentUpdate, db: Session = Depends(get_db), user=Depends(get_current_user)
+    dept_id: int,
+    data: DepartmentUpdate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
     """修改部门信息。"""
-    dept = db.query(Department).filter(Department.id == dept_id).first()
+    dept = get_company_scoped(db, Department, dept_id, cid)
     if not dept:
         raise HTTPException(status_code=404, detail="部门不存在")
     for field, value in data.model_dump(exclude_unset=True).items():
@@ -86,8 +90,13 @@ def bulk_import_departments(
 
 
 @router.delete("/{dept_id}")
-def delete_department(dept_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
-    dept = db.query(Department).filter(Department.id == dept_id).first()
+def delete_department(
+    dept_id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    dept = get_company_scoped(db, Department, dept_id, cid)
     if not dept:
         raise HTTPException(status_code=404, detail="部门不存在")
     dept.is_active = False

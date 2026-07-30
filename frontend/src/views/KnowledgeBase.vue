@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useI18n } from '@/i18n'
 import { useToast } from 'primevue/usetoast'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import {
   listKbArticles,
   getKbArticle,
@@ -51,7 +52,8 @@ const tagInput = ref('')
 
 const renderedHtml = computed(() => {
   if (!selectedArticle.value?.content_md) return '<p class="text-zinc-400 text-sm">暂无内容</p>'
-  return marked(selectedArticle.value.content_md || '')
+  const raw = marked(selectedArticle.value.content_md || '') as string
+  return DOMPurify.sanitize(raw)
 })
 
 function findCatName(id: number): string {

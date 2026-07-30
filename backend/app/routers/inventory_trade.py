@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import (
     InvPurchase,
     InvSale,
@@ -138,9 +138,13 @@ def create_purchase(data: InvPurchaseCreate, db: Session = Depends(get_db), user
 
 @router.put("/purchases/{id}", response_model=InvPurchaseResponse)
 def update_purchase(
-    id: int, data: InvPurchaseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    id: int,
+    data: InvPurchaseCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(InvPurchase).filter(InvPurchase.id == id).first()
+    item = get_company_scoped(db, InvPurchase, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="采购单不存在")
     old_status = item.status
@@ -185,8 +189,13 @@ def update_purchase(
 
 
 @router.delete("/purchases/{id}")
-def delete_purchase(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(InvPurchase).filter(InvPurchase.id == id).first()
+def delete_purchase(
+    id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    item = get_company_scoped(db, InvPurchase, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="采购单不存在")
     _audit(db, user, "delete", "purchase", item.id, {"order_no": item.order_no})
@@ -251,8 +260,14 @@ def create_sale(data: InvSaleCreate, db: Session = Depends(get_db), user: User =
 
 
 @router.put("/sales/{id}", response_model=InvSaleResponse)
-def update_sale(id: int, data: InvSaleCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(InvSale).filter(InvSale.id == id).first()
+def update_sale(
+    id: int,
+    data: InvSaleCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    item = get_company_scoped(db, InvSale, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="销售单不存在")
     old_status = item.status
@@ -320,8 +335,13 @@ def update_sale(id: int, data: InvSaleCreate, db: Session = Depends(get_db), use
 
 
 @router.delete("/sales/{id}")
-def delete_sale(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(InvSale).filter(InvSale.id == id).first()
+def delete_sale(
+    id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    item = get_company_scoped(db, InvSale, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="销售单不存在")
     _audit(db, user, "delete", "sale", item.id, {"order_no": item.order_no})
@@ -394,9 +414,13 @@ def create_stock_item(data: InvStockCreate, db: Session = Depends(get_db), user:
 
 @router.put("/stock/{id}", response_model=InvStockResponse)
 def update_stock_item(
-    id: int, data: InvStockCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    id: int,
+    data: InvStockCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(InvStock).filter(InvStock.id == id).first()
+    item = get_company_scoped(db, InvStock, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="库存记录不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -409,8 +433,13 @@ def update_stock_item(
 
 
 @router.delete("/stock/{id}")
-def delete_stock_item(id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    item = db.query(InvStock).filter(InvStock.id == id).first()
+def delete_stock_item(
+    id: int,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    item = get_company_scoped(db, InvStock, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="库存记录不存在")
     _audit(db, user, "delete", "stock", item.id, {"product_name": item.product_name})
@@ -540,9 +569,13 @@ def create_warehouse(data: WarehouseCreate, db: Session = Depends(get_db), user:
 
 @router.put("/warehouses/{id}", response_model=WarehouseResponse)
 def update_warehouse(
-    id: int, data: WarehouseCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    id: int,
+    data: WarehouseCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(Warehouse).filter(Warehouse.id == id).first()
+    item = get_company_scoped(db, Warehouse, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="仓库不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -578,9 +611,13 @@ def create_inventory_category(
 
 @router.put("/categories/{id}", response_model=InventoryCategoryResponse)
 def update_inventory_category(
-    id: int, data: InventoryCategoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    id: int,
+    data: InventoryCategoryCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(InventoryCategory).filter(InventoryCategory.id == id).first()
+    item = get_company_scoped(db, InventoryCategory, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="分类不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -614,9 +651,13 @@ def create_inventory(data: InventoryCreate, db: Session = Depends(get_db), user:
 
 @router.put("/inventory/{id}", response_model=InventoryResponse)
 def update_inventory(
-    id: int, data: InventoryCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    id: int,
+    data: InventoryCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(Inventory).filter(Inventory.id == id).first()
+    item = get_company_scoped(db, Inventory, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="存货不存在")
     for k, v in data.model_dump(exclude_unset=True).items():
@@ -652,9 +693,13 @@ def create_unit_of_measure(
 
 @router.put("/units/{id}", response_model=UnitOfMeasureResponse)
 def update_unit_of_measure(
-    id: int, data: UnitOfMeasureCreate, db: Session = Depends(get_db), user: User = Depends(get_current_user)
+    id: int,
+    data: UnitOfMeasureCreate,
+    cid: int = Depends(get_current_company_id),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
-    item = db.query(UnitOfMeasure).filter(UnitOfMeasure.id == id).first()
+    item = get_company_scoped(db, UnitOfMeasure, id, cid)
     if not item:
         raise HTTPException(status_code=404, detail="计量单位不存在")
     for k, v in data.model_dump(exclude_unset=True).items():

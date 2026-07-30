@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.auth import get_current_user
+from app.auth import get_current_user, get_current_company_id, get_company_scoped
 from app.models import User, TodoTask
 
 router = APIRouter()
@@ -78,11 +78,12 @@ def update_task(
     status: str = Query(None),
     priority: str = Query(None),
     due_date: str = Query(None),
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """更新待办任务。"""
-    task = db.query(TodoTask).filter(TodoTask.id == task_id).first()
+    task = get_company_scoped(db, TodoTask, task_id, cid)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     if title is not None:
@@ -105,11 +106,12 @@ def update_task(
 @router.delete("/{task_id}")
 def delete_task(
     task_id: int,
+    cid: int = Depends(get_current_company_id),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """删除待办任务。"""
-    task = db.query(TodoTask).filter(TodoTask.id == task_id).first()
+    task = get_company_scoped(db, TodoTask, task_id, cid)
     if not task:
         raise HTTPException(status_code=404, detail="任务不存在")
     db.delete(task)
