@@ -117,6 +117,8 @@ async function handleLogin() {
       is_admin: isAdmin.value,
     })
     // Token 现在通过 httpOnly cookie 自动管理（防 XSS 窃取）
+    // authReady 告知路由守卫认证已就绪，避免被踢回登录页
+    localStorage.setItem('authReady', '1')
     localStorage.setItem('companyId', String(res.data.company_id))
     localStorage.setItem('companyName', res.data.company_name)
     localStorage.setItem('username', res.data.username)

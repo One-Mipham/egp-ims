@@ -773,29 +773,28 @@ const router = createRouter({
 })
 
 router.beforeEach((to, _from, next) => {
-  const token = localStorage.getItem('token')
+  // 安全修复后 token 存于 httpOnly cookie，不再依赖 localStorage token
+  // authReady 标记表示刚登录且 cookie 已设置
+  const authReady = localStorage.getItem('authReady')
 
-  // 访问登录/注册页：主动清除旧 token，确保能看到登录界面
+  // 访问登录/注册页：清除认证标记
   if (to.path === '/login' || to.path === '/register') {
-    if (token) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('companyId')
-    }
+    localStorage.removeItem('authReady')
+    localStorage.removeItem('companyId')
     return next()
   }
 
-  // 首页根路径：有 token 也重定向到登录页（除刚登录的 fresh 标记外）
-  if ((to.path === '' || to.path === '/') && !to.query.fresh) {
-    if (token) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('companyId')
-    }
+  // 刚登录完成（fresh=1）：放行，App.vue 会通过 cookie 验证 /auth/me
+  if (to.query.fresh) {
+    return next()
+  }
+
+  // 非登录页面且未认证 → 重定向到登录
+  if (to.meta.requiresAuth && !authReady) {
     return next('/login')
   }
 
-  if (to.meta.requiresAuth && !token) {
-    next('/login')
-  } else if (to.meta.allowedRoles) {
+  if (to.meta.allowedRoles) {
     const role = localStorage.getItem('role') || ''
     const roles = to.meta.allowedRoles as string[]
     if (!roles.includes(role)) {

@@ -69,7 +69,8 @@ async function loadCurrentUser() {
     const res = await getMe()
     currentUser.value = res.data
   } catch {
-    // Cookie 无效或已过期 → 清除旧 token 并跳转登录
+    // Cookie 无效或已过期 → 清除认证标记并跳转登录
+    localStorage.removeItem('authReady')
     localStorage.removeItem('token')
     if (route.path !== '/login') {
       router.push('/login')
@@ -104,6 +105,7 @@ async function handleLogout() {
   } catch {
     // 即使 logout API 失败也清除本地状态
   }
+  localStorage.removeItem('authReady')
   localStorage.removeItem('token')
   localStorage.removeItem('companyId')
   router.push('/login')
