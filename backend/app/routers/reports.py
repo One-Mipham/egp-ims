@@ -44,8 +44,8 @@ def _prev_year_end(period: str) -> str:
 def _get_leaf_descendants(code: str, accts_by_code: dict) -> list:
     """递归获取某个科目代码下的所有叶子后代科目（使用 parent_code 层级关系）。
 
-    若科目有子科目：递归收集所有叶子后代，同时包含父科目自身
-    （以捕获直接记在父科目上的凭证分录）。"""
+    只返回真正的叶子科目（没有子科目的科目）。父科目的 initial_balance
+    是其所有子科目 initial_balance 的汇总，同时包含父科目会导致双重计算。"""
     direct_children = [a for a in accts_by_code.values() if a.parent_code == code]
     if not direct_children:
         # 叶子科目：返回自身
@@ -53,10 +53,9 @@ def _get_leaf_descendants(code: str, accts_by_code: dict) -> list:
             return [accts_by_code[code]]
         # 代码可能匹配多个以该代码为前缀的科目（历史数据），遍历全量
         return [a for a in accts_by_code.values() if a.code == code]
-    # 父科目：递归收集所有叶子后代 + 包含父科目自身
+    # 父科目：只递归收集叶子后代，不包含父科目自身
+    # （父科目的 initial_balance 是子科目的汇总，包含它会导致双重计算）
     leaves = []
-    if code in accts_by_code:
-        leaves.append(accts_by_code[code])
     for child in direct_children:
         leaves.extend(_get_leaf_descendants(child.code, accts_by_code))
     return leaves
