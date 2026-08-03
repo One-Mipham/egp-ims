@@ -68,12 +68,19 @@ async function loadCurrentUser() {
   try {
     const res = await getMe()
     currentUser.value = res.data
-  } catch {
-    // Cookie 无效或已过期 → 清除认证标记并跳转登录
-    localStorage.removeItem('authReady')
-    localStorage.removeItem('token')
-    if (route.path !== '/login') {
-      router.push('/login')
+    // Cookie 有效 → 确保 authReady 标记存在（防止因网络波动被清除后无法恢复）
+    if (!localStorage.getItem('authReady')) {
+      localStorage.setItem('authReady', '1')
+    }
+  } catch (e: any) {
+    // 仅 401 未授权才清除认证标记并跳转登录
+    // 网络超时/服务器错误等不踢出用户
+    if (e.response?.status === 401) {
+      localStorage.removeItem('authReady')
+      localStorage.removeItem('token')
+      if (route.path !== '/login') {
+        router.push('/login')
+      }
     }
   }
 }
