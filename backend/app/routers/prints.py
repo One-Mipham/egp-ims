@@ -592,13 +592,23 @@ def _get_report_data(db: Session, company_id: int, period: str, report: str, rty
         fin_out_p = round(_cat_sum(prev_items, "fin_", "outflow"), 2)
 
         # 现金类科目（与资产负债表货币资金一致：1001,1002,1012）
+        # 使用 _get_leaf_descendants 避免父科目+子科目双重计算
         all_accts = db.query(Account).filter(Account.company_id == company_id).all()
-        accts_cf = {a.code: a for a in all_accts if _is_cash_account(a.code, CASH_CODES)}
+        accts_by_code = {a.code: a for a in all_accts}
+        cash_leaves = []
+        for cash_code in CASH_CODES:
+            cash_leaves.extend(_get_leaf_descendants(cash_code, accts_by_code))
+        seen_ids = set()
+        cash_accounts = []
+        for a in cash_leaves:
+            if a.id not in seen_ids:
+                seen_ids.add(a.id)
+                cash_accounts.append(a)
         pye = _prev_year_end(period)
 
         def _cash_balance(ref_date):
             """资产负债表货币资金在某一日期的余额"""
-            return round(sum(_calc_ending(a, db, company_id, ref_date) for a in accts_cf.values()), 2)
+            return round(sum(_calc_ending(a, db, company_id, ref_date) for a in cash_accounts), 2)
 
         # ── 倒挤法：期末余额 = 资产负债表货币资金 ──
         # curr 列：本期期初 = curr_start 前一日；期末 = end_date
