@@ -647,7 +647,8 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
         if a.id not in seen_ids:
             seen_ids.add(a.id)
             cash_accounts.append(a)
-    beginning_balance = sum(_calc_ending(a, db, company_id, ys) for a in cash_accounts)
+    pye = _prev_year_end(period)
+    beginning_balance = sum(_calc_ending(a, db, company_id, pye) for a in cash_accounts)
 
     # --- Build 会企03表 rows ---
     def R(key, label, flow_type=None):
