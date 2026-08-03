@@ -634,10 +634,20 @@ def cash_flow(company_id: int, period: str, db: Session = Depends(get_db), user:
         """Return (curr, ytd, prev) for a row key."""
         return (_cf_val(row_key, curr_items), _cf_val(row_key, ytd_items), _cf_val(row_key, prev_items))
 
-    # 现金期初余额
+    # 现金期初余额 — 使用 _get_leaf_descendants 避免父科目+子科目双重计算
     all_accts = db.query(Account).filter(Account.company_id == company_id).all()
-    accts = {a.code: a for a in all_accts if _is_cash_account(a.code, CASH_CODES)}
-    beginning_balance = sum(_calc_ending(a, db, company_id, ys) for a in accts.values())
+    accts_by_code = {a.code: a for a in all_accts}
+    cash_leaves = []
+    for cash_code in CASH_CODES:
+        cash_leaves.extend(_get_leaf_descendants(cash_code, accts_by_code))
+    # 去重（同一科目可能被多个现金代码匹配）
+    seen_ids = set()
+    cash_accounts = []
+    for a in cash_leaves:
+        if a.id not in seen_ids:
+            seen_ids.add(a.id)
+            cash_accounts.append(a)
+    beginning_balance = sum(_calc_ending(a, db, company_id, ys) for a in cash_accounts)
 
     # --- Build 会企03表 rows ---
     def R(key, label, flow_type=None):
