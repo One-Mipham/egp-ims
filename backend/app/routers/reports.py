@@ -381,11 +381,12 @@ def income_statement(
                 # 排除结转凭证（所有损益相关类别：profit_loss, revenue, cost, expense）
                 exclude_xfer = a.category in ("profit_loss", "revenue", "cost", "expense")
                 d, c = _occurrence(a, db, company_id, start, end, exclude_transfer=exclude_xfer)
-                # 按科目余额方向取发生额：贷方科目取贷方（收入），借方科目取借方（费用）
+                # 按科目余额方向取净值：贷方科目 = 贷-借，借方科目 = 借-贷
+                # 使用净值确保冲销分录（如费用冲销在贷方）被正确反映
                 if a.balance_direction == "credit":
-                    total += c
+                    total += c - d
                 else:
-                    total += d
+                    total += d - c
         return round(total, 2)
 
     def _build_items(start: str, end: str):
